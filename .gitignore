@@ -1,0 +1,35 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+*.iml
+.idea/
+*.log
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/captures/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+*.apk
+*.ap_
+*.dex
+*.class
+gen/
+bin/
+
+# iOS (不需要但保留)
+ios/
+macos/
+linux/
+windows/
+web/
+
+# Misc
+.DS_Store
+*.lock
+!pubspec.lock
