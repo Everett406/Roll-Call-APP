@@ -219,29 +219,59 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 
   Future<void> _archiveSession(AppState state) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('结束并归档'),
-        content: const Text('确定要结束本次点名并归档吗？归档后仍可查看记录。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定归档'),
-          ),
-        ],
-      ),
-    );
+    final isComplete = state.isSessionComplete(widget.sessionId);
+    if (!isComplete) {
+      final forceArchive = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('点名未完成'),
+          content: const Text('还有人员未标记状态，确定要归档吗？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('继续标记'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('强制归档'),
+            ),
+          ],
+        ),
+      );
 
-    if (confirmed == true) {
-      await state.archiveSession(widget.sessionId);
-      if (mounted) {
-        Navigator.pop(context);
+      if (forceArchive != true) {
+        return;
       }
+    } else {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('结束并归档'),
+          content: const Text('确定要结束本次点名并归档吗？归档后仍可查看记录。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('确定归档'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) {
+        return;
+      }
+    }
+
+    await state.archiveSession(widget.sessionId);
+    if (mounted) {
+      Navigator.pop(context);
     }
   }
 }

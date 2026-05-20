@@ -321,8 +321,22 @@ class AppState extends ChangeNotifier {
     return counts;
   }
 
+  int getSessionArrivedCount(String sessionId) {
+    return getSessionCheckIns(sessionId)
+        .where((c) => c.statusId == 'tag_arrived')
+        .length;
+  }
+
   int getSessionCheckedCount(String sessionId) {
     return getSessionCheckIns(sessionId).length;
+  }
+
+  bool isSessionComplete(String sessionId) {
+    final session = getSessionById(sessionId);
+    if (session == null) return true;
+    final totalMembers = session.memberIds.length;
+    final checkedCount = getSessionCheckedCount(sessionId);
+    return checkedCount >= totalMembers;
   }
 
   Map<String, int> getMemberStatusCounts(String memberId) {

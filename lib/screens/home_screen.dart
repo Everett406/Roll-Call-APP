@@ -187,7 +187,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       padding: const EdgeInsets.all(16),
       itemCount: sessions.length,
       itemBuilder: (context, index) {
-        return _SessionCard(session: sessions[index], isArchived: true);
+        return _SessionCard(
+          session: sessions[index],
+          isArchived: true,
+        );
       },
     );
   }
@@ -199,11 +202,43 @@ class _SessionCard extends ConsumerWidget {
 
   const _SessionCard({required this.session, this.isArchived = false});
 
+  Future<void> _deleteSession(BuildContext context, AppState state) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除点名'),
+        content: const Text('确定要删除这个点名记录吗？此操作无法撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await state.deleteSession(session.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已删除点名记录')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(appStateProvider);
     final theme = Theme.of(context);
-    final checkedCount = state.getSessionCheckedCount(session.id);
+    final arrivedCount = state.getSessionArrivedCount(session.id);
     final totalCount = session.memberIds.length;
     final dateFormat = DateFormat('MM/dd HH:mm');
 
@@ -249,6 +284,13 @@ class _SessionCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  if (isArchived)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      color: theme.colorScheme.error,
+                      onPressed: () => _deleteSession(context, state),
+                      tooltip: '删除',
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -265,9 +307,9 @@ class _SessionCard extends ConsumerWidget {
                   ),
                   const Spacer(),
                   Text(
-                    '实到 $checkedCount / 应到 $totalCount',
+                    '实到 $arrivedCount / 应到 $totalCount',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: checkedCount == totalCount
+                      color: arrivedCount == totalCount
                           ? AppColors.success
                           : theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
@@ -277,7 +319,7 @@ class _SessionCard extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               LinearProgressIndicator(
-                value: totalCount > 0 ? checkedCount / totalCount : 0,
+                value: totalCount > 0 ? arrivedCount / totalCount : 0,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
                 borderRadius: BorderRadius.circular(4),

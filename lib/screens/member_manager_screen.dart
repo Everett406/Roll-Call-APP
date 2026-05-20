@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
 import 'import_screen.dart';
+import 'member_history_screen.dart';
 
 class MemberManagerScreen extends ConsumerStatefulWidget {
   const MemberManagerScreen({super.key});
 
   @override
-  ConsumerState<MemberManagerScreen> createState() => _MemberManagerScreenState();
+  ConsumerState<MemberManagerScreen> createState() =>
+      _MemberManagerScreenState();
 }
 
 class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
@@ -74,7 +76,8 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                   background: Container(
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 20),
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 4),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.error,
                       borderRadius: BorderRadius.circular(12),
@@ -117,25 +120,69 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                       ),
                     );
                   },
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: theme.colorScheme.primaryContainer,
-                      child: Text(
-                        member.name.isNotEmpty ? member.name[0] : '?',
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 4),
+                    child: InkWell(
+                      onTap: () => _showEditDialog(context, state, member),
+                      onLongPress: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MemberHistoryScreen(
+                              memberId: member.id,
+                              memberName: member.name,
+                            ),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: theme.colorScheme.primaryContainer,
+                              child: Text(
+                                member.name.isNotEmpty ? member.name[0] : '?',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    member.name,
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (member.studentId != null &&
+                                      member.studentId!.isNotEmpty)
+                                    Text(
+                                      member.studentId!,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, size: 20),
+                              onPressed: () =>
+                                  _showEditDialog(context, state, member),
+                              tooltip: '编辑',
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    title: Text(member.name),
-                    subtitle: member.studentId != null &&
-                            member.studentId!.isNotEmpty
-                        ? Text(member.studentId!)
-                        : null,
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () => _showEditDialog(context, state, member),
                     ),
                   ),
                 );
