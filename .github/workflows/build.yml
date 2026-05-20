@@ -32,6 +32,22 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Generate keystore for signing
+        run: |
+          mkdir -p android/keystore
+          # Generate debug keystore
+          keytool -genkeypair -v \
+            -keystore android/keystore/debug.keystore \
+            -storepass rollcall2026 \
+            -alias rollcall \
+            -keypass rollcall2026 \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 36500 \
+            -dname "CN=RollCall, OU=Dev, O=RollCall, L=Unknown, ST=Unknown, C=CN"
+          # Generate release keystore (same key for consistent signing)
+          cp android/keystore/debug.keystore android/keystore/release.keystore
+
       - name: Get dependencies
         run: flutter pub get
 

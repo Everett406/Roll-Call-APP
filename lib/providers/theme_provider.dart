@@ -32,9 +32,11 @@ const List<ThemeColor> themeColors = [
 class ThemeState extends ChangeNotifier {
   AppThemeMode _themeMode = AppThemeMode.system;
   Color _seedColor = Colors.indigo;
+  bool _dynamicColorEnabled = false;
 
   AppThemeMode get themeMode => _themeMode;
   Color get seedColor => _seedColor;
+  bool get dynamicColorEnabled => _dynamicColorEnabled;
 
   void setThemeMode(AppThemeMode mode) {
     _themeMode = mode;
@@ -43,6 +45,11 @@ class ThemeState extends ChangeNotifier {
 
   void setSeedColor(Color color) {
     _seedColor = color;
+    notifyListeners();
+  }
+
+  void setDynamicColorEnabled(bool value) {
+    _dynamicColorEnabled = value;
     notifyListeners();
   }
 
@@ -57,23 +64,51 @@ class ThemeState extends ChangeNotifier {
     }
   }
 
-  ThemeData get lightTheme => ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: _seedColor,
-      brightness: Brightness.light,
-    ),
-    fontFamily: 'NotoSansSC',
-  );
+  ThemeData get lightTheme {
+    if (_dynamicColorEnabled) {
+      // 动态取色模式：使用更高饱和度和对比度的配色方案
+      return ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: _seedColor,
+          brightness: Brightness.light,
+          saturation: 1.0,
+        ),
+        fontFamily: 'NotoSansSC',
+      );
+    }
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _seedColor,
+        brightness: Brightness.light,
+      ),
+      fontFamily: 'NotoSansSC',
+    );
+  }
 
-  ThemeData get darkTheme => ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: _seedColor,
-      brightness: Brightness.dark,
-    ),
-    fontFamily: 'NotoSansSC',
-  );
+  ThemeData get darkTheme {
+    if (_dynamicColorEnabled) {
+      // 动态取色模式：使用更高饱和度和对比度的配色方案
+      return ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: _seedColor,
+          brightness: Brightness.dark,
+          saturation: 1.0,
+        ),
+        fontFamily: 'NotoSansSC',
+      );
+    }
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _seedColor,
+        brightness: Brightness.dark,
+      ),
+      fontFamily: 'NotoSansSC',
+    );
+  }
 }
 
 /// Provider

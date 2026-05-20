@@ -46,9 +46,30 @@ android {
         versionName flutterVersionName
     }
 
-    buildTypes {
+    signingConfigs {
+        // Fixed signing config to avoid signature conflicts on reinstall
+        debug {
+            storeFile file('../keystore/debug.keystore')
+            storePassword 'rollcall2026'
+            keyAlias 'rollcall'
+            keyPassword 'rollcall2026'
+        }
         release {
+            storeFile file('../keystore/release.keystore')
+            storePassword 'rollcall2026'
+            keyAlias 'rollcall'
+            keyPassword 'rollcall2026'
+        }
+    }
+
+    buildTypes {
+        debug {
             signingConfig signingConfigs.debug
+        }
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }

@@ -24,17 +24,55 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
   String _searchQuery = '';
   bool _isSearchExpanded = false;
   final _searchController = TextEditingController();
-  
-  // 动画相关
+
+  // AnimatedList key for unchecked members
   final GlobalKey<AnimatedListState> _uncheckedListKey = GlobalKey();
-  final GlobalKey<AnimatedListState> _checkedListKey = GlobalKey();
-  List<String> _previousUncheckedIds = [];
-  List<String> _previousCheckedIds = [];
+
+  // Track previous unchecked member list to detect removals
+  List<Member> _prevUncheckedMembers = [];
+
+  // Track which status groups are expanded
+  final Set<String> _expandedGroups = {};
+
+  // Animation controllers for each status group
+  final Map<String, AnimationController> _groupControllers = {};
+  final Map<String, Animation<double>> _groupAnimations = {};
 
   @override
   void dispose() {
     _searchController.dispose();
+    for (final controller in _groupControllers.values) {
+      controller.dispose();
+    }
+    _groupControllers.clear();
+    _groupAnimations.clear();
     super.dispose();
+  }
+
+  AnimationController _getGroupController(String tagId) {
+    return _groupControllers.putIfAbsent(tagId, () {
+      final controller = AnimationController(
+        duration: const Duration(milliseconds: 300),
+        vsync: this,
+      );
+      _groupAnimations[tagId] = CurvedAnimation(
+        parent: controller,
+        curve: Curves.easeInOut,
+      );
+      return controller;
+    });
+  }
+
+  void _toggleGroup(String tagId) {
+    setState(() {
+      if (_expandedGroups.contains(tagId)) {
+        _expandedGroups.remove(tagId);
+        _getGroupController(tagId).reverse();
+      } else {
+        _expandedGroups.add(tagId);
+        _getGroupController(tagId).forward();
+      }
+    });
   }
 
   @override
@@ -61,20 +99,22 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
       final checkIn = state.getActiveCheckIn(widget.sessionId, m.id);
       return checkIn == null;
     }).toList();
+
     final checkedMembers = members.where((m) {
       final checkIn = state.getActiveCheckIn(widget.sessionId, m.id);
       return checkIn != null;
     }).toList();
 
-    // 检测变化并触发动画
-    final currentUncheckedIds = uncheckedMembers.map((m) => m.id).toList();
-    final currentCheckedIds = checkedMembers.map((m) => m.id).toList();
-    
-    // 更新之前的列表
+    // Detect unchecked members that were removed (marked) and animate them out
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _previousUncheckedIds = currentUncheckedIds;
-      _previousCheckedIds = currentCheckedIds;
+      _animateUncheckedChanges(uncheckedMembers);
     });
+
+    // Build status groups for checked members
+    final statusGroups = _buildStatusGroups(state, checkedMembers);
+
+    // Clean up controllers for groups that no longer exist
+    _cleanupGroupControllers(statusGroups);
 
     return Scaffold(
       appBar: AppBar(
@@ -136,6 +176,8 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
             onFilterChanged: (filter) {
               setState(() {
                 _selectedFilter = filter;
+                // Reset unchecked tracking when filter changes
+                _prevUncheckedMembers = List.from(uncheckedMembers);
               });
             },
           ),
@@ -164,12 +206,13 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
           Expanded(
             child: members.isEmpty
                 ? _buildEmptyState(theme, _isSearchExpanded, _selectedFilter)
-                : _buildAnimatedList(
+                : _buildMemberList(
                     context,
                     theme,
                     state,
                     uncheckedMembers,
                     checkedMembers,
+                    statusGroups,
                   ),
           ),
           // Undo bar at bottom
@@ -183,7 +226,116 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme, bool isSearchExpanded, String? selectedFilter) {
+  // ---------------------------------------------------------------
+  // AnimatedList change detection for unchecked members
+  // ---------------------------------------------------------------
+  void _animateUncheckedChanges(List<Member> currentUnchecked) {
+    final listState = _uncheckedListKey.currentState;
+    if (listState == null) {
+      _prevUncheckedMembers = List.from(currentUnchecked);
+      return;
+    }
+
+    // Detect removed items (member was checked in)
+    final currentIds = currentUnchecked.map((m) => m.id).toSet();
+    final prevIds = _prevUncheckedMembers.map((m) => m.id).toSet();
+
+    // Items that were in previous but not in current -> removed
+    final removedIds = prevIds.difference(currentIds);
+
+    for (final removedId in removedIds) {
+      final removedIndex =
+          _prevUncheckedMembers.indexWhere((m) => m.id == removedId);
+      if (removedIndex != -1) {
+        listState.removeItem(
+          removedIndex,
+          (context, animation) {
+            return SizeTransition(
+              sizeFactor: animation,
+              axisAlignment: 0.0,
+              child: FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset.zero,
+                    end: const Offset(0, 0.3),
+                  ).animate(animation),
+                  child: SwipePersonCard(
+                    member: _prevUncheckedMembers[removedIndex],
+                    currentTag: null,
+                    onSwipeRight: () {},
+                    onSwipeLeft: () {},
+                    onLongPress: () {},
+                  ),
+                ),
+              ),
+            );
+          },
+          duration: const Duration(milliseconds: 350),
+        );
+      }
+    }
+
+    // Detect added items (undo happened, member back to unchecked)
+    final addedIds = currentIds.difference(prevIds);
+
+    for (final addedId in addedIds) {
+      final addedIndex =
+          currentUnchecked.indexWhere((m) => m.id == addedId);
+      if (addedIndex != -1) {
+        listState.insertItem(addedIndex, duration: const Duration(milliseconds: 350));
+      }
+    }
+
+    _prevUncheckedMembers = List.from(currentUnchecked);
+  }
+
+  // ---------------------------------------------------------------
+  // Build status groups: Map<tagId, List<Member>>
+  // ---------------------------------------------------------------
+  List<MapEntry<String, List<Member>>> _buildStatusGroups(
+    AppState state,
+    List<Member> checkedMembers,
+  ) {
+    final groups = <String, List<Member>>{};
+    for (final member in checkedMembers) {
+      final checkIn = state.getActiveCheckIn(widget.sessionId, member.id);
+      final statusId = checkIn?.statusId ?? 'unknown';
+      groups.putIfAbsent(statusId, () => []).add(member);
+    }
+
+    // Sort groups by count descending
+    final entries = groups.entries.toList()
+      ..sort((a, b) => b.value.length.compareTo(a.value.length));
+
+    return entries;
+  }
+
+  // ---------------------------------------------------------------
+  // Clean up animation controllers for groups that no longer exist
+  // ---------------------------------------------------------------
+  void _cleanupGroupControllers(
+    List<MapEntry<String, List<Member>>> statusGroups,
+  ) {
+    final activeTagIds = statusGroups.map((e) => e.key).toSet();
+    final staleKeys =
+        _groupControllers.keys.where((k) => !activeTagIds.contains(k)).toList();
+    for (final key in staleKeys) {
+      _groupControllers[key]?.dispose();
+      _groupControllers.remove(key);
+      _groupAnimations.remove(key);
+      _expandedGroups.remove(key);
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Empty state
+  // ---------------------------------------------------------------
+  Widget _buildEmptyState(
+    ThemeData theme,
+    bool isSearchExpanded,
+    String? selectedFilter,
+  ) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -213,17 +365,21 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
     );
   }
 
-  Widget _buildAnimatedList(
+  // ---------------------------------------------------------------
+  // Main member list builder
+  // ---------------------------------------------------------------
+  Widget _buildMemberList(
     BuildContext context,
     ThemeData theme,
     AppState state,
     List<Member> uncheckedMembers,
     List<Member> checkedMembers,
+    List<MapEntry<String, List<Member>>> statusGroups,
   ) {
     return ListView(
       padding: const EdgeInsets.only(bottom: 16),
       children: [
-        // 未标记区域标题
+        // ---- Unchecked section header ----
         if (uncheckedMembers.isNotEmpty)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -256,35 +412,49 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
             ),
           ),
 
-        // 未标记成员列表
-        ...uncheckedMembers.map((member) => TweenAnimationBuilder<double>(
-          key: ValueKey('unchecked-${member.id}'),
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(0, (1 - value) * 20),
-              child: Opacity(
-                opacity: value,
-                child: child,
-              ),
-            );
-          },
-          child: SwipePersonCard(
-            member: member,
-            currentTag: null,
-            onSwipeRight: () => _markAsArrived(state, member),
-            onSwipeLeft: () => _showStatusSheet(context, state, member),
-            onLongPress: () => _showMemberHistory(context, member),
+        // ---- AnimatedList for unchecked members ----
+        if (uncheckedMembers.isNotEmpty)
+          SizedBox(
+            height: uncheckedMembers.length * 72.0,
+            child: AnimatedList(
+              key: _uncheckedListKey,
+              initialItemCount: uncheckedMembers.length,
+              padding: EdgeInsets.zero,
+              itemBuilder: (context, index, animation) {
+                final member = uncheckedMembers[index];
+                return SizeTransition(
+                  sizeFactor: animation,
+                  axisAlignment: 0.0,
+                  child: FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -0.15),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      )),
+                      child: SwipePersonCard(
+                        member: member,
+                        currentTag: null,
+                        onSwipeRight: () => _markAsArrived(state, member),
+                        onSwipeLeft: () =>
+                            _showStatusSheet(context, state, member),
+                        onLongPress: () => _showMemberHistory(context, member),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        )),
 
-        // 分隔线
+        // ---- Divider between unchecked and checked ----
         if (uncheckedMembers.isNotEmpty && checkedMembers.isNotEmpty)
           _buildDivider(theme, checkedMembers.length),
 
-        // 已标记区域标题
+        // ---- Checked section header ----
         if (checkedMembers.isNotEmpty)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -320,38 +490,21 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
             ),
           ),
 
-        // 已标记成员列表（带背景色区分）
+        // ---- Status-grouped checked members ----
         if (checkedMembers.isNotEmpty)
           Container(
             color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
             child: Column(
-              children: checkedMembers.map((member) {
-                final checkIn = state.getActiveCheckIn(widget.sessionId, member.id);
-                final tag = checkIn?.statusId != null
-                    ? state.getTagById(checkIn!.statusId!)
-                    : null;
-
-                return TweenAnimationBuilder<double>(
-                  key: ValueKey('checked-${member.id}'),
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    return Transform.translate(
-                      offset: Offset(0, (1 - value) * -30),
-                      child: Opacity(
-                        opacity: value,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: SwipePersonCard(
-                    member: member,
-                    currentTag: tag,
-                    onSwipeRight: () => _markAsArrived(state, member),
-                    onSwipeLeft: () => _showStatusSheet(context, state, member),
-                    onLongPress: () => _showMemberHistory(context, member),
-                  ),
+              children: statusGroups.map((entry) {
+                final tagId = entry.key;
+                final groupMembers = entry.value;
+                final tag = state.getTagById(tagId);
+                return _buildStatusGroup(
+                  theme,
+                  state,
+                  tagId,
+                  tag,
+                  groupMembers,
                 );
               }).toList(),
             ),
@@ -360,6 +513,123 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
     );
   }
 
+  // ---------------------------------------------------------------
+  // Status group with expand / collapse animation
+  // ---------------------------------------------------------------
+  Widget _buildStatusGroup(
+    ThemeData theme,
+    AppState state,
+    String tagId,
+    StatusTag? tag,
+    List<Member> groupMembers,
+  ) {
+    final tagColor = tag != null ? Color(tag.colorValue) : theme.colorScheme.outline;
+    final tagName = tag?.name ?? '未知状态';
+    final isExpanded = _expandedGroups.contains(tagId);
+    final controller = _getGroupController(tagId);
+    final animation = _groupAnimations[tagId]!;
+
+    // Ensure animation state matches expansion state
+    if (isExpanded && !controller.isCompleted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) controller.forward();
+      });
+    } else if (!isExpanded && !controller.isDismissed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) controller.reverse();
+      });
+    }
+
+    return Column(
+      children: [
+        // Group header - tappable
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _toggleGroup(tagId),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  // Status color dot
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: tagColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Status name
+                  Text(
+                    tagName,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: tagColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Member count badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tagColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${groupMembers.length}人',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: tagColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  // Expand / collapse icon
+                  RotationTransition(
+                    turns: animation,
+                    child: Icon(
+                      Icons.expand_more,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // Animated group content
+        SizeTransition(
+          sizeFactor: animation,
+          axisAlignment: -1.0,
+          child: FadeTransition(
+            opacity: animation,
+            child: Column(
+              children: groupMembers.map((member) {
+                return SwipePersonCard(
+                  member: member,
+                  currentTag: tag,
+                  onSwipeRight: () => _markAsArrived(state, member),
+                  onSwipeLeft: () =>
+                      _showStatusSheet(context, state, member),
+                  onLongPress: () => _showMemberHistory(context, member),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------
+  // Divider between unchecked and checked sections
+  // ---------------------------------------------------------------
   Widget _buildDivider(ThemeData theme, int checkedCount) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -429,6 +699,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
     );
   }
 
+  // ---------------------------------------------------------------
+  // Actions
+  // ---------------------------------------------------------------
   void _markAsArrived(AppState state, Member member) {
     state.checkIn(
       sessionId: widget.sessionId,

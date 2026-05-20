@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/theme_provider.dart';
 import '../providers/app_state.dart';
+import 'member_manager_screen.dart';
+import 'group_manager_screen.dart';
+import 'tag_manager_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -54,6 +57,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: Text(_getThemeColorName(themeState.seedColor)),
             onTap: () => _showColorPickerDialog(),
           ),
+          
+          // 动态取色开关
+          SwitchListTile(
+            secondary: const Icon(Icons.palette_outlined),
+            title: const Text('动态取色'),
+            subtitle: Text(themeState.dynamicColorEnabled ? '已开启 - 高饱和度配色' : '已关闭 - 柔和配色'),
+            value: themeState.dynamicColorEnabled,
+            onChanged: (value) {
+              themeState.setDynamicColorEnabled(value);
+            },
+          ),
 
           const Divider(),
 
@@ -65,7 +79,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: const Text('人员管理'),
             subtitle: Text('共 ${appState.members.length} 人'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/members'),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberManagerScreen()));
+            },
           ),
           
           ListTile(
@@ -73,7 +89,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: const Text('分组管理'),
             subtitle: Text('共 ${appState.groups.length} 个分组'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/groups'),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupManagerScreen()));
+            },
           ),
           
           ListTile(
@@ -81,7 +99,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: const Text('标签管理'),
             subtitle: Text('共 ${appState.tags.length} 个标签'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.pushNamed(context, '/tags'),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const TagManagerScreen()));
+            },
           ),
 
           const Divider(),
@@ -117,14 +137,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('关于点名诗韵'),
-            subtitle: const Text('点名诗韵 v1.1.1'),
+            subtitle: const Text('点名诗韵 v1.1.2'),
             onTap: () => _showAboutDialog(),
           ),
           
           ListTile(
             leading: const Icon(Icons.update),
             title: const Text('版本信息'),
-            subtitle: const Text('当前版本: 1.1.1 (Build 1)'),
+            subtitle: const Text('当前版本: 1.1.2 (Build 2)'),
           ),
         ],
       ),
@@ -283,7 +303,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: '点名诗韵',
-      applicationVersion: '1.1.1',
+      applicationVersion: '1.1.2',
       applicationLegalese: '© 2026 Everett',
       children: [
         const SizedBox(height: 16),

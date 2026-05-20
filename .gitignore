@@ -15,6 +15,7 @@ android/captures/
 android/gradle/
 android/gradlew
 android/gradlew.bat
+android/keystore/
 *.apk
 *.ap_
 *.dex
