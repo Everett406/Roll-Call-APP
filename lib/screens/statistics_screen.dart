@@ -347,10 +347,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     switch (period) {
       case TimePeriod.today:
         return '今天';
-      case TimePeriod.thisWeek:
-        return '本周';
-      case TimePeriod.thisMonth:
-        return '本月';
+      case TimePeriod.lastWeek:
+        return '近一周';
+      case TimePeriod.lastMonth:
+        return '近一月';
     }
   }
 }

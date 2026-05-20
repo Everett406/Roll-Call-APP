@@ -472,13 +472,13 @@ class AppState extends ChangeNotifier {
       case TimePeriod.today:
         startDate = today;
         break;
-      case TimePeriod.thisWeek:
-        // Monday of this week
-        final daysFromMonday = now.weekday - 1;
-        startDate = today.subtract(Duration(days: daysFromMonday));
+      case TimePeriod.lastWeek:
+        // 最近7天
+        startDate = today.subtract(const Duration(days: 7));
         break;
-      case TimePeriod.thisMonth:
-        startDate = DateTime(now.year, now.month, 1);
+      case TimePeriod.lastMonth:
+        // 最近30天
+        startDate = today.subtract(const Duration(days: 30));
         break;
     }
 
