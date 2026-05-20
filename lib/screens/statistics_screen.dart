@@ -13,7 +13,7 @@ class StatisticsScreen extends ConsumerStatefulWidget {
 }
 
 class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
-  TimePeriod _selectedPeriod = TimePeriod.thisWeek;
+  TimePeriod _selectedPeriod = TimePeriod.lastWeek;
 
   @override
   Widget build(BuildContext context) {
