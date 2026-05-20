@@ -49,18 +49,14 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       searchQuery: _isSearchExpanded ? _searchQuery : null,
     );
 
-    // Split into unchecked and checked, both keep original order (by studentId)
-    final uncheckedMembers = members.where((m) {
-      final checkIn = state.getActiveCheckIn(widget.sessionId, m.id);
-      return checkIn == null;
-    }).toList();
+    // When showing all (no filter), display a single fixed list sorted by studentId.
+    // Members stay in place after marking — they just change color + tag.
+    // When filtering, only show matching members in sorted order.
+    final isShowingAll = _selectedFilter == null;
 
-    final checkedMembers = members.where((m) {
-      final checkIn = state.getActiveCheckIn(widget.sessionId, m.id);
-      return checkIn != null;
-    }).toList();
-
-    return Scaffold(
+    if (isShowingAll) {
+      // Fixed list: all members in studentId order, no splitting
+      return Scaffold(
       appBar: AppBar(
         title: _isSearchExpanded
             ? TextField(
@@ -136,7 +132,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '共 ${session.memberIds.length} 人，已标记 ${checkedMembers.length} 人',
+                    '共 ${session.memberIds.length} 人，已标记 ${state.getSessionCheckedCount(widget.sessionId)} 人',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -144,48 +140,131 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                 ],
               ),
             ),
-          // Member list
+          // Member list - fixed order when showing all
           Expanded(
             child: members.isEmpty
                 ? _buildEmptyState(theme, _isSearchExpanded, _selectedFilter)
-                : ListView(
+                : ListView.builder(
                     padding: const EdgeInsets.only(bottom: 16),
-                    children: [
-                      // Unchecked members
-                      ...uncheckedMembers.map((member) => SwipePersonCard(
-                            member: member,
-                            currentTag: null,
-                            onSwipeRight: () => _markAsArrived(state, member),
-                            onSwipeLeft: () =>
-                                _showStatusSheet(context, state, member),
-                            onLongPress: () =>
-                                _showMemberHistory(context, member),
-                          )),
-                      // Divider
-                      if (uncheckedMembers.isNotEmpty &&
-                          checkedMembers.isNotEmpty)
-                        _buildDivider(theme, checkedMembers.length),
-                      // Checked members
-                      ...checkedMembers.map((member) {
-                        final checkIn =
-                            state.getActiveCheckIn(widget.sessionId, member.id);
-                        final tag = checkIn?.statusId != null
-                            ? state.getTagById(checkIn!.statusId!)
-                            : null;
-                        return SwipePersonCard(
-                          member: member,
-                          currentTag: tag,
-                          onSwipeRight: () => _markAsArrived(state, member),
-                          onSwipeLeft: () =>
-                              _showStatusSheet(context, state, member),
-                          onLongPress: () =>
-                              _showMemberHistory(context, member),
-                        );
-                      }),
-                    ],
+                    itemCount: members.length,
+                    itemBuilder: (context, index) {
+                      final member = members[index];
+                      final checkIn =
+                          state.getActiveCheckIn(widget.sessionId, member.id);
+                      final tag = checkIn?.statusId != null
+                          ? state.getTagById(checkIn!.statusId!)
+                          : null;
+                      return SwipePersonCard(
+                        member: member,
+                        currentTag: tag,
+                        onSwipeRight: () => _markAsArrived(state, member),
+                        onSwipeLeft: () =>
+                            _showStatusSheet(context, state, member),
+                        onLongPress: () =>
+                            _showMemberHistory(context, member),
+                      );
+                    },
                   ),
           ),
           // Undo bar
+          if (session.status == 'ongoing')
+            SafeArea(
+              top: false,
+              child: UndoBar(sessionId: widget.sessionId),
+            ),
+        ],
+      ),
+    );
+    }
+
+    // ---- Filtered view: show only matching members ----
+    return Scaffold(
+      appBar: AppBar(
+        title: _isSearchExpanded
+            ? TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: '搜索姓名或学号...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(fontSize: 16),
+                ),
+                style: const TextStyle(fontSize: 16),
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val;
+                  });
+                },
+                autofocus: true,
+              )
+            : Text(session.title),
+        actions: [
+          if (_isSearchExpanded)
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                setState(() {
+                  _isSearchExpanded = false;
+                  _searchController.clear();
+                  _searchQuery = '';
+                });
+              },
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                setState(() {
+                  _isSearchExpanded = true;
+                });
+              },
+            ),
+          if (session.status == 'ongoing')
+            TextButton.icon(
+              onPressed: () => _archiveSession(state),
+              icon: const Icon(Icons.archive_outlined, size: 18),
+              label: const Text('结束并归档'),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+              ),
+            ),
+        ],
+      ),
+      body: Column(
+        children: [
+          FilterChipBar(
+            sessionId: widget.sessionId,
+            selectedFilter: _selectedFilter,
+            onFilterChanged: (filter) {
+              setState(() {
+                _selectedFilter = filter;
+              });
+            },
+          ),
+          Expanded(
+            child: members.isEmpty
+                ? _buildEmptyState(theme, _isSearchExpanded, _selectedFilter)
+                : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    itemCount: members.length,
+                    itemBuilder: (context, index) {
+                      final member = members[index];
+                      final checkIn =
+                          state.getActiveCheckIn(widget.sessionId, member.id);
+                      final tag = checkIn?.statusId != null
+                          ? state.getTagById(checkIn!.statusId!)
+                          : null;
+                      return SwipePersonCard(
+                        member: member,
+                        currentTag: tag,
+                        onSwipeRight: () => _markAsArrived(state, member),
+                        onSwipeLeft: () =>
+                            _showStatusSheet(context, state, member),
+                        onLongPress: () =>
+                            _showMemberHistory(context, member),
+                      );
+                    },
+                  ),
+          ),
           if (session.status == 'ongoing')
             SafeArea(
               top: false,
@@ -223,43 +302,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                     : '暂无人员',
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDivider(ThemeData theme, int checkedCount) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 1,
-              color: theme.colorScheme.outlineVariant,
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '已标记 $checkedCount 人',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              height: 1,
-              color: theme.colorScheme.outlineVariant,
             ),
           ),
         ],

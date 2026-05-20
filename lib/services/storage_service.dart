@@ -37,35 +37,17 @@ class StorageService {
           isBuiltIn: true,
           sortOrder: 0),
       StatusTag(
-          id: 'tag_sick',
-          name: '病假',
-          colorValue: 0xFFFF9800,
-          isBuiltIn: true,
-          sortOrder: 1),
-      StatusTag(
-          id: 'tag_retake',
-          name: '重修',
-          colorValue: 0xFF9C27B0,
-          isBuiltIn: true,
-          sortOrder: 2),
-      StatusTag(
-          id: 'tag_chorus',
-          name: '合唱',
-          colorValue: 0xFF2196F3,
-          isBuiltIn: true,
-          sortOrder: 3),
-      StatusTag(
-          id: 'tag_duty',
-          name: '上岗',
-          colorValue: 0xFF009688,
-          isBuiltIn: true,
-          sortOrder: 4),
-      StatusTag(
           id: 'tag_absent',
           name: '未到',
           colorValue: 0xFFF44336,
           isBuiltIn: true,
-          sortOrder: 5),
+          sortOrder: 1),
+      StatusTag(
+          id: 'tag_sick',
+          name: '病假',
+          colorValue: 0xFFFF9800,
+          isBuiltIn: true,
+          sortOrder: 2),
     ];
 
     for (final tag in defaultTags) {
