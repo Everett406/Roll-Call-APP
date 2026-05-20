@@ -1,7 +1,7 @@
 name: roll_call_app
 description: 班级点名助手应用
 publish_to: 'none'
-version: 1.1.0+2
+version: 1.1.0+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -13,8 +13,6 @@ dependencies:
   hive_flutter: ^1.1.0
   uuid: ^4.3.3
   intl: ^0.19.0
-  lpinyin: ^2.0.3
-  http: ^1.2.1
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,3 @@
-import 'package:lpinyin/lpinyin.dart';
-
 class PinyinSearchHelper {
   static bool matches(String text, String query) {
     if (text.isEmpty || query.isEmpty) return false;
@@ -12,47 +10,35 @@ class PinyinSearchHelper {
       return true;
     }
 
-    // 2. 拼音首字母匹配
-    final pinyin = PinyinHelper.getShortPinyin(text).toLowerCase();
-    if (pinyin.contains(normalizedQuery)) {
-      return true;
-    }
-
-    // 3. 每个字的首字母匹配（更宽松的匹配）
-    if (_matchesFuzzyPinyin(text, normalizedQuery)) {
-      return true;
-    }
-
-    // 4. 全拼音匹配
-    final fullPinyin = PinyinHelper.getPinyin(text, separator: '').toLowerCase();
-    if (fullPinyin.contains(normalizedQuery)) {
+    // 2. 模糊匹配（查询是姓名的子串）
+    // 比如输入 "小天" 可以匹配 "张晓天"
+    if (_matchesSubstring(text, normalizedQuery)) {
       return true;
     }
 
     return false;
   }
 
-  static bool _matchesFuzzyPinyin(String text, String query) {
-    final pinyinList = PinyinHelper.getPinyinArray(text);
-    final queryChars = query.split('');
+  static bool _matchesSubstring(String text, String query) {
+    // 如果查询是空，返回 false
+    if (query.isEmpty) return false;
 
-    int matchCount = 0;
+    // 将文本转为小写
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+
+    // 检查查询中的每个字符是否按顺序出现在文本中
     int queryIndex = 0;
-
-    for (int i = 0; i < pinyinList.length && queryIndex < queryChars.length; i++) {
-      final py = pinyinList[i].toLowerCase();
-      if (py.startsWith(queryChars[queryIndex])) {
-        matchCount++;
+    for (int i = 0; i < lowerText.length && queryIndex < lowerQuery.length; i++) {
+      if (lowerText[i] == lowerQuery[queryIndex]) {
         queryIndex++;
       }
     }
 
-    return queryIndex >= queryChars.length;
+    return queryIndex >= lowerQuery.length;
   }
 
   static String getSearchKey(String text) {
-    final short = PinyinHelper.getShortPinyin(text).toLowerCase();
-    final full = PinyinHelper.getPinyin(text, separator: '').toLowerCase();
-    return '$text|$short|$full';
+    return text;
   }
 }
