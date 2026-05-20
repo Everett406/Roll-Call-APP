@@ -118,7 +118,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: _parseText,
-                    icon: const Icon(Icons.parse),
+                    icon: const Icon(Icons.analytics_outlined),
                     label: const Text('解析'),
                   ),
                 ),
@@ -233,9 +233,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: _hasParsed && _parsedMembers.isNotEmpty
-            ? Padding(
+      bottomNavigationBar: _hasParsed && _parsedMembers.isNotEmpty
+          ? SafeArea(
+              child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: FilledButton(
                   onPressed: () => _doImport(),
@@ -250,9 +250,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),
-              )
-            : null,
-      ),
+              ),
+            )
+          : null,
     );
   }
 

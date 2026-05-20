@@ -1,10 +1,15 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/member.dart';
 import '../models/status_tag.dart';
 import '../models/session.dart';
 import '../models/check_in.dart';
 import '../models/operation_log.dart';
 import '../services/storage_service.dart';
+
+final appStateProvider = ChangeNotifierProvider<AppState>((ref) {
+  return AppState();
+});
 
 class AppState extends ChangeNotifier {
   // ==================== Data ====================
@@ -111,7 +116,7 @@ class AppState extends ChangeNotifier {
   StatusTag get arrivedTag {
     return _tags.firstWhere(
       (t) => t.id == 'tag_arrived',
-      orElse: => StatusTag(
+      orElse: () => StatusTag(
         id: 'tag_arrived',
         name: '已到达',
         colorValue: 0xFF4CAF50,

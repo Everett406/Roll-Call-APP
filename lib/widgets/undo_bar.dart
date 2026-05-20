@@ -51,7 +51,7 @@ class UndoBar extends ConsumerWidget {
             child: Text(
               '撤销 $memberName -> $tagName',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.inverseOnSurface,
+                color: Theme.of(context).colorScheme.onInverseSurface,
                 fontSize: 14,
               ),
             ),

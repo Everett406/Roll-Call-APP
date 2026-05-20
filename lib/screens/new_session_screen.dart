@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
+import '../models/member.dart';
 import '../models/session.dart';
 
 class NewSessionScreen extends ConsumerStatefulWidget {
