@@ -10,6 +10,7 @@ import 'member_manager_screen.dart';
 import 'tag_manager_screen.dart';
 import 'group_manager_screen.dart';
 import 'statistics_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -36,7 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('点名助手'),
+        title: const Text('点名诗韵'),
         centerTitle: true,
         actions: [
           if (_currentIndex == 0)
@@ -65,6 +66,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 );
               },
             ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: '设置',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
       body: IndexedStack(
@@ -102,7 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           NavigationDestination(
             icon: Icon(Icons.people_outline),
             selectedIcon: Icon(Icons.people),
-            label: '设置',
+            label: '成员',
           ),
         ],
       ),

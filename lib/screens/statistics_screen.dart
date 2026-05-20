@@ -24,6 +24,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     final totalCheckIns = statusCounts.values.fold(0, (a, b) => a + b);
     final arrivedCount = statusCounts['tag_arrived'] ?? 0;
     final attendanceRate = totalCheckIns > 0 ? arrivedCount / totalCheckIns : 0.0;
+    final absenteeismRanking = state.getMemberAbsenteeismRanking(_selectedPeriod);
 
     return Scaffold(
       body: CustomScrollView(
@@ -222,6 +223,118 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               ),
             ),
           ),
+
+          // Absenteeism Ranking
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '缺勤排名',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (absenteeismRanking.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          '暂无数据',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ...absenteeismRanking.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final stat = entry.value;
+                      final member = stat['member'];
+                      final absentRate = stat['absentRate'] as double;
+                      final total = stat['total'] as int;
+                      final absent = stat['absent'] as int;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Card(
+                          child: ListTile(
+                            leading: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: index < 3
+                                    ? [
+                                        Colors.red.withOpacity(0.9),
+                                        Colors.orange.withOpacity(0.9),
+                                        Colors.yellow.withOpacity(0.9),
+                                      ][index]
+                                    : theme.colorScheme.surfaceContainerHighest,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: index < 3
+                                        ? Colors.white
+                                        : theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              member.name,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '缺勤 $absent / $total 次',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: absentRate >= 0.3
+                                    ? AppColors.error
+                                    : absentRate >= 0.15
+                                        ? AppColors.warning
+                                        : AppColors.success,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${(absentRate * 100).toStringAsFixed(0)}%',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MemberHistoryScreen(member: member),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -229,8 +342,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
 
   String _getPeriodLabel(TimePeriod period) {
     switch (period) {
-      case TimePeriod.currentSession:
-        return '本次';
       case TimePeriod.today:
         return '今天';
       case TimePeriod.thisWeek:

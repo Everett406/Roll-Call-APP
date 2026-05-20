@@ -38,6 +38,14 @@ jobs:
       - name: Run tests (optional)
         run: flutter test || true
 
+      - name: Read version from pubspec.yaml
+        id: read-version
+        run: |
+          VERSION=$(grep 'version: ' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
+          BUILD=$(grep 'version: ' pubspec.yaml | sed 's/version: //' | cut -d'+' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build=$BUILD" >> $GITHUB_OUTPUT
+
       - name: Build APK (release)
         run: flutter build apk --release
 
@@ -53,8 +61,8 @@ jobs:
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0-${{ github.run_number }}
-          name: 点名助手 v1.0.0 Build #${{ github.run_number }}
+          tag_name: v${{ steps.read-version.outputs.version }}+${{ steps.read-version.outputs.build }}
+          name: 点名诗韵 v${{ steps.read-version.outputs.version }} Build #${{ github.run_number }}
           body: |
             自动构建的 APK 安装包。
             构建时间：${{ github.event.head_commit.timestamp }}

@@ -8,6 +8,7 @@ import '../widgets/swipe_person_card.dart';
 import '../widgets/status_bottom_sheet.dart';
 import '../widgets/undo_bar.dart';
 import 'member_history_screen.dart';
+import 'package:vibration/vibration.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -48,6 +49,16 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       filterStatusId: _selectedFilter,
       searchQuery: _isSearchExpanded ? _searchQuery : null,
     );
+
+    // Split members into checked and unchecked
+    final uncheckedMembers = members.where((m) {
+      final checkIn = state.getActiveCheckIn(widget.sessionId, m.id);
+      return checkIn == null;
+    }).toList();
+    final checkedMembers = members.where((m) {
+      final checkIn = state.getActiveCheckIn(widget.sessionId, m.id);
+      return checkIn != null;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -125,7 +136,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '共 ${session.memberIds.length} 人',
+                    '共 ${session.memberIds.length} 人，已标记 ${checkedMembers.length} 人',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -148,31 +159,89 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                       ),
                     ),
                   )
-                : ListView.builder(
+                : ListView(
                     padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: members.length,
-                    itemBuilder: (context, index) {
-                      final member = members[index];
-                      final checkIn = state.getActiveCheckIn(
-                          widget.sessionId, member.id);
-                      final tag = checkIn?.statusId != null
-                          ? state.getTagById(checkIn!.statusId!)
-                          : null;
-
-                      return SwipePersonCard(
-                        member: member,
-                        currentTag: tag,
-                        onSwipeRight: () {
-                          _markAsArrived(state, member);
-                        },
-                        onSwipeLeft: () {
-                          _showStatusSheet(context, state, member);
-                        },
-                        onLongPress: () {
-                          _showMemberHistory(context, member);
-                        },
-                      );
-                    },
+                    children: [
+                      // Unchecked members section
+                      if (uncheckedMembers.isNotEmpty) ...[
+                        for (var i = 0; i < uncheckedMembers.length; i++)
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            child: SwipePersonCard(
+                              key: ValueKey('unchecked-${uncheckedMembers[i].id}'),
+                              member: uncheckedMembers[i],
+                              currentTag: null,
+                              onSwipeRight: () {
+                                _markAsArrived(state, uncheckedMembers[i]);
+                              },
+                              onSwipeLeft: () {
+                                _showStatusSheet(context, state, uncheckedMembers[i]);
+                              },
+                              onLongPress: () {
+                                _showMemberHistory(context, uncheckedMembers[i]);
+                              },
+                            ),
+                          ),
+                      ],
+                      // Divider between sections
+                      if (uncheckedMembers.isNotEmpty && checkedMembers.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Divider(
+                                  color: theme.colorScheme.outline,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  '已标记 ${checkedMembers.length} 人',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: theme.colorScheme.outline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // Checked members section
+                      if (checkedMembers.isNotEmpty) ...[
+                        for (var i = 0; i < checkedMembers.length; i++)
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            child: SwipePersonCard(
+                              key: ValueKey('checked-${checkedMembers[i].id}'),
+                              member: checkedMembers[i],
+                              currentTag: state.getActiveCheckIn(
+                                          widget.sessionId, checkedMembers[i].id)
+                                      ?.statusId != null
+                                  ? state.getTagById(state
+                                      .getActiveCheckIn(
+                                          widget.sessionId, checkedMembers[i].id)!
+                                      .statusId!)
+                                  : null,
+                              onSwipeRight: () {
+                                _markAsArrived(state, checkedMembers[i]);
+                              },
+                              onSwipeLeft: () {
+                                _showStatusSheet(context, state, checkedMembers[i]);
+                              },
+                              onLongPress: () {
+                                _showMemberHistory(context, checkedMembers[i]);
+                              },
+                            ),
+                          ),
+                      ],
+                    ],
                   ),
           ),
           // Undo bar at bottom
@@ -186,7 +255,11 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     );
   }
 
-  void _markAsArrived(AppState state, Member member) {
+  void _markAsArrived(AppState state, Member member) async {
+    // Vibration feedback
+    if (await Vibration.hasVibrator() ?? false) {
+      Vibration.vibrate(duration: 50);
+    }
     state.checkIn(
       sessionId: widget.sessionId,
       memberId: member.id,
@@ -202,7 +275,11 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     StatusBottomSheet.show(
       context,
       tags: state.tags,
-      onStatusSelected: (tag, note) {
+      onStatusSelected: (tag, note) async {
+        // Vibration feedback
+        if (await Vibration.hasVibrator() ?? false) {
+          Vibration.vibrate(duration: 50);
+        }
         state.checkIn(
           sessionId: widget.sessionId,
           memberId: member.id,

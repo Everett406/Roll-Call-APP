@@ -480,17 +480,48 @@ class AppState extends ChangeNotifier {
       case TimePeriod.thisMonth:
         startDate = DateTime(now.year, now.month, 1);
         break;
-      case TimePeriod.currentSession:
-        if (sessionId == null) return [];
-        return getSessionCheckIns(sessionId);
     }
 
     return _checkIns.where((ci) {
       if (ci.isUndone) return false;
-      if (sessionId != null && ci.sessionId != sessionId) return false;
       return ci.checkedAt.isAfter(startDate) &&
           ci.checkedAt.isBefore(endDate.add(const Duration(days: 1)));
     }).toList();
+  }
+
+  /// Get member attendance stats for a time period
+  List<Map<String, dynamic>> getMemberAbsenteeismRanking(TimePeriod period) {
+    final checkIns = getCheckInsForPeriod(period);
+
+    final memberStats = <String, Map<String, int>>{};
+
+    for (final ci in checkIns) {
+      if (!memberStats.containsKey(ci.memberId)) {
+        memberStats[ci.memberId] = {'total': 0, 'absent': 0};
+      }
+      memberStats[ci.memberId]!['total'] = memberStats[ci.memberId]!['total']! + 1;
+      if (ci.statusId != 'tag_arrived') {
+        memberStats[ci.memberId]!['absent'] = memberStats[ci.memberId]!['absent']! + 1;
+      }
+    }
+
+    final result = <Map<String, dynamic>>[];
+    memberStats.forEach((memberId, stats) {
+      final member = getMemberById(memberId);
+      if (member != null) {
+        final absentRate = stats['total']! > 0 ? stats['absent']! / stats['total']! : 0.0;
+        result.add({
+          'member': member,
+          'total': stats['total'],
+          'absent': stats['absent'],
+          'absentRate': absentRate,
+        });
+      }
+    });
+
+    result.sort((a, b) => (b['absentRate'] as double).compareTo(a['absentRate'] as double));
+
+    return result;
   }
 
   /// Get status counts for a time period

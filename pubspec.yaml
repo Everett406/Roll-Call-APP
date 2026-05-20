@@ -1,7 +1,7 @@
 name: roll_call_app
-description: 班级点名助手应用
+description: 点名诗韵 - 让点名更有诗意
 publish_to: 'none'
-version: 1.1.0+3
+version: 2.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -13,6 +13,7 @@ dependencies:
   hive_flutter: ^1.1.0
   uuid: ^4.3.3
   intl: ^0.19.0
+  vibration: ^2.0.0
 
 dev_dependencies:
   flutter_test:
