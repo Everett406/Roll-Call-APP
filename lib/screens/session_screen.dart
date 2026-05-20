@@ -18,8 +18,7 @@ class SessionScreen extends ConsumerStatefulWidget {
   ConsumerState<SessionScreen> createState() => _SessionScreenState();
 }
 
-class _SessionScreenState extends ConsumerState<SessionScreen>
-    with TickerProviderStateMixin {
+class _SessionScreenState extends ConsumerState<SessionScreen> {
   String? _selectedFilter;
   String _searchQuery = '';
   bool _isSearchExpanded = false;
@@ -34,43 +33,18 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
   // Track which status groups are expanded
   final Set<String> _expandedGroups = {};
 
-  // Animation controllers for each status group
-  final Map<String, AnimationController> _groupControllers = {};
-  final Map<String, Animation<double>> _groupAnimations = {};
-
   @override
   void dispose() {
     _searchController.dispose();
-    for (final controller in _groupControllers.values) {
-      controller.dispose();
-    }
-    _groupControllers.clear();
-    _groupAnimations.clear();
     super.dispose();
-  }
-
-  AnimationController _getGroupController(String tagId) {
-    return _groupControllers.putIfAbsent(tagId, () {
-      final controller = AnimationController(
-        duration: const Duration(milliseconds: 300),
-        vsync: this,
-      );
-      _groupAnimations[tagId] = CurvedAnimation(
-        parent: controller,
-        curve: Curves.easeInOut,
-      );
-      return controller;
-    });
   }
 
   void _toggleGroup(String tagId) {
     setState(() {
       if (_expandedGroups.contains(tagId)) {
         _expandedGroups.remove(tagId);
-        _getGroupController(tagId).reverse();
       } else {
         _expandedGroups.add(tagId);
-        _getGroupController(tagId).forward();
       }
     });
   }
@@ -112,9 +86,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
 
     // Build status groups for checked members
     final statusGroups = _buildStatusGroups(state, checkedMembers);
-
-    // Clean up controllers for groups that no longer exist
-    _cleanupGroupControllers(statusGroups);
 
     return Scaffold(
       appBar: AppBar(
@@ -309,23 +280,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
       ..sort((a, b) => b.value.length.compareTo(a.value.length));
 
     return entries;
-  }
-
-  // ---------------------------------------------------------------
-  // Clean up animation controllers for groups that no longer exist
-  // ---------------------------------------------------------------
-  void _cleanupGroupControllers(
-    List<MapEntry<String, List<Member>>> statusGroups,
-  ) {
-    final activeTagIds = statusGroups.map((e) => e.key).toSet();
-    final staleKeys =
-        _groupControllers.keys.where((k) => !activeTagIds.contains(k)).toList();
-    for (final key in staleKeys) {
-      _groupControllers[key]?.dispose();
-      _groupControllers.remove(key);
-      _groupAnimations.remove(key);
-      _expandedGroups.remove(key);
-    }
   }
 
   // ---------------------------------------------------------------
@@ -526,19 +480,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
     final tagColor = tag != null ? Color(tag.colorValue) : theme.colorScheme.outline;
     final tagName = tag?.name ?? '未知状态';
     final isExpanded = _expandedGroups.contains(tagId);
-    final controller = _getGroupController(tagId);
-    final animation = _groupAnimations[tagId]!;
-
-    // Ensure animation state matches expansion state
-    if (isExpanded && !controller.isCompleted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) controller.forward();
-      });
-    } else if (!isExpanded && !controller.isDismissed) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) controller.reverse();
-      });
-    }
 
     return Column(
       children: [
@@ -551,7 +492,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: [
-                  // Status color dot
                   Container(
                     width: 10,
                     height: 10,
@@ -561,7 +501,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // Status name
                   Text(
                     tagName,
                     style: theme.textTheme.titleSmall?.copyWith(
@@ -570,7 +509,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Member count badge
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -589,9 +527,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
                     ),
                   ),
                   const Spacer(),
-                  // Expand / collapse icon
-                  RotationTransition(
-                    turns: animation,
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
                     child: Icon(
                       Icons.expand_more,
                       size: 20,
@@ -604,24 +542,24 @@ class _SessionScreenState extends ConsumerState<SessionScreen>
           ),
         ),
         // Animated group content
-        SizeTransition(
-          sizeFactor: animation,
-          axisAlignment: -1.0,
-          child: FadeTransition(
-            opacity: animation,
-            child: Column(
-              children: groupMembers.map((member) {
-                return SwipePersonCard(
-                  member: member,
-                  currentTag: tag,
-                  onSwipeRight: () => _markAsArrived(state, member),
-                  onSwipeLeft: () =>
-                      _showStatusSheet(context, state, member),
-                  onLongPress: () => _showMemberHistory(context, member),
-                );
-              }).toList(),
-            ),
-          ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: isExpanded
+              ? Column(
+                  children: groupMembers.map((member) {
+                    return SwipePersonCard(
+                      member: member,
+                      currentTag: tag,
+                      onSwipeRight: () => _markAsArrived(state, member),
+                      onSwipeLeft: () =>
+                          _showStatusSheet(context, state, member),
+                      onLongPress: () => _showMemberHistory(context, member),
+                    );
+                  }).toList(),
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );
