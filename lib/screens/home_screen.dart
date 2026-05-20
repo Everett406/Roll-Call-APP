@@ -3,15 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../models/session.dart';
+import '../utils/constants.dart';
 import 'session_screen.dart';
 import 'new_session_screen.dart';
 import 'member_manager_screen.dart';
 import 'tag_manager_screen.dart';
 import 'statistics_screen.dart';
-
-final appStateProvider = ChangeNotifierProvider<AppState>((ref) {
-  return AppState();
-});
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -271,7 +268,7 @@ class _SessionCard extends ConsumerWidget {
                     '实到 $checkedCount / 应到 $totalCount',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: checkedCount == totalCount
-                          ? const Color(0xFF4CAF50)
+                          ? AppColors.success
                           : theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
@@ -282,7 +279,7 @@ class _SessionCard extends ConsumerWidget {
               LinearProgressIndicator(
                 value: totalCount > 0 ? checkedCount / totalCount : 0,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
                 borderRadius: BorderRadius.circular(4),
               ),
             ],

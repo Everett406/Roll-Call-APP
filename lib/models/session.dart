@@ -9,6 +9,9 @@ class Session {
   final DateTime? endedAt;
   final String status; // 'ongoing' or 'archived'
   final List<String> memberIds;
+  // memberNames is stored as a snapshot for archived sessions.
+  // When a session is archived, the member's name at that time is preserved
+  // in case the member is later deleted or renamed.
   final List<String> memberNames;
 
   Session({

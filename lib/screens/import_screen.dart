@@ -25,14 +25,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     final text = _textController.text;
     final lines = text.split('\n');
     final existing = ref.read(appStateProvider).members;
-    final existingNames = existing.map((m) => m.name).toSet();
-    final existingIds = existing
-        .where((m) => m.studentId != null)
-        .map((m) => m.studentId!)
-        .toSet();
 
     final parsed = <_ParsedMember>[];
-    final seenNames = <String>{};
+    final seenKeys = <String>{};
 
     for (final line in lines) {
       final trimmed = line.trim();
@@ -44,14 +39,25 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       final name = parts[0];
       final studentId = parts.length > 1 ? parts[1] : null;
 
-      // Skip duplicates within the paste
-      if (seenNames.contains(name)) continue;
+      // Create a unique key for deduplication within the paste
+      final key = studentId != null ? '$name|$studentId' : name;
+      if (seenKeys.contains(key)) continue;
+      seenKeys.add(key);
 
-      // Skip if already exists
-      if (existingNames.contains(name)) continue;
-      if (studentId != null && existingIds.contains(studentId)) continue;
+      // Check if member already exists (by name+studentId or name alone if no studentId)
+      bool alreadyExists = existing.any((m) {
+        if (studentId != null && m.studentId != null) {
+          return m.name == name && m.studentId == studentId;
+        } else if (studentId == null && m.studentId == null) {
+          return m.name == name;
+        } else if (studentId == null) {
+          return m.name == name;
+        }
+        return false;
+      });
 
-      seenNames.add(name);
+      if (alreadyExists) continue;
+
       parsed.add(_ParsedMember(name: name, studentId: studentId));
     }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
+import '../utils/constants.dart';
 import 'member_history_screen.dart';
 
 class StatisticsScreen extends ConsumerWidget {
@@ -170,10 +171,10 @@ class StatisticsScreen extends ConsumerWidget {
                       if (member == null) return const SizedBox.shrink();
 
                       final rateColor = rate >= 0.3
-                          ? const Color(0xFFF44336)
+                          ? AppColors.error
                           : rate >= 0.1
-                              ? const Color(0xFFFF9800)
-                              : const Color(0xFF4CAF50);
+                              ? AppColors.warning
+                              : AppColors.success;
 
                       return InkWell(
                         onTap: () {

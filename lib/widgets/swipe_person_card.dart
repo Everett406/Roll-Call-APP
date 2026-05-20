@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/member.dart';
 import '../models/status_tag.dart';
+import '../utils/constants.dart';
 
 class SwipePersonCard extends StatefulWidget {
   final Member member;
@@ -98,7 +99,7 @@ class _SwipePersonCardState extends State<SwipePersonCard>
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: const Color(0xFF4CAF50).withOpacity(
+                  color: AppColors.success.withOpacity(
                       (_dragOffset / 120).clamp(0.0, 1.0)),
                 ),
                 alignment: Alignment.centerLeft,
@@ -138,7 +139,7 @@ class _SwipePersonCardState extends State<SwipePersonCard>
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: const Color(0xFF4CAF50).withOpacity(0.3),
+                  color: AppColors.success.withOpacity(0.3),
                 ),
               ),
             ),

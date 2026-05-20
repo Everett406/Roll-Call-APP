@@ -5,6 +5,7 @@ import '../providers/app_state.dart';
 import '../models/session.dart';
 import '../models/check_in.dart';
 import '../models/status_tag.dart';
+import '../utils/constants.dart';
 
 class MemberHistoryScreen extends ConsumerWidget {
   final String memberId;
@@ -90,10 +91,10 @@ class MemberHistoryScreen extends ConsumerWidget {
                       label: '出勤率',
                       value: '${(attendanceRate * 100).toStringAsFixed(1)}%',
                       color: attendanceRate >= 0.8
-                          ? const Color(0xFF4CAF50)
+                          ? AppColors.success
                           : attendanceRate >= 0.6
-                              ? const Color(0xFFFF9800)
-                              : const Color(0xFFF44336),
+                              ? AppColors.warning
+                              : AppColors.error,
                     ),
                   ],
                 ),

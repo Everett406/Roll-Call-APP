@@ -142,7 +142,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 80),
+                    padding: const EdgeInsets.only(bottom: 16),
                     itemCount: members.length,
                     itemBuilder: (context, index) {
                       final member = members[index];
@@ -168,12 +168,14 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                     },
                   ),
           ),
+          // Undo bar at bottom
+          if (session.status == 'ongoing')
+            SafeArea(
+              top: false,
+              child: UndoBar(sessionId: widget.sessionId),
+            ),
         ],
       ),
-      // Undo bar at bottom
-      bottomSheet: session.status == 'ongoing'
-          ? UndoBar(sessionId: widget.sessionId)
-          : null,
     );
   }
 

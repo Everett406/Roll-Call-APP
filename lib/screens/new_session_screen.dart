@@ -16,7 +16,6 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
   final _titleController = TextEditingController();
   bool _useAllMembers = true;
   String? _copyFromSessionId;
-  List<Session> _archivedSessions = [];
 
   @override
   void initState() {
@@ -38,7 +37,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
     final state = ref.watch(appStateProvider);
     final members = state.members;
     final theme = Theme.of(context);
-    _archivedSessions = [...state.archivedSessions, ...state.ongoingSessions];
+    final allSessions = [...state.archivedSessions, ...state.ongoingSessions];
 
     return Scaffold(
       appBar: AppBar(
@@ -114,7 +113,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
                   ),
                   prefixIcon: const Icon(Icons.history),
                 ),
-                items: _archivedSessions.map((s) {
+                items: allSessions.map((s) {
                   final date = DateFormat('MM/dd').format(s.createdAt);
                   return DropdownMenuItem(
                     value: s.id,

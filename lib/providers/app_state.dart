@@ -401,7 +401,14 @@ class AppState extends ChangeNotifier {
       }).toList();
     }
 
-    // Apply status filter
+    // Apply status filter and always maintain sort: unchecked first
+    memberList.sort((a, b) {
+      final aChecked = getActiveCheckIn(sessionId, a.id) != null;
+      final bChecked = getActiveCheckIn(sessionId, b.id) != null;
+      if (aChecked == bChecked) return 0;
+      return aChecked ? 1 : -1;
+    });
+
     if (filterStatusId != null) {
       if (filterStatusId == 'unchecked') {
         memberList = memberList.where((m) {
@@ -414,14 +421,6 @@ class AppState extends ChangeNotifier {
           return ci?.statusId == filterStatusId;
         }).toList();
       }
-    } else {
-      // Default sort: unchecked first
-      memberList.sort((a, b) {
-        final aChecked = getActiveCheckIn(sessionId, a.id) != null;
-        final bChecked = getActiveCheckIn(sessionId, b.id) != null;
-        if (aChecked == bChecked) return 0;
-        return aChecked ? 1 : -1;
-      });
     }
 
     return memberList;
