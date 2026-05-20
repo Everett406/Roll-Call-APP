@@ -323,7 +323,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => MemberHistoryScreen(member: member),
+                                  builder: (context) => MemberHistoryScreen(
+                                    memberId: member.id,
+                                    memberName: member.name,
+                                  ),
                                 ),
                               );
                             },
