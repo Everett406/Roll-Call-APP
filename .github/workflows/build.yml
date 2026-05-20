@@ -7,6 +7,10 @@ on:
     branches: [ main, master ]
   workflow_dispatch: # 允许手动触发
 
+permissions:
+  contents: write  # 允许创建 Release
+  actions: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,3 +47,18 @@ jobs:
           name: roll-call-app-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+
+      # 如果是 push 到 main/master，额外创建 GitHub Release
+      - name: Create Release
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-${{ github.run_number }}
+          name: 点名助手 v1.0.0 Build #${{ github.run_number }}
+          body: |
+            自动构建的 APK 安装包。
+            构建时间：${{ github.event.head_commit.timestamp }}
+            提交信息：${{ github.event.head_commit.message }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          draft: false
+          prerelease: false
