@@ -8,6 +8,7 @@ import 'session_screen.dart';
 import 'new_session_screen.dart';
 import 'member_manager_screen.dart';
 import 'tag_manager_screen.dart';
+import 'group_manager_screen.dart';
 import 'statistics_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -47,6 +48,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const TagManagerScreen(),
+                  ),
+                );
+              },
+            ),
+          if (_currentIndex == 3)
+            IconButton(
+              icon: const Icon(Icons.folder_outlined),
+              tooltip: '分组管理',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const GroupManagerScreen(),
                   ),
                 );
               },

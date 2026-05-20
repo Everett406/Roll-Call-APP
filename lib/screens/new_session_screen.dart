@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
 import '../models/session.dart';
+import '../models/group.dart';
+import '../utils/constants.dart';
 
 class NewSessionScreen extends ConsumerStatefulWidget {
   const NewSessionScreen({super.key});
@@ -14,8 +16,9 @@ class NewSessionScreen extends ConsumerStatefulWidget {
 
 class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
   final _titleController = TextEditingController();
-  bool _useAllMembers = true;
+  int _selectionMode = 0; // 0: all, 1: from history, 2: from groups
   String? _copyFromSessionId;
+  final Set<String> _selectedGroupIds = {};
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(appStateProvider);
     final members = state.members;
+    final groups = state.groups;
     final theme = Theme.of(context);
     final allSessions = [...state.archivedSessions, ...state.ongoingSessions];
 
@@ -77,33 +81,91 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
             ),
             const SizedBox(height: 12),
 
-            RadioListTile<bool>(
+            RadioListTile<int>(
               title: const Text('使用全部人员'),
               subtitle: Text('共 ${members.length} 人'),
-              value: true,
-              groupValue: _useAllMembers,
+              value: 0,
+              groupValue: _selectionMode,
               onChanged: (val) {
                 setState(() {
-                  _useAllMembers = val ?? true;
+                  _selectionMode = val ?? 0;
+                  _copyFromSessionId = null;
+                  _selectedGroupIds.clear();
+                });
+              },
+              contentPadding: EdgeInsets.zero,
+            ),
+
+            RadioListTile<int>(
+              title: const Text('从分组选择'),
+              subtitle: groups.isEmpty
+                  ? const Text('暂未创建分组')
+                  : Text('${groups.length} 个分组可用'),
+              value: 2,
+              groupValue: _selectionMode,
+              onChanged: (val) {
+                setState(() {
+                  _selectionMode = val ?? 2;
                   _copyFromSessionId = null;
                 });
               },
               contentPadding: EdgeInsets.zero,
             ),
 
-            RadioListTile<bool>(
+            if (_selectionMode == 2) ...[
+              const SizedBox(height: 8),
+              if (groups.isEmpty)
+                const SizedBox()
+              else
+                ...groups.map((group) {
+                  final isSelected = _selectedGroupIds.contains(group.id);
+                  final color =
+                      groupColors[group.colorIndex % groupColors.length];
+                  return CheckboxListTile(
+                    title: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(group.name),
+                      ],
+                    ),
+                    subtitle: Text('${group.memberIds.length} 人'),
+                    value: isSelected,
+                    onChanged: (selected) {
+                      setState(() {
+                        if (selected == true) {
+                          _selectedGroupIds.add(group.id);
+                        } else {
+                          _selectedGroupIds.remove(group.id);
+                        }
+                      });
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  );
+                }),
+            ],
+
+            RadioListTile<int>(
               title: const Text('从历史点名复制'),
-              value: false,
-              groupValue: _useAllMembers,
+              value: 1,
+              groupValue: _selectionMode,
               onChanged: (val) {
                 setState(() {
-                  _useAllMembers = val ?? false;
+                  _selectionMode = val ?? 1;
+                  _selectedGroupIds.clear();
                 });
               },
               contentPadding: EdgeInsets.zero,
             ),
 
-            if (!_useAllMembers) ...[
+            if (_selectionMode == 1) ...[
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _copyFromSessionId,
@@ -139,8 +201,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      Icon(Icons.warning_amber,
-                          color: theme.colorScheme.error),
+                      Icon(Icons.warning_amber, color: theme.colorScheme.error),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -174,7 +235,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '参与人数：${_getPreviewCount(members)} 人',
+                        '参与人数：${_getPreviewCount(members, state)} 人',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -190,9 +251,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: FilledButton(
-            onPressed: members.isEmpty
-                ? null
-                : () => _createSession(state),
+            onPressed: members.isEmpty ? null : () => _createSession(state),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -209,13 +268,21 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
     );
   }
 
-  int _getPreviewCount(List<Member> members) {
-    if (_useAllMembers) {
+  int _getPreviewCount(List<Member> members, AppState state) {
+    if (_selectionMode == 0) {
       return members.length;
-    } else if (_copyFromSessionId != null) {
-      final state = ref.read(appStateProvider);
+    } else if (_selectionMode == 1 && _copyFromSessionId != null) {
       final session = state.getSessionById(_copyFromSessionId!);
       return session?.memberIds.length ?? 0;
+    } else if (_selectionMode == 2) {
+      final memberIds = <String>{};
+      for (final groupId in _selectedGroupIds) {
+        final group = state.getGroupById(groupId);
+        if (group != null) {
+          memberIds.addAll(group.memberIds);
+        }
+      }
+      return memberIds.length;
     }
     return 0;
   }
@@ -232,10 +299,10 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
     List<String> memberIds;
     List<String> memberNames;
 
-    if (_useAllMembers) {
+    if (_selectionMode == 0) {
       memberIds = state.members.map((m) => m.id).toList();
       memberNames = state.members.map((m) => m.name).toList();
-    } else if (_copyFromSessionId != null) {
+    } else if (_selectionMode == 1 && _copyFromSessionId != null) {
       final session = state.getSessionById(_copyFromSessionId!);
       if (session == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -245,6 +312,31 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
       }
       memberIds = List.from(session.memberIds);
       memberNames = List.from(session.memberNames);
+    } else if (_selectionMode == 2) {
+      final memberIdSet = <String>{};
+      final memberMap = <String, Member>{};
+      for (final member in state.members) {
+        memberMap[member.id] = member;
+      }
+
+      for (final groupId in _selectedGroupIds) {
+        final group = state.getGroupById(groupId);
+        if (group != null) {
+          memberIdSet.addAll(group.memberIds);
+        }
+      }
+
+      if (memberIdSet.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('请至少选择一个分组')),
+        );
+        return;
+      }
+
+      memberIds = memberIdSet.toList();
+      memberNames = memberIds
+          .map((id) => memberMap[id]?.name ?? '未知')
+          .toList();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('请选择人员范围')),

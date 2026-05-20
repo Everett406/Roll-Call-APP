@@ -5,7 +5,9 @@ import '../models/status_tag.dart';
 import '../models/session.dart';
 import '../models/check_in.dart';
 import '../models/operation_log.dart';
+import '../models/group.dart';
 import '../services/storage_service.dart';
+import '../utils/search_helper.dart';
 
 final appStateProvider = ChangeNotifierProvider<AppState>((ref) {
   return AppState();
@@ -18,6 +20,7 @@ class AppState extends ChangeNotifier {
   List<Session> _sessions = [];
   List<CheckIn> _checkIns = [];
   List<OperationLog> _logs = [];
+  List<Group> _groups = [];
 
   // ==================== Getters ====================
   List<Member> get members => _members;
@@ -25,6 +28,7 @@ class AppState extends ChangeNotifier {
   List<Session> get sessions => _sessions;
   List<CheckIn> get checkIns => _checkIns;
   List<OperationLog> get logs => _logs;
+  List<Group> get groups => _groups;
 
   List<Session> get ongoingSessions =>
       _sessions.where((s) => s.status == 'ongoing').toList()
@@ -42,6 +46,7 @@ class AppState extends ChangeNotifier {
     _sessions = StorageService.getAllSessions();
     _checkIns = StorageService.getAllCheckIns();
     _logs = StorageService.getAllLogs();
+    _groups = StorageService.getAllGroups();
     notifyListeners();
   }
 
@@ -406,12 +411,15 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // Apply search filter
+    // Apply search filter with pinyin support
     if (searchQuery != null && searchQuery.isNotEmpty) {
-      final query = searchQuery.toLowerCase();
       memberList = memberList.where((m) {
-        return m.name.toLowerCase().contains(query) ||
-            (m.studentId?.toLowerCase().contains(query) ?? false);
+        // Search by name with pinyin
+        final nameMatch = PinyinSearchHelper.matches(m.name, searchQuery);
+        // Search by studentId
+        final studentIdMatch = m.studentId != null &&
+            m.studentId!.toLowerCase().contains(searchQuery.toLowerCase());
+        return nameMatch || studentIdMatch;
       }).toList();
     }
 
@@ -439,4 +447,129 @@ class AppState extends ChangeNotifier {
 
     return memberList;
   }
+
+  /// Search members globally
+  List<Member> searchMembers(String query) {
+    if (query.isEmpty) return [..._members];
+    return _members.where((m) {
+      final nameMatch = PinyinSearchHelper.matches(m.name, query);
+      final studentIdMatch = m.studentId != null &&
+          m.studentId!.toLowerCase().contains(query.toLowerCase());
+      return nameMatch || studentIdMatch;
+    }).toList();
+  }
+
+  /// Get checkins for a specific time period
+  List<CheckIn> getCheckInsForPeriod(TimePeriod period, {String? sessionId}) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    DateTime startDate;
+    DateTime endDate = now;
+
+    switch (period) {
+      case TimePeriod.today:
+        startDate = today;
+        break;
+      case TimePeriod.thisWeek:
+        // Monday of this week
+        final daysFromMonday = now.weekday - 1;
+        startDate = today.subtract(Duration(days: daysFromMonday));
+        break;
+      case TimePeriod.thisMonth:
+        startDate = DateTime(now.year, now.month, 1);
+        break;
+      case TimePeriod.currentSession:
+        if (sessionId == null) return [];
+        return getSessionCheckIns(sessionId);
+    }
+
+    return _checkIns.where((ci) {
+      if (ci.isUndone) return false;
+      if (sessionId != null && ci.sessionId != sessionId) return false;
+      return ci.checkedAt.isAfter(startDate) &&
+          ci.checkedAt.isBefore(endDate.add(const Duration(days: 1)));
+    }).toList();
+  }
+
+  /// Get status counts for a time period
+  Map<String, int> getStatusCountsForPeriod(TimePeriod period, {String? sessionId}) {
+    final checkIns = getCheckInsForPeriod(period, sessionId: sessionId);
+    final counts = <String, int>{};
+    for (final ci in checkIns) {
+      if (ci.statusId != null) {
+        counts[ci.statusId!] = (counts[ci.statusId!] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  /// Get arrived count for a time period
+  int getArrivedCountForPeriod(TimePeriod period, {String? sessionId}) {
+    final checkIns = getCheckInsForPeriod(period, sessionId: sessionId);
+    return checkIns.where((ci) => ci.statusId == 'tag_arrived').length;
+  }
+
+  // ==================== Group CRUD ====================
+  Future<void> addGroup(Group group) async {
+    _groups.add(group);
+    await StorageService.putGroup(group);
+    notifyListeners();
+  }
+
+  Future<void> updateGroup(Group group) async {
+    final idx = _groups.indexWhere((g) => g.id == group.id);
+    if (idx != -1) {
+      _groups[idx] = group.copyWith(updatedAt: DateTime.now());
+      await StorageService.putGroup(_groups[idx]);
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteGroup(String id) async {
+    _groups.removeWhere((g) => g.id == id);
+    await StorageService.deleteGroup(id);
+    notifyListeners();
+  }
+
+  Group? getGroupById(String id) {
+    try {
+      return _groups.firstWhere((g) => g.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<Group> getGroupsForMember(String memberId) {
+    return _groups.where((g) => g.memberIds.contains(memberId)).toList();
+  }
+
+  Future<void> addMemberToGroup(String groupId, String memberId) async {
+    final group = getGroupById(groupId);
+    if (group == null) return;
+    if (group.memberIds.contains(memberId)) return;
+
+    final updatedGroup = group.copyWith(
+      memberIds: [...group.memberIds, memberId],
+    );
+    await updateGroup(updatedGroup);
+  }
+
+  Future<void> removeMemberFromGroup(String groupId, String memberId) async {
+    final group = getGroupById(groupId);
+    if (group == null) return;
+    if (!group.memberIds.contains(memberId)) return;
+
+    final updatedGroup = group.copyWith(
+      memberIds: group.memberIds.where((id) => id != memberId).toList(),
+    );
+    await updateGroup(updatedGroup);
+  }
+}
+
+enum TimePeriod {
+  currentSession,
+  today,
+  thisWeek,
+  thisMonth,
 }

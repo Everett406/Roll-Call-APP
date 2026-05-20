@@ -51,8 +51,44 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(session.title),
+        title: _isSearchExpanded
+            ? TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: '搜索姓名或学号...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(fontSize: 16),
+                ),
+                style: const TextStyle(fontSize: 16),
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val;
+                  });
+                },
+                autofocus: true,
+              )
+            : Text(session.title),
         actions: [
+          if (_isSearchExpanded)
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                setState(() {
+                  _isSearchExpanded = false;
+                  _searchController.clear();
+                  _searchQuery = '';
+                });
+              },
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                setState(() {
+                  _isSearchExpanded = true;
+                });
+              },
+            ),
           if (session.status == 'ongoing')
             TextButton.icon(
               onPressed: () => _archiveSession(state),
@@ -76,66 +112,37 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               });
             },
           ),
-          // Search bar
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    _isSearchExpanded ? Icons.close : Icons.search,
-                    size: 20,
+          // Info row when not searching
+          if (!_isSearchExpanded)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _isSearchExpanded = !_isSearchExpanded;
-                      if (!_isSearchExpanded) {
-                        _searchController.clear();
-                        _searchQuery = '';
-                      }
-                    });
-                  },
-                ),
-                if (_isSearchExpanded)
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: '搜索姓名或学号...',
-                        border: InputBorder.none,
-                      ),
-                      onChanged: (val) {
-                        setState(() {
-                          _searchQuery = val;
-                        });
-                      },
-                      autofocus: true,
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: Text(
-                      '共 ${session.memberIds.length} 人',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '共 ${session.memberIds.length} 人',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
-          ),
           // Member list
           Expanded(
             child: members.isEmpty
                 ? Center(
                     child: Text(
-                      _selectedFilter != null
-                          ? '没有符合筛选条件的人员'
-                          : '暂无人员',
+                      _isSearchExpanded
+                          ? '没有找到匹配的人员'
+                          : _selectedFilter != null
+                              ? '没有符合筛选条件的人员'
+                              : '暂无人员',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

@@ -4,6 +4,7 @@ import '../models/status_tag.dart';
 import '../models/session.dart';
 import '../models/check_in.dart';
 import '../models/operation_log.dart';
+import '../models/group.dart';
 
 class StorageService {
   static const String _membersBox = 'members';
@@ -11,6 +12,7 @@ class StorageService {
   static const String _sessionsBox = 'sessions';
   static const String _checkInsBox = 'checkIns';
   static const String _logsBox = 'operationLogs';
+  static const String _groupsBox = 'groups';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -19,6 +21,7 @@ class StorageService {
     await Hive.openBox(_sessionsBox);
     await Hive.openBox(_checkInsBox);
     await Hive.openBox(_logsBox);
+    await Hive.openBox(_groupsBox);
     await _initDefaultTags();
   }
 
@@ -212,6 +215,30 @@ class StorageService {
     await _logBox.put(log.id, log.toMap());
   }
 
+  // ==================== Groups ====================
+  static Box get _groupBox => Hive.box(_groupsBox);
+
+  static List<Group> getAllGroups() {
+    return _groupBox.values
+        .map((e) => Group.fromMap(Map<String, dynamic>.from(e as Map)))
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  }
+
+  static Future<void> putGroup(Group group) async {
+    await _groupBox.put(group.id, group.toMap());
+  }
+
+  static Future<void> deleteGroup(String id) async {
+    await _groupBox.delete(id);
+  }
+
+  static Group? getGroup(String id) {
+    final data = _groupBox.get(id);
+    if (data == null) return null;
+    return Group.fromMap(Map<String, dynamic>.from(data as Map));
+  }
+
   // ==================== Utility ====================
   static Future<void> clearAll() async {
     await _memberBox.clear();
@@ -219,6 +246,7 @@ class StorageService {
     await _sessionBox.clear();
     await _checkInBox.clear();
     await _logBox.clear();
+    await _groupBox.clear();
     await _initDefaultTags();
   }
 }
