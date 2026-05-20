@@ -8,7 +8,6 @@ import '../widgets/swipe_person_card.dart';
 import '../widgets/status_bottom_sheet.dart';
 import '../widgets/undo_bar.dart';
 import 'member_history_screen.dart';
-import 'package:vibration/vibration.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -255,11 +254,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     );
   }
 
-  void _markAsArrived(AppState state, Member member) async {
-    // Vibration feedback
-    if (await Vibration.hasVibrator() ?? false) {
-      Vibration.vibrate(duration: 50);
-    }
+  void _markAsArrived(AppState state, Member member) {
     state.checkIn(
       sessionId: widget.sessionId,
       memberId: member.id,
@@ -275,11 +270,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     StatusBottomSheet.show(
       context,
       tags: state.tags,
-      onStatusSelected: (tag, note) async {
-        // Vibration feedback
-        if (await Vibration.hasVibrator() ?? false) {
-          Vibration.vibrate(duration: 50);
-        }
+      onStatusSelected: (tag, note) {
         state.checkIn(
           sessionId: widget.sessionId,
           memberId: member.id,
