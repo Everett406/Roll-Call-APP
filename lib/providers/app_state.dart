@@ -601,7 +601,6 @@ class AppState extends ChangeNotifier {
   /// Clear all data
   Future<void> clearAllData() async {
     await StorageService.clearAll();
-    await _initDefaultTags();
     notifyListeners();
   }
 }
