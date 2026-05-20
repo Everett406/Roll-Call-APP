@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
+import '../models/time_period.dart';
 import '../utils/constants.dart';
 import 'member_history_screen.dart';
 

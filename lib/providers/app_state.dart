@@ -6,6 +6,7 @@ import '../models/session.dart';
 import '../models/check_in.dart';
 import '../models/operation_log.dart';
 import '../models/group.dart';
+import '../models/time_period.dart';
 import '../services/storage_service.dart';
 import '../utils/search_helper.dart';
 
@@ -565,11 +566,4 @@ class AppState extends ChangeNotifier {
     );
     await updateGroup(updatedGroup);
   }
-}
-
-enum TimePeriod {
-  currentSession,
-  today,
-  thisWeek,
-  thisMonth,
 }

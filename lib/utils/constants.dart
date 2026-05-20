@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-const Color success = Color(0xFF4CAF50);
-const Color warning = Color(0xFFFF9800);
-const Color error = Color(0xFFF44336);
+class AppColors {
+  static const Color success = Color(0xFF4CAF50);
+  static const Color warning = Color(0xFFFF9800);
+  static const Color error = Color(0xFFF44336);
+}
 
 const List<Color> groupColors = [
   Color(0xFFE91E63),
