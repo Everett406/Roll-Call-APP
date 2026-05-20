@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:ui';
 
 /// 主题模式
 enum AppThemeMode {
@@ -64,23 +65,20 @@ class ThemeState extends ChangeNotifier {
     }
   }
 
+  /// 生成高饱和度的种子颜色
+  Color get _vibrantSeedColor {
+    final hsl = HSLColor.fromColor(_seedColor);
+    return hsl.withSaturation(hsl.saturation.clamp(0.8, 1.0)).withLightness(
+      hsl.lightness.clamp(0.35, 0.55),
+    ).toColor();
+  }
+
   ThemeData get lightTheme {
-    if (_dynamicColorEnabled) {
-      // 动态取色模式：使用更高饱和度和对比度的配色方案
-      return ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _seedColor,
-          brightness: Brightness.light,
-          saturation: 1.0,
-        ),
-        fontFamily: 'NotoSansSC',
-      );
-    }
+    final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: _seedColor,
+        seedColor: seed,
         brightness: Brightness.light,
       ),
       fontFamily: 'NotoSansSC',
@@ -88,22 +86,11 @@ class ThemeState extends ChangeNotifier {
   }
 
   ThemeData get darkTheme {
-    if (_dynamicColorEnabled) {
-      // 动态取色模式：使用更高饱和度和对比度的配色方案
-      return ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _seedColor,
-          brightness: Brightness.dark,
-          saturation: 1.0,
-        ),
-        fontFamily: 'NotoSansSC',
-      );
-    }
+    final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: _seedColor,
+        seedColor: seed,
         brightness: Brightness.dark,
       ),
       fontFamily: 'NotoSansSC',
