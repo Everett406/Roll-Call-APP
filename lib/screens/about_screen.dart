@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/app_info.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -70,7 +71,7 @@ class AboutScreen extends StatelessWidget {
 
             // 版本号
             Text(
-              'v1.3.8',
+              AppInfo.fullVersion,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

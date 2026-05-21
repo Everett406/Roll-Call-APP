@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:confetti/confetti.dart';
 import '../providers/theme_provider.dart';
 import '../providers/app_state.dart';
+import '../utils/app_info.dart';
 import '../services/update_service.dart';
 import 'member_manager_screen.dart';
 import 'group_manager_screen.dart';
@@ -21,7 +22,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.3.8';
+  final String _currentVersion = AppInfo.version;
 
   @override
   void initState() {
