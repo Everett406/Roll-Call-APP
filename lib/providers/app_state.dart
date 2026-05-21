@@ -342,9 +342,6 @@ class AppState extends ChangeNotifier {
       if (existing != null) {
         final updated = existing.copyWith(
           statusId: arrivedTag.id,
-          statusName: arrivedTag.name,
-          colorValue: arrivedTag.colorValue,
-          checkedAt: now,
         );
         final idx = _checkIns.indexOf(existing);
         _checkIns[idx] = updated;
