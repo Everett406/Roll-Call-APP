@@ -87,32 +87,34 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
           // ===== Header =====
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      '统计概览',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                  Text(
+                    '统计概览',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
+                  const SizedBox(height: 8),
                   // Period selector chips
-                  ...TimePeriod.values.map((period) {
-                    final isSelected = _selectedPeriod == period;
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: ChoiceChip(
-                        selected: isSelected,
-                        label: Text(_getPeriodLabel(period)),
-                        onSelected: (_) {
-                          setState(() => _selectedPeriod = period);
-                        },
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                      ),
-                    );
-                  }),
+                  Row(
+                    children: TimePeriod.values.map((period) {
+                      final isSelected = _selectedPeriod == period;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          selected: isSelected,
+                          label: Text(_getPeriodLabel(period)),
+                          onSelected: (_) {
+                            setState(() => _selectedPeriod = period);
+                          },
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ],
               ),
             ),

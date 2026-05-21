@@ -8,7 +8,7 @@ import '../models/status_tag.dart';
 import '../widgets/filter_chip_bar.dart';
 import '../widgets/swipe_person_card.dart';
 import '../widgets/status_bottom_sheet.dart';
-import '../widgets/undo_bar.dart';
+import '../widgets/operation_log_panel.dart';
 import 'member_history_screen.dart';
 import 'export_screen.dart';
 import '../utils/expressive_theme.dart';
@@ -401,7 +401,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             if (session.status == 'ongoing')
               SafeArea(
                 top: false,
-                child: UndoBar(sessionId: widget.sessionId),
+                child: OperationLogPanel(sessionId: widget.sessionId),
               ),
           ],
         ),
@@ -454,7 +454,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           if (session.status == 'ongoing')
             SafeArea(
               top: false,
-              child: UndoBar(sessionId: widget.sessionId),
+              child: OperationLogPanel(sessionId: widget.sessionId),
             ),
         ],
       ),

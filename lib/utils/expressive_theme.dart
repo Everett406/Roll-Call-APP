@@ -292,7 +292,7 @@ class ExpressiveTheme {
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
-        titleTextStyle: textTheme.headlineSmall?.copyWith(
+        titleTextStyle: textTheme.headlineLarge?.copyWith(
           fontWeight: FontWeight.w700,
         ),
       ),
