@@ -424,16 +424,18 @@ class AppState extends ChangeNotifier {
       }).toList();
     }
 
-    // Apply status filter and always maintain sort: unchecked first, then by studentId
-    memberList.sort((a, b) {
-      final aChecked = getActiveCheckIn(sessionId, a.id) != null;
-      final bChecked = getActiveCheckIn(sessionId, b.id) != null;
-      if (aChecked != bChecked) return aChecked ? 1 : -1;
-      // Same check status: sort by studentId to keep stable order
-      final aId = a.studentId ?? a.name;
-      final bId = b.studentId ?? b.name;
-      return aId.compareTo(bId);
-    });
+    // When no filter (showing all), keep original order from session.memberIds.
+    // Only sort when filtering: unchecked first, then by studentId.
+    if (filterStatusId != null) {
+      memberList.sort((a, b) {
+        final aChecked = getActiveCheckIn(sessionId, a.id) != null;
+        final bChecked = getActiveCheckIn(sessionId, b.id) != null;
+        if (aChecked != bChecked) return aChecked ? 1 : -1;
+        final aId = a.studentId ?? a.name;
+        final bId = b.studentId ?? b.name;
+        return aId.compareTo(bId);
+      });
+    }
 
     if (filterStatusId != null) {
       if (filterStatusId == 'unchecked') {

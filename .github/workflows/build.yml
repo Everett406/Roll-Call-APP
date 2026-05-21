@@ -32,22 +32,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Generate keystore for signing
-        run: |
-          mkdir -p android/keystore
-          # Generate debug keystore
-          keytool -genkeypair -v \
-            -keystore android/keystore/debug.keystore \
-            -storepass rollcall2026 \
-            -alias rollcall \
-            -keypass rollcall2026 \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 36500 \
-            -dname "CN=RollCall, OU=Dev, O=RollCall, L=Unknown, ST=Unknown, C=CN"
-          # Generate release keystore (same key for consistent signing)
-          cp android/keystore/debug.keystore android/keystore/release.keystore
-
       - name: Get dependencies
         run: flutter pub get
 
@@ -78,7 +62,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.read-version.outputs.version }}+${{ steps.read-version.outputs.build }}
-          name: 点名诗韵 v${{ steps.read-version.outputs.version }} Build #${{ github.run_number }}
+          name: 点到为止 v${{ steps.read-version.outputs.version }} Build #${{ github.run_number }}
           body: |
             自动构建的 APK 安装包。
             构建时间：${{ github.event.head_commit.timestamp }}

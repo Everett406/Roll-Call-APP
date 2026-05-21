@@ -37,7 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('点名诗韵'),
+        title: const Text('点到为止'),
         centerTitle: true,
         actions: [
           if (_currentIndex == 0)

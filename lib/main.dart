@@ -18,7 +18,7 @@ class RollCallApp extends ConsumerWidget {
     final themeState = ref.watch(themeProvider);
     
     return MaterialApp(
-      title: '点名诗韵',
+      title: '点到为止',
       debugShowCheckedModeBanner: false,
       theme: themeState.lightTheme,
       darkTheme: themeState.darkTheme,
