@@ -322,7 +322,6 @@ class ExpressiveTheme {
             ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
             : null,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
       ),
       // ==========================================================
       // Switch
