@@ -522,7 +522,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 
   /// 生成文字导出摘要
-  String _generateExportText(AppState state, Session session) {
+  String _generateExportText(AppState state, Session session, {bool includeArrived = true}) {
     final checkIns = state.getSessionCheckIns(widget.sessionId);
     final totalPeople = session.memberIds.length;
 
@@ -530,6 +530,8 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     final statusGroups = <String, List<String>>{};
     for (final ci in checkIns) {
       if (ci.statusId == null) continue;
+      // 如果不包含已到达，跳过
+      if (!includeArrived && ci.statusId == 'tag_arrived') continue;
       final tag = state.getTagById(ci.statusId!);
       final tagName = tag?.name ?? '未知状态';
       // 获取成员名称
@@ -569,51 +571,78 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
   /// 显示导出对话框
   void _showExportDialog(BuildContext context, AppState state, Session session) {
-    final exportText = _generateExportText(state, session);
+    bool includeArrived = true;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('导出点名摘要'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.maxFinite,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final exportText = _generateExportText(state, session, includeArrived: includeArrived);
+            final theme = Theme.of(context);
+
+            return AlertDialog(
+              title: const Text('导出点名摘要'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 开关：是否包含已到达
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('包含已到达人员'),
+                    subtitle: const Text('关闭后只显示未到和其他状态'),
+                    value: includeArrived,
+                    onChanged: (val) {
+                      setDialogState(() {
+                        includeArrived = val;
+                      });
+                    },
+                    dense: true,
+                  ),
+                  const SizedBox(height: 8),
+                  // 导出内容预览
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    width: double.maxFinite,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        exportText,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: SelectableText(
-                exportText,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-          FilledButton.icon(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: exportText));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已复制到剪贴板'),
-                  duration: Duration(seconds: 2),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('关闭'),
                 ),
-              );
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.copy, size: 18),
-            label: const Text('复制'),
-          ),
-        ],
-      ),
+                FilledButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: exportText));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('已复制到剪贴板'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.copy, size: 18),
+                  label: const Text('复制'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
