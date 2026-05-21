@@ -24,6 +24,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   String? _selectedFilter;
   String _searchQuery = '';
   bool _isSearchExpanded = false;
+  bool _isGridView = false;
   final _searchController = TextEditingController();
 
   @override
@@ -61,6 +62,11 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               case 'addTag':
                 _showAddTagDialog(context, state);
                 break;
+              case 'toggleView':
+                setState(() {
+                  _isGridView = !_isGridView;
+                });
+                break;
             }
           },
           itemBuilder: (context) => [
@@ -91,6 +97,16 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   Icon(Icons.label_outline),
                   SizedBox(width: 8),
                   Text('添加新标签'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'toggleView',
+              child: Row(
+                children: [
+                  Icon(_isGridView ? Icons.view_list : Icons.grid_view),
+                  const SizedBox(width: 8),
+                  Text(_isGridView ? '列表视图' : '网格视图'),
                 ],
               ),
             ),
@@ -315,27 +331,29 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             Expanded(
               child: members.isEmpty
                   ? _buildEmptyState(theme, _isSearchExpanded, _selectedFilter)
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      itemCount: members.length,
-                      itemBuilder: (context, index) {
-                        final member = members[index];
-                        final checkIn =
-                            state.getActiveCheckIn(widget.sessionId, member.id);
-                        final tag = checkIn?.statusId != null
-                            ? state.getTagById(checkIn!.statusId!)
-                            : null;
-                        return SwipePersonCard(
-                          member: member,
-                          currentTag: tag,
-                          onSwipeRight: () => _markAsArrived(state, member),
-                          onSwipeLeft: () =>
-                              _showStatusSheet(context, state, member),
-                          onLongPress: () =>
-                              _showMemberHistory(context, member),
-                        );
-                      },
-                    ),
+                  : _isGridView
+                      ? _buildGridView(members, state)
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          itemCount: members.length,
+                          itemBuilder: (context, index) {
+                            final member = members[index];
+                            final checkIn =
+                                state.getActiveCheckIn(widget.sessionId, member.id);
+                            final tag = checkIn?.statusId != null
+                                ? state.getTagById(checkIn!.statusId!)
+                                : null;
+                            return SwipePersonCard(
+                              member: member,
+                              currentTag: tag,
+                              onSwipeRight: () => _markAsArrived(state, member),
+                              onSwipeLeft: () =>
+                                  _showStatusSheet(context, state, member),
+                              onLongPress: () =>
+                                  _showMemberHistory(context, member),
+                            );
+                          },
+                        ),
             ),
             // Undo bar
             if (session.status == 'ongoing')
@@ -367,27 +385,29 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           Expanded(
             child: members.isEmpty
                 ? _buildEmptyState(theme, _isSearchExpanded, _selectedFilter)
-                : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: members.length,
-                    itemBuilder: (context, index) {
-                      final member = members[index];
-                      final checkIn =
-                          state.getActiveCheckIn(widget.sessionId, member.id);
-                      final tag = checkIn?.statusId != null
-                          ? state.getTagById(checkIn!.statusId!)
-                          : null;
-                      return SwipePersonCard(
-                        member: member,
-                        currentTag: tag,
-                        onSwipeRight: () => _markAsArrived(state, member),
-                        onSwipeLeft: () =>
-                            _showStatusSheet(context, state, member),
-                        onLongPress: () =>
-                            _showMemberHistory(context, member),
-                      );
-                    },
-                  ),
+                : _isGridView
+                    ? _buildGridView(members, state)
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemCount: members.length,
+                        itemBuilder: (context, index) {
+                          final member = members[index];
+                          final checkIn =
+                              state.getActiveCheckIn(widget.sessionId, member.id);
+                          final tag = checkIn?.statusId != null
+                              ? state.getTagById(checkIn!.statusId!)
+                              : null;
+                          return SwipePersonCard(
+                            member: member,
+                            currentTag: tag,
+                            onSwipeRight: () => _markAsArrived(state, member),
+                            onSwipeLeft: () =>
+                                _showStatusSheet(context, state, member),
+                            onLongPress: () =>
+                                _showMemberHistory(context, member),
+                          );
+                        },
+                      ),
           ),
           if (session.status == 'ongoing')
             SafeArea(
@@ -430,6 +450,110 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 获取学号后两位
+  String _getShortStudentId(String? studentId) {
+    if (studentId == null || studentId.isEmpty) return '';
+    final digits = studentId.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length >= 2) return digits.substring(digits.length - 2);
+    return studentId.length >= 2 ? studentId.substring(studentId.length - 2) : studentId;
+  }
+
+  /// 构建网格视图
+  Widget _buildGridView(List<Member> members, AppState state) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(12),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        childAspectRatio: 0.85,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: members.length,
+      itemBuilder: (context, index) {
+        final member = members[index];
+        final checkIn = state.getActiveCheckIn(widget.sessionId, member.id);
+        final tag = checkIn?.statusId != null
+            ? state.getTagById(checkIn!.statusId!)
+            : null;
+
+        // 确定背景色
+        Color backgroundColor;
+        Color textColor;
+        if (tag != null) {
+          if (tag.id == 'tag_arrived') {
+            backgroundColor = Colors.green.shade50;
+            textColor = Colors.green.shade800;
+          } else {
+            backgroundColor = Color(tag.colorValue).withOpacity(0.12);
+            textColor = Color(tag.colorValue);
+          }
+        } else {
+          backgroundColor = Colors.white;
+          textColor = Colors.black87;
+        }
+
+        final shortId = _getShortStudentId(member.studentId);
+        final sequenceNumber = (index + 1).toString().padLeft(2, '0');
+
+        return GestureDetector(
+          onTap: () => _showStatusSheet(context, state, member),
+          onLongPress: () => _showMemberHistory(context, member),
+          child: Container(
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.grey.shade200,
+                width: 0.5,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 序号（左上角）
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 6, top: 4),
+                    child: Text(
+                      sequenceNumber,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                // 姓名（居中，粗体）
+                Text(
+                  member.name,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                // 学号后两位
+                if (shortId.isNotEmpty)
+                  Text(
+                    shortId,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
