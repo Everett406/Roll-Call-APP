@@ -20,6 +20,7 @@ dependencies:
   permission_handler: ^11.3.0
   package_info_plus: ^5.0.1
   url_launcher: ^6.2.5
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
