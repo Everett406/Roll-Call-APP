@@ -27,7 +27,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(appStateProvider);
     final theme = Theme.of(context);
-    
+
     // 获取最新的分组数据
     final currentGroup = state.groups.firstWhere(
       (g) => g.id == _group.id,
@@ -43,7 +43,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     final color = groupColors[_group.colorIndex % groupColors.length];
 
     return Scaffold(
-      Scaffold(
       appBar: AppBar(
         title: Text(_group.name),
         actions: [
@@ -58,6 +57,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             tooltip: '删除',
           ),
         ],
+      ),
       body: Column(
         children: [
           // 分组信息卡片
@@ -88,8 +88,8 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   ),
                   child: Icon(
                     Icons.group,
-                    color: color.computeLuminance() > 0.5 
-                        ? Colors.black87 
+                    color: color.computeLuminance() > 0.5
+                        ? Colors.black87
                         : Colors.white,
                   ),
                 ),
@@ -216,12 +216,13 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   ),
           ),
         ],
+      ),
     );
   }
 
   void _showEditDialog(BuildContext context) {
     final state = ref.read(appStateProvider);
-    final TextEditingController nameController = 
+    final TextEditingController nameController =
         TextEditingController(text: _group.name);
     int selectedColorIndex = _group.colorIndex;
 
@@ -305,12 +306,13 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             ),
           ],
         ),
+      ),
     );
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
     final state = ref.read(appStateProvider);
-    
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -329,6 +331,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             child: const Text('删除'),
           ),
         ],
+      ),
     );
 
     if (confirm == true) {
@@ -423,12 +426,13 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             ],
           ),
         ),
+      ),
     );
   }
 
   Future<void> _removeMember(Member member) async {
     final state = ref.read(appStateProvider);
-    
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -444,6 +448,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             child: const Text('移除'),
           ),
         ],
+      ),
     );
 
     if (confirm == true) {

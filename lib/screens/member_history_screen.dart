@@ -49,9 +49,9 @@ class MemberHistoryScreen extends ConsumerWidget {
     final totalSessions = allCheckIns.length;
 
     return Scaffold(
-      Scaffold(
       appBar: AppBar(
         title: Text(memberName),
+      ),
       body: CustomScrollView(
         slivers: [
           // Header
@@ -313,6 +313,7 @@ class MemberHistoryScreen extends ConsumerWidget {
             child: SizedBox(height: 20),
           ),
         ],
+      ),
     );
   }
 }
@@ -417,6 +418,7 @@ class _TimelineItem extends StatelessWidget {
           ),
           Expanded(child: child),
         ],
+      ),
     );
   }
 }

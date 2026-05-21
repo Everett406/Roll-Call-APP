@@ -40,7 +40,6 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
     final allSelected = members.length == _selectedMemberIds.length && members.isNotEmpty;
 
     return Scaffold(
-      Scaffold(
       appBar: _isMultiSelectMode
           ? AppBar(
               leading: IconButton(
@@ -334,6 +333,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
             child: const Text('删除'),
           ),
         ],
+      ),
     );
 
     if (confirmed == true) {
@@ -402,6 +402,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
             child: const Text('添加'),
           ),
         ],
+      ),
     );
   }
 
@@ -474,6 +475,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
             child: const Text('保存'),
           ),
         ],
+      ),
     );
   }
 }

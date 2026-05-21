@@ -72,7 +72,6 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      Scaffold(
       appBar: AppBar(
         title: const Text('批量导入'),
         actions: [
@@ -82,6 +81,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               child: const Text('重新解析'),
             ),
         ],
+      ),
       body: Column(
         children: [
           // Input area
@@ -258,6 +258,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               ),
             )
           : null,
+      ),
     );
   }
 

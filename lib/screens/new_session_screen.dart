@@ -68,9 +68,9 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
     final allSessions = [...state.archivedSessions, ...state.ongoingSessions];
 
     return Scaffold(
-      Scaffold(
       appBar: AppBar(
         title: const Text('新建点名'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -271,6 +271,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
               ),
           ],
         ),
+      ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -288,6 +289,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
             ),
           ),
         ),
+      ),
     );
   }
 
