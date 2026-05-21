@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
+import '../widgets/predictive_back_page.dart';
 import 'import_screen.dart';
 import 'member_history_screen.dart';
 
@@ -39,7 +40,8 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
     final hasSelected = _selectedMemberIds.isNotEmpty;
     final allSelected = members.length == _selectedMemberIds.length && members.isNotEmpty;
 
-    return Scaffold(
+    return PredictiveBackPage(
+      child: Scaffold(
       appBar: _isMultiSelectMode
           ? AppBar(
               leading: IconButton(
@@ -311,6 +313,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
               onPressed: () => _showAddDialog(context, state),
               child: const Icon(Icons.person_add),
             ),
+      ),
     );
   }
 

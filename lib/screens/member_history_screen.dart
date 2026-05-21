@@ -6,6 +6,7 @@ import '../models/session.dart';
 import '../models/check_in.dart';
 import '../models/status_tag.dart';
 import '../utils/constants.dart';
+import '../widgets/predictive_back_page.dart';
 
 class MemberHistoryScreen extends ConsumerWidget {
   final String memberId;
@@ -48,7 +49,8 @@ class MemberHistoryScreen extends ConsumerWidget {
     final attendanceRate = state.getMemberAttendanceRate(memberId);
     final totalSessions = allCheckIns.length;
 
-    return Scaffold(
+    return PredictiveBackPage(
+      child: Scaffold(
       appBar: AppBar(
         title: Text(memberName),
       ),
@@ -313,6 +315,7 @@ class MemberHistoryScreen extends ConsumerWidget {
             child: SizedBox(height: 20),
           ),
         ],
+      ),
       ),
     );
   }

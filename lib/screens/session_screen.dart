@@ -9,6 +9,7 @@ import '../widgets/filter_chip_bar.dart';
 import '../widgets/swipe_person_card.dart';
 import '../widgets/status_bottom_sheet.dart';
 import '../widgets/undo_bar.dart';
+import '../widgets/predictive_back_page.dart';
 import 'member_history_screen.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
@@ -274,7 +275,8 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     if (isShowingAll) {
       // Fixed list: all members in studentId order, no splitting
-      return Scaffold(
+      return PredictiveBackPage(
+        child: Scaffold(
         appBar: _isSearchExpanded
             ? _buildSearchAppBar(session)
             : _buildNormalAppBar(session, state),
@@ -345,11 +347,13 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             ),
         ],
       ),
-    );
+        ),
+      );
     }
 
     // ---- Filtered view: show only matching members ----
-    return Scaffold(
+    return PredictiveBackPage(
+      child: Scaffold(
       appBar: _isSearchExpanded
           ? _buildSearchAppBar(session)
           : _buildNormalAppBar(session, state),
@@ -395,6 +399,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               child: UndoBar(sessionId: widget.sessionId),
             ),
         ],
+      ),
       ),
     );
   }

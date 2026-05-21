@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
+import '../widgets/predictive_back_page.dart';
 
 class ImportScreen extends ConsumerStatefulWidget {
   const ImportScreen({super.key});
@@ -71,7 +72,8 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return PredictiveBackPage(
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('批量导入'),
         actions: [
@@ -259,6 +261,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               ),
             )
           : null,
+      ),
     );
   }
 

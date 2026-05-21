@@ -4,6 +4,7 @@ import '../providers/app_state.dart';
 import '../models/group.dart';
 import '../models/member.dart';
 import '../utils/constants.dart';
+import '../widgets/predictive_back_page.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {
   final Group group;
@@ -42,7 +43,8 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
     final color = groupColors[_group.colorIndex % groupColors.length];
 
-    return Scaffold(
+    return PredictiveBackPage(
+      child: Scaffold(
       appBar: AppBar(
         title: Text(_group.name),
         actions: [
@@ -216,6 +218,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   ),
           ),
         ],
+      ),
       ),
     );
   }

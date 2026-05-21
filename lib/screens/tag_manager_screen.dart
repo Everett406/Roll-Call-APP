@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../models/status_tag.dart';
+import '../widgets/predictive_back_page.dart';
 
 class TagManagerScreen extends ConsumerStatefulWidget {
   const TagManagerScreen({super.key});
@@ -46,7 +47,8 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
     final tags = state.tags;
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return PredictiveBackPage(
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('标签管理'),
       ),
@@ -189,6 +191,7 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

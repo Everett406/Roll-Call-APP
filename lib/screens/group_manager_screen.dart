@@ -4,6 +4,7 @@ import '../providers/app_state.dart';
 import '../models/group.dart';
 import '../models/member.dart';
 import '../utils/constants.dart';
+import '../widgets/predictive_back_page.dart';
 import 'group_detail_screen.dart';
 
 class GroupManagerScreen extends ConsumerStatefulWidget {
@@ -21,7 +22,8 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
     final groups = state.groups;
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return PredictiveBackPage(
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('分组管理'),
       ),
@@ -39,6 +41,7 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
         onPressed: () => _navigateToCreateGroup(context),
         icon: const Icon(Icons.add),
         label: const Text('创建分组'),
+      ),
       ),
     );
   }
