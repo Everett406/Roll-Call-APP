@@ -66,9 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  _zoomRoute(
-                    builder: (_) => const TagManagerScreen(),
-                  ),
+                  _zoomRoute(const TagManagerScreen()),
                 );
               },
             ),
@@ -79,9 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  _zoomRoute(
-                    builder: (_) => const GroupManagerScreen(),
-                  ),
+                  _zoomRoute(const GroupManagerScreen()),
                 );
               },
             ),
@@ -91,9 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                _zoomRoute(
-                  builder: (_) => const SettingsScreen(),
-                ),
+                _zoomRoute(const SettingsScreen()),
               );
             },
           ),
@@ -143,9 +137,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
-                  _zoomRoute(
-                    builder: (_) => const NewSessionScreen(),
-                  ),
+                  _zoomRoute(const NewSessionScreen()),
                 );
                 if (result == true) {
                   ref.read(appStateProvider).loadData();
@@ -294,9 +286,7 @@ class _SessionCard extends ConsumerWidget {
         onTap: () {
           Navigator.push(
             context,
-            _zoomRoute(
-              builder: (_) => SessionScreen(sessionId: session.id),
-            ),
+            _zoomRoute(SessionScreen(sessionId: session.id)),
           );
         },
         borderRadius: BorderRadius.circular(12),
