@@ -143,7 +143,7 @@ class AboutScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildFeatureListItem(
                     theme,
-                    icon: Icons.auto_archive,
+                    icon: Icons.schedule,
                     title: '自动归档',
                     desc: '24小时超时自动处理',
                   ),
