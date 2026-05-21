@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:confetti/confetti.dart';
 import '../providers/theme_provider.dart';
 import '../providers/app_state.dart';
 import '../services/update_service.dart';
@@ -19,7 +20,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.3.4';
+  String _currentVersion = '1.3.5';
 
   @override
   void initState() {
@@ -165,6 +166,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           appState.setConfettiEnabled(value);
                         },
                       ),
+                      if (appState.confettiEnabled)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 52, bottom: 8),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.tonalIcon(
+                              icon: const Icon(Icons.preview, size: 18),
+                              label: const Text('预览效果'),
+                              onPressed: () {
+                                final controller = ConfettiController(
+                                  duration: const Duration(seconds: 2),
+                                );
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                  builder: (_) => StatefulBuilder(
+                                    builder: (context, setState) {
+                                      controller.play();
+                                      Future.delayed(const Duration(seconds: 2), () {
+                                        if (context.mounted) Navigator.pop(context);
+                                      });
+                                      return IgnorePointer(
+                                        child: Align(
+                                          alignment: Alignment.topCenter,
+                                          child: ConfettiWidget(
+                                            confettiController: controller,
+                                            blastDirectionality: BlastDirectionality.explosive,
+                                            shouldLoop: false,
+                                            numberOfParticles: 30,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 4),
                     ],
                   ),

@@ -67,6 +67,7 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
     const rollDuration = Duration(milliseconds: 1800);
     final startTime = DateTime.now();
 
+    var tickCount = 0;
     while (DateTime.now().difference(startTime) < rollDuration) {
       await Future.delayed(const Duration(milliseconds: 60));
       if (!mounted) return;
@@ -75,6 +76,11 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
         _selectedMemberName = members[idx].name;
         _selectedMemberStudentId = members[idx].studentId;
       });
+      // Tactile feedback during rolling (every 5th tick = ~300ms)
+      tickCount++;
+      if (tickCount % 5 == 0) {
+        Vibration.vibrate(duration: 15);
+      }
     }
 
     // Final pick

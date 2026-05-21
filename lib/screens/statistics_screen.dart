@@ -95,6 +95,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                     '统计概览',
                     style: theme.textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),

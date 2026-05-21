@@ -292,8 +292,11 @@ class ExpressiveTheme {
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         titleTextStyle: textTheme.headlineLarge?.copyWith(
           fontWeight: FontWeight.w700,
+          color: colorScheme.onSurface,
         ),
       ),
       // ==========================================================
