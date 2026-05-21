@@ -1,7 +1,7 @@
 name: roll_call_app
 description: 点到为止 - 让点名更有诗意
 publish_to: 'none'
-version: 1.1.5+5
+version: 1.1.6+6
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -14,6 +14,12 @@ dependencies:
   uuid: ^4.3.3
   intl: ^0.19.0
   dynamic_color: 1.6.9
+  # 自动更新功能依赖
+  dio: ^5.4.0
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.0
+  package_info_plus: ^5.0.1
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:

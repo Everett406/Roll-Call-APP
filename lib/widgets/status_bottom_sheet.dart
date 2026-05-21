@@ -4,17 +4,20 @@ import '../models/status_tag.dart';
 class StatusBottomSheet extends StatefulWidget {
   final List<StatusTag> tags;
   final Function(StatusTag tag, String? note) onStatusSelected;
+  final VoidCallback? onAddTagPressed;
 
   const StatusBottomSheet({
     super.key,
     required this.tags,
     required this.onStatusSelected,
+    this.onAddTagPressed,
   });
 
   static Future<void> show(
     BuildContext context, {
     required List<StatusTag> tags,
     required Function(StatusTag tag, String? note) onStatusSelected,
+    VoidCallback? onAddTagPressed,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -25,6 +28,7 @@ class StatusBottomSheet extends StatefulWidget {
       builder: (_) => StatusBottomSheet(
         tags: tags,
         onStatusSelected: onStatusSelected,
+        onAddTagPressed: onAddTagPressed,
       ),
     );
   }
@@ -106,6 +110,26 @@ class _StatusBottomSheetState extends State<StatusBottomSheet> {
               ),
               maxLines: 2,
             ),
+            const SizedBox(height: 16),
+            // Add new tag button
+            if (widget.onAddTagPressed != null)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    widget.onAddTagPressed!();
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('添加新标签'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
             const SizedBox(height: 8),
           ],
         ),
@@ -141,6 +165,156 @@ class _StatusButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 添加新标签对话框
+class AddTagDialog extends StatefulWidget {
+  final Function(String name, int colorValue) onConfirm;
+
+  const AddTagDialog({
+    super.key,
+    required this.onConfirm,
+  });
+
+  static Future<void> show(
+    BuildContext context, {
+    required Function(String name, int colorValue) onConfirm,
+  }) {
+    return showDialog(
+      context: context,
+      builder: (_) => AddTagDialog(onConfirm: onConfirm),
+    );
+  }
+
+  @override
+  State<AddTagDialog> createState() => _AddTagDialogState();
+}
+
+class _AddTagDialogState extends State<AddTagDialog> {
+  final _nameController = TextEditingController();
+  int _selectedColor = 0xFF4CAF50;
+
+  // 预设颜色列表
+  final List<Map<String, dynamic>> _presetColors = [
+    {'name': '绿色', 'value': 0xFF4CAF50},
+    {'name': '红色', 'value': 0xFFF44336},
+    {'name': '橙色', 'value': 0xFFFF9800},
+    {'name': '蓝色', 'value': 0xFF2196F3},
+    {'name': '紫色', 'value': 0xFF9C27B0},
+    {'name': '粉色', 'value': 0xFFE91E63},
+    {'name': '青色', 'value': 0xFF009688},
+    {'name': '灰色', 'value': 0xFF9E9E9E},
+  ];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _confirm() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入标签名称')),
+      );
+      return;
+    }
+    widget.onConfirm(name, _selectedColor);
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('添加新标签'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标签名称输入框
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              hintText: '标签名称',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+            autofocus: true,
+          ),
+          const SizedBox(height: 20),
+          // 颜色选择标题
+          Text(
+            '选择颜色',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // 颜色网格
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: _presetColors.map((color) {
+              final isSelected = _selectedColor == color['value'];
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedColor = color['value'];
+                  });
+                },
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Color(color['value']),
+                    shape: BoxShape.circle,
+                    border: isSelected
+                        ? Border.all(
+                            color: theme.colorScheme.primary,
+                            width: 3,
+                          )
+                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 20,
+                        )
+                      : null,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: _confirm,
+          child: const Text('添加'),
+        ),
+      ],
     );
   }
 }

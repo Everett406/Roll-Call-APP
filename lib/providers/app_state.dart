@@ -96,6 +96,19 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> addTagWithParams(String name, int colorValue) async {
+    final tag = StatusTag(
+      id: 'tag_${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      colorValue: colorValue,
+      isBuiltIn: false,
+      sortOrder: _tags.length,
+    );
+    _tags.add(tag);
+    await StorageService.putTag(tag);
+    notifyListeners();
+  }
+
   Future<void> updateTag(StatusTag tag) async {
     final idx = _tags.indexWhere((t) => t.id == tag.id);
     if (idx != -1) {

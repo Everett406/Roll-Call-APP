@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/theme_provider.dart';
 import '../providers/app_state.dart';
+import '../services/update_service.dart';
 import 'member_manager_screen.dart';
 import 'group_manager_screen.dart';
 import 'tag_manager_screen.dart';
@@ -14,6 +16,28 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _isCheckingUpdate = false;
+  String _currentVersion = '1.1.6';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentVersion();
+  }
+
+  Future<void> _loadCurrentVersion() async {
+    try {
+      final version = await UpdateService.getCurrentVersion();
+      if (mounted) {
+        setState(() {
+          _currentVersion = version;
+        });
+      }
+    } catch (e) {
+      // 使用默认版本号
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -28,7 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           // 外观设置
           _SectionHeader(title: '外观', theme: theme),
-          
+
           // 主题模式
           ListTile(
             leading: Icon(
@@ -42,7 +66,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: Text(_getThemeModeLabel(themeState.themeMode)),
             onTap: () => _showThemeModeDialog(),
           ),
-          
+
           // 主题颜色
           ListTile(
             leading: Container(
@@ -57,7 +81,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: Text(_getThemeColorName(themeState.seedColor)),
             onTap: () => _showColorPickerDialog(),
           ),
-          
+
           // 动态取色开关
           SwitchListTile(
             secondary: const Icon(Icons.palette_outlined),
@@ -73,7 +97,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // 数据管理
           _SectionHeader(title: '数据管理', theme: theme),
-          
+
           ListTile(
             leading: const Icon(Icons.people_outline),
             title: const Text('人员管理'),
@@ -83,7 +107,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberManagerScreen()));
             },
           ),
-          
+
           ListTile(
             leading: const Icon(Icons.folder_outlined),
             title: const Text('分组管理'),
@@ -93,7 +117,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupManagerScreen()));
             },
           ),
-          
+
           ListTile(
             leading: const Icon(Icons.label_outline),
             title: const Text('标签管理'),
@@ -108,14 +132,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // 数据操作
           _SectionHeader(title: '数据操作', theme: theme),
-          
+
           ListTile(
             leading: const Icon(Icons.import_export),
             title: const Text('导出数据'),
             subtitle: const Text('导出为JSON文件'),
             onTap: () => _exportData(),
           ),
-          
+
           ListTile(
             leading: Icon(
               Icons.delete_outline,
@@ -133,18 +157,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // 关于
           _SectionHeader(title: '关于', theme: theme),
-          
+
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('关于点到为止'),
-            subtitle: const Text('点到为止 v1.1.5'),
+            subtitle: const Text('点到为止 v1.1.6'),
             onTap: () => _showAboutDialog(),
           ),
-          
+
           ListTile(
             leading: const Icon(Icons.update),
             title: const Text('版本信息'),
-            subtitle: const Text('当前版本: 1.1.5 (Build 5)'),
+            subtitle: Text('当前版本: $_currentVersion'),
+          ),
+
+          // 检查更新按钮
+          ListTile(
+            leading: _isCheckingUpdate
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.colorScheme.primary,
+                    ),
+                  )
+                : Icon(Icons.system_update, color: theme.colorScheme.primary),
+            title: const Text('检查更新'),
+            subtitle: const Text('检查是否有新版本可用'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _isCheckingUpdate ? null : () => _checkForUpdate(),
           ),
         ],
       ),
@@ -173,7 +215,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showThemeModeDialog() {
     final themeState = ref.read(themeProvider);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -200,7 +242,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showColorPickerDialog() {
     final themeState = ref.read(themeProvider);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -303,7 +345,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: '点到为止',
-      applicationVersion: '1.1.5',
+      applicationVersion: '1.1.6',
       applicationLegalese: '© 2026 Everett',
       children: [
         const SizedBox(height: 16),
@@ -320,6 +362,266 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const Text('• 自定义标签，灵活分类'),
         const Text('• 多会话管理，历史可追溯'),
         const Text('• 出勤统计，一目了然'),
+      ],
+    );
+  }
+
+  /// 检查更新
+  Future<void> _checkForUpdate() async {
+    if (!Platform.isAndroid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('仅支持 Android 平台')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCheckingUpdate = true;
+    });
+
+    try {
+      final releaseInfo = await UpdateService.checkUpdate();
+
+      if (!mounted) return;
+
+      if (releaseInfo != null) {
+        // 有新版本，显示更新对话框
+        _showUpdateDialog(releaseInfo);
+      } else {
+        // 已是最新版本
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('当前已是最新版本')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('检查更新失败: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingUpdate = false;
+        });
+      }
+    }
+  }
+
+  /// 显示更新对话框
+  void _showUpdateDialog(ReleaseInfo releaseInfo) {
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.system_update, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text('发现新版本'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '最新版本: ${releaseInfo.version}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '当前版本: $_currentVersion',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              if (releaseInfo.downloadSize != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '文件大小: ${_formatFileSize(releaseInfo.downloadSize!)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text(
+                '更新说明:',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: SingleChildScrollView(
+                  child: Text(
+                    releaseInfo.body.isNotEmpty
+                        ? releaseInfo.body
+                        : '暂无更新说明',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('稍后更新'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (releaseInfo.downloadUrl != null) {
+                _showDownloadDialog(releaseInfo.downloadUrl!);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('未找到下载链接')),
+                );
+              }
+            },
+            child: const Text('立即更新'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 显示下载进度对话框
+  void _showDownloadDialog(String downloadUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _DownloadProgressDialog(downloadUrl: downloadUrl),
+    );
+  }
+
+  /// 格式化文件大小
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) {
+      return '$bytes B';
+    } else if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    } else if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    } else {
+      return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    }
+  }
+}
+
+/// 下载进度对话框
+class _DownloadProgressDialog extends StatefulWidget {
+  final String downloadUrl;
+
+  const _DownloadProgressDialog({required this.downloadUrl});
+
+  @override
+  State<_DownloadProgressDialog> createState() => _DownloadProgressDialogState();
+}
+
+class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
+  double _progress = 0.0;
+  String _status = '准备下载...';
+  bool _isComplete = false;
+  bool _hasError = false;
+  StreamSubscription<DownloadProgress>? _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _startDownload();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _startDownload() {
+    final stream = UpdateService.downloadAndInstall(widget.downloadUrl);
+    _subscription = stream.listen(
+      (progress) {
+        if (mounted) {
+          setState(() {
+            _progress = progress.progress;
+            _status = progress.status;
+            _isComplete = progress.progress >= 1.0 &&
+                (progress.status.contains('安装') || progress.status.contains('失败'));
+            _hasError = progress.status.contains('失败') || progress.status.contains('错误');
+          });
+        }
+      },
+      onError: (error) {
+        if (mounted) {
+          setState(() {
+            _status = '下载失败: $error';
+            _hasError = true;
+            _isComplete = true;
+          });
+        }
+      },
+      onDone: () {
+        // 下载完成后的处理
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('下载更新'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 16),
+          LinearProgressIndicator(
+            value: _progress > 0 ? _progress : null,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              _hasError ? theme.colorScheme.error : theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _status,
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          if (_progress > 0 && !_isComplete) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${(_progress * 100).toStringAsFixed(1)}%',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        if (_isComplete)
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_hasError ? '关闭' : '完成'),
+          )
+        else
+          TextButton(
+            onPressed: () {
+              _subscription?.cancel();
+              Navigator.pop(context);
+            },
+            child: const Text('取消'),
+          ),
       ],
     );
   }

@@ -32,6 +32,222 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     super.dispose();
   }
 
+  /// 构建标准AppBar（非搜索模式）
+  AppBar _buildNormalAppBar(Session session, AppState state) {
+    final theme = Theme.of(context);
+    return AppBar(
+      title: Text(session.title),
+      actions: [
+        // 归档按钮（仅 ongoing 状态显示）
+        if (session.status == 'ongoing')
+          IconButton(
+            icon: const Icon(Icons.archive_outlined),
+            tooltip: '结束并归档',
+            onPressed: () => _archiveSession(state),
+          ),
+        // 更多菜单按钮
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert),
+          onSelected: (value) {
+            switch (value) {
+              case 'search':
+                setState(() {
+                  _isSearchExpanded = true;
+                });
+                break;
+              case 'export':
+                _showExportDialog(context, state, session);
+                break;
+              case 'addTag':
+                _showAddTagDialog(context, state);
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'search',
+              child: Row(
+                children: [
+                  Icon(Icons.search),
+                  SizedBox(width: 8),
+                  Text('搜索'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'export',
+              child: Row(
+                children: [
+                  Icon(Icons.file_copy_outlined),
+                  SizedBox(width: 8),
+                  Text('导出文字摘要'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'addTag',
+              child: Row(
+                children: [
+                  Icon(Icons.label_outline),
+                  SizedBox(width: 8),
+                  Text('添加新标签'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 构建搜索模式AppBar
+  AppBar _buildSearchAppBar(Session session) {
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          setState(() {
+            _isSearchExpanded = false;
+            _searchController.clear();
+            _searchQuery = '';
+          });
+        },
+      ),
+      title: TextField(
+        controller: _searchController,
+        decoration: const InputDecoration(
+          hintText: '搜索姓名或学号...',
+          border: InputBorder.none,
+          hintStyle: TextStyle(fontSize: 16),
+        ),
+        style: const TextStyle(fontSize: 16),
+        onChanged: (val) {
+          setState(() {
+            _searchQuery = val;
+          });
+        },
+        autofocus: true,
+      ),
+      actions: [
+        if (_searchQuery.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              setState(() {
+                _searchController.clear();
+                _searchQuery = '';
+              });
+            },
+          ),
+      ],
+    );
+  }
+
+  /// 显示添加标签对话框
+  void _showAddTagDialog(BuildContext context, AppState state) {
+    final nameController = TextEditingController();
+    int selectedColorValue = Colors.blue.value;
+    final colorOptions = [
+      ('蓝色', Colors.blue),
+      ('绿色', Colors.green),
+      ('橙色', Colors.orange),
+      ('红色', Colors.red),
+      ('紫色', Colors.purple),
+      ('青色', Colors.teal),
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('添加新标签'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: '标签名称',
+                  hintText: '例如：请假、迟到',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '选择颜色',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: colorOptions.map((option) {
+                  final (colorName, color) = option;
+                  final isSelected = selectedColorValue == color.value;
+                  return InkWell(
+                    onTap: () {
+                      setDialogState(() {
+                        selectedColorValue = color.value;
+                      });
+                    },
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(color: Colors.white, width: 2)
+                            : null,
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: color.withOpacity(0.5),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check, color: Colors.white, size: 18)
+                          : null,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                if (name.isNotEmpty) {
+                  final newTag = StatusTag(
+                    name: name,
+                    colorValue: selectedColorValue,
+                  );
+                  state.addTag(newTag);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('标签 "$name" 已添加')),
+                  );
+                }
+              },
+              child: const Text('添加'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(appStateProvider);
@@ -59,62 +275,10 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     if (isShowingAll) {
       // Fixed list: all members in studentId order, no splitting
       return Scaffold(
-      appBar: AppBar(
-        title: _isSearchExpanded
-            ? TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: '搜索姓名或学号...',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(fontSize: 16),
-                ),
-                style: const TextStyle(fontSize: 16),
-                onChanged: (val) {
-                  setState(() {
-                    _searchQuery = val;
-                  });
-                },
-                autofocus: true,
-              )
-            : Text(session.title),
-        actions: [
-          if (_isSearchExpanded)
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                setState(() {
-                  _isSearchExpanded = false;
-                  _searchController.clear();
-                  _searchQuery = '';
-                });
-              },
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                setState(() {
-                  _isSearchExpanded = true;
-                });
-              },
-            ),
-          IconButton(
-            icon: const Icon(Icons.file_copy_outlined),
-            tooltip: '导出文字摘要',
-            onPressed: () => _showExportDialog(context, state, session),
-          ),
-          if (session.status == 'ongoing')
-            TextButton.icon(
-              onPressed: () => _archiveSession(state),
-              icon: const Icon(Icons.archive_outlined, size: 18),
-              label: const Text('结束并归档'),
-              style: TextButton.styleFrom(
-                foregroundColor: theme.colorScheme.error,
-              ),
-            ),
-        ],
-      ),
-      body: Column(
+        appBar: _isSearchExpanded
+            ? _buildSearchAppBar(session)
+            : _buildNormalAppBar(session, state),
+        body: Column(
         children: [
           // Filter chip bar
           FilterChipBar(
@@ -186,61 +350,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     // ---- Filtered view: show only matching members ----
     return Scaffold(
-      appBar: AppBar(
-        title: _isSearchExpanded
-            ? TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: '搜索姓名或学号...',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(fontSize: 16),
-                ),
-                style: const TextStyle(fontSize: 16),
-                onChanged: (val) {
-                  setState(() {
-                    _searchQuery = val;
-                  });
-                },
-                autofocus: true,
-              )
-            : Text(session.title),
-        actions: [
-          if (_isSearchExpanded)
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                setState(() {
-                  _isSearchExpanded = false;
-                  _searchController.clear();
-                  _searchQuery = '';
-                });
-              },
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                setState(() {
-                  _isSearchExpanded = true;
-                });
-              },
-            ),
-          IconButton(
-            icon: const Icon(Icons.file_copy_outlined),
-            tooltip: '导出文字摘要',
-            onPressed: () => _showExportDialog(context, state, session),
-          ),
-          if (session.status == 'ongoing')
-            TextButton.icon(
-              onPressed: () => _archiveSession(state),
-              icon: const Icon(Icons.archive_outlined, size: 18),
-              label: const Text('结束并归档'),
-              style: TextButton.styleFrom(
-                foregroundColor: theme.colorScheme.error,
-              ),
-            ),
-        ],
-      ),
+      appBar: _isSearchExpanded
+          ? _buildSearchAppBar(session)
+          : _buildNormalAppBar(session, state),
       body: Column(
         children: [
           FilterChipBar(
