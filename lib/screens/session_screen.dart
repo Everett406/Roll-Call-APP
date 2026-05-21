@@ -259,7 +259,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                         color: color,
                         shape: BoxShape.circle,
                         border: isSelected
-                            ? Border.all(color: theme.colorScheme.onPrimary, width: 2)
+                            ? Border.all(color: Theme.of(context).colorScheme.onPrimary, width: 2)
                             : null,
                         boxShadow: isSelected
                             ? [
@@ -272,7 +272,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                             : null,
                       ),
                       child: isSelected
-                          ? Icon(Icons.check, color: theme.colorScheme.onPrimary, size: 18)
+                          ? Icon(Icons.check, color: Theme.of(context).colorScheme.onPrimary, size: 18)
                           : null,
                     ),
                   );

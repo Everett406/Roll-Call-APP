@@ -522,8 +522,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.check,
                           size: 20,
                           color: themeColor.color.computeLuminance() > 0.5
-                              ? theme.colorScheme.onSurface
-                              : theme.colorScheme.onPrimary,
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onPrimary,
                         )
                       : null,
                 ),

@@ -1061,7 +1061,7 @@ class _SessionCard extends ConsumerWidget {
   }
 
   List<_ProgressSegment> _buildSegments(
-      AppState state, Map<String, int> statusCounts, int totalCount) {
+      AppState state, Map<String, int> statusCounts, int totalCount, ThemeData theme) {
     if (totalCount == 0) return [];
 
     final segments = <_ProgressSegment>[];
