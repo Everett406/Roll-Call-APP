@@ -28,6 +28,10 @@ class AppState extends ChangeNotifier {
   List<String> _attendanceTagIds = [];
   bool _showPercentageOnCards = true;
   bool _confettiEnabled = true;
+  int _confettiColor = 3; // 0=primary, 1=secondary, 2=tertiary, 3=rainbow
+  int _confettiShape = 2; // 0=circle, 1=square, 2=mixed
+  int _confettiMode = 0; // 0=explosive, 1=rain, 2=side, 3=corner
+  double _confettiIntensity = 0.7;
   List<RandomPickRecord> _randomPickRecords = [];
 
   // ==================== Getters ====================
@@ -40,6 +44,10 @@ class AppState extends ChangeNotifier {
   List<String> get attendanceTagIds => _attendanceTagIds;
   bool get showPercentageOnCards => _showPercentageOnCards;
   bool get confettiEnabled => _confettiEnabled;
+  int get confettiColor => _confettiColor;
+  int get confettiShape => _confettiShape;
+  int get confettiMode => _confettiMode;
+  double get confettiIntensity => _confettiIntensity;
   List<RandomPickRecord> get randomPickRecords => _randomPickRecords;
 
   /// Check if a tag is considered as "attended" (present).
@@ -65,6 +73,10 @@ class AppState extends ChangeNotifier {
     _attendanceTagIds = StorageService.getAttendanceTagIds();
     _showPercentageOnCards = StorageService.getShowPercentageOnCards();
     _confettiEnabled = StorageService.getConfettiEnabled();
+    _confettiColor = StorageService.getConfettiColor();
+    _confettiShape = StorageService.getConfettiShape();
+    _confettiMode = StorageService.getConfettiMode();
+    _confettiIntensity = StorageService.getConfettiIntensity();
     _randomPickRecords = StorageService.getAllRandomPickRecords()
         .map((r) => RandomPickRecord.fromJson(r))
         .toList();
@@ -87,6 +99,30 @@ class AppState extends ChangeNotifier {
   Future<void> setConfettiEnabled(bool value) async {
     _confettiEnabled = value;
     await StorageService.setConfettiEnabled(value);
+    notifyListeners();
+  }
+
+  Future<void> setConfettiColor(int value) async {
+    _confettiColor = value;
+    await StorageService.setConfettiColor(value);
+    notifyListeners();
+  }
+
+  Future<void> setConfettiShape(int value) async {
+    _confettiShape = value;
+    await StorageService.setConfettiShape(value);
+    notifyListeners();
+  }
+
+  Future<void> setConfettiMode(int value) async {
+    _confettiMode = value;
+    await StorageService.setConfettiMode(value);
+    notifyListeners();
+  }
+
+  Future<void> setConfettiIntensity(double value) async {
+    _confettiIntensity = value;
+    await StorageService.setConfettiIntensity(value);
     notifyListeners();
   }
 

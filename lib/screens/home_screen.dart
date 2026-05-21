@@ -1073,7 +1073,7 @@ class _SessionCard extends ConsumerWidget {
     if (totalChecked == 0) {
       return [
         _ProgressSegment(
-          color: Colors.grey.shade300,
+          color: theme.colorScheme.surfaceContainerHighest,
           percentage: 100,
         ),
       ];
@@ -1101,7 +1101,7 @@ class _SessionCard extends ConsumerWidget {
       final percentage = ((uncheckedCount / totalCount) * 100).round();
       if (percentage > 0) {
         segments.add(_ProgressSegment(
-          color: Colors.grey.shade300,
+          color: theme.colorScheme.surfaceContainerHighest,
           percentage: percentage,
           count: uncheckedCount,
           label: '未标记',

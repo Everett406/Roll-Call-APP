@@ -89,8 +89,8 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   child: Icon(
                     Icons.group,
                     color: color.computeLuminance() > 0.5
-                        ? Colors.black87
-                        : Colors.white,
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.onPrimary,
                   ),
                 ),
                 const SizedBox(width: 16),

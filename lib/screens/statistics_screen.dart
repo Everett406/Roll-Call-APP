@@ -536,7 +536,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                         '${index + 1}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: index < 3 ? Colors.white : theme.colorScheme.onSurfaceVariant,
+                          color: index < 3 ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),

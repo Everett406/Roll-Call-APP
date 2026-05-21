@@ -259,7 +259,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                         color: color,
                         shape: BoxShape.circle,
                         border: isSelected
-                            ? Border.all(color: Colors.white, width: 2)
+                            ? Border.all(color: theme.colorScheme.onPrimary, width: 2)
                             : null,
                         boxShadow: isSelected
                             ? [
@@ -272,7 +272,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, color: Colors.white, size: 18)
+                          ? Icon(Icons.check, color: theme.colorScheme.onPrimary, size: 18)
                           : null,
                     ),
                   );
@@ -802,7 +802,9 @@ class _ArchiveConfettiPageState extends State<_ArchiveConfettiPage> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        ConfettiOverlay.explosion(controller: _controller),
+        ConfettiOverlay(
+          controller: _controller,
+        ),
         Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -817,6 +819,7 @@ class _ArchiveConfettiPageState extends State<_ArchiveConfettiPage> {
                 '点名完成！',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],

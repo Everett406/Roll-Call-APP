@@ -335,6 +335,35 @@ class StorageService {
     await _randomPickBoxInstanceGetter.clear();
   }
 
+  // ==================== Confetti Config ====================
+  static const String _confettiColorKey = 'confettiColor';
+  static const String _confettiShapeKey = 'confettiShape';
+  static const String _confettiModeKey = 'confettiMode';
+  static const String _confettiIntensityKey = 'confettiIntensity';
+
+  // Color: 0=primary, 1=secondary, 2=tertiary, 3=rainbow(default)
+  static int getConfettiColor() => _configBox.get(_confettiColorKey) ?? 3;
+  static Future<void> setConfettiColor(int value) async =>
+      _configBox.put(_confettiColorKey, value);
+
+  // Shape: 0=circle, 1=square, 2=mixed(default)
+  static int getConfettiShape() => _configBox.get(_confettiShapeKey) ?? 2;
+  static Future<void> setConfettiShape(int value) async =>
+      _configBox.put(_confettiShapeKey, value);
+
+  // Mode: 0=explosive(default), 1=rain, 2=side, 3=corner
+  static int getConfettiMode() => _configBox.get(_confettiModeKey) ?? 0;
+  static Future<void> setConfettiMode(int value) async =>
+      _configBox.put(_confettiModeKey, value);
+
+  // Intensity: 0.1~1.0, default 0.7
+  static double getConfettiIntensity() {
+    final v = _configBox.get(_confettiIntensityKey);
+    return v != null ? (v as double) : 0.7;
+  }
+  static Future<void> setConfettiIntensity(double value) async =>
+      _configBox.put(_confettiIntensityKey, value);
+
   // ==================== Utility ====================
   static Future<void> clearAll() async {
     await _memberBox.clear();

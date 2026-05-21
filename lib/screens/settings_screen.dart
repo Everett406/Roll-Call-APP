@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:confetti/confetti.dart';
@@ -20,7 +21,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.3.5';
+  String _currentVersion = '1.3.6';
 
   @override
   void initState() {
@@ -167,45 +168,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         },
                       ),
                       if (appState.confettiEnabled)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 52, bottom: 8),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: FilledButton.tonalIcon(
-                              icon: const Icon(Icons.preview, size: 18),
-                              label: const Text('预览效果'),
-                              onPressed: () {
-                                final controller = ConfettiController(
-                                  duration: const Duration(seconds: 2),
-                                );
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: true,
-                                  barrierColor: Colors.transparent,
-                                  builder: (_) => StatefulBuilder(
-                                    builder: (context, setState) {
-                                      controller.play();
-                                      Future.delayed(const Duration(seconds: 2), () {
-                                        if (context.mounted) Navigator.pop(context);
-                                      });
-                                      return IgnorePointer(
-                                        child: Align(
-                                          alignment: Alignment.topCenter,
-                                          child: ConfettiWidget(
-                                            confettiController: controller,
-                                            blastDirectionality: BlastDirectionality.explosive,
-                                            shouldLoop: false,
-                                            numberOfParticles: 30,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
+                        _buildConfettiSettings(context, theme, appState),
                       const SizedBox(height: 4),
                     ],
                   ),
@@ -559,8 +522,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icons.check,
                           size: 20,
                           color: themeColor.color.computeLuminance() > 0.5
-                              ? Colors.black87
-                              : Colors.white,
+                              ? theme.colorScheme.onSurface
+                              : theme.colorScheme.onPrimary,
                         )
                       : null,
                 ),
@@ -766,6 +729,169 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           duration: Duration(seconds: 3),
         ),
       );
+    }
+  }
+
+  /// 纸屑特效详细设置
+  Widget _buildConfettiSettings(BuildContext context, ThemeData theme, AppState appState) {
+    final colorOptions = [
+      ('主要色', theme.colorScheme.primary),
+      ('次要色', theme.colorScheme.secondary),
+      ('三级色', theme.colorScheme.tertiary),
+      ('彩虹', null),
+    ];
+    final shapeLabels = ['圆形', '方形', '混合'];
+    final modeLabels = ['爆炸', '下雨', '侧边', '边角'];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(),
+          // Color theme
+          Text('颜色主题', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: colorOptions.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final (label, color) = entry.value;
+              final isSelected = appState.confettiColor == idx;
+              return ChoiceChip(
+                selected: isSelected,
+                label: Text(label),
+                avatar: color != null
+                    ? Container(width: 14, height: 14, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+                    : null,
+                onSelected: (_) => appState.setConfettiColor(idx),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+          // Shape
+          Text('纸屑形状', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          SegmentedButton<int>(
+            segments: shapeLabels.asMap().entries.map((e) =>
+              ButtonSegment(value: e.key, label: Text(e.value))
+            ).toList(),
+            selected: {appState.confettiShape},
+            onSelectionChanged: (s) => appState.setConfettiShape(s.first),
+          ),
+          const SizedBox(height: 12),
+          // Mode
+          Text('发射模式', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          SegmentedButton<int>(
+            segments: modeLabels.asMap().entries.map((e) =>
+              ButtonSegment(value: e.key, label: Text(e.value))
+            ).toList(),
+            selected: {appState.confettiMode},
+            onSelectionChanged: (s) => appState.setConfettiMode(s.first),
+          ),
+          const SizedBox(height: 12),
+          // Intensity
+          Row(
+            children: [
+              Text('强度', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Slider(
+                  value: appState.confettiIntensity,
+                  min: 0.1,
+                  max: 1.0,
+                  divisions: 9,
+                  label: '${(appState.confettiIntensity * 100).toStringAsFixed(0)}%',
+                  onChanged: (v) => appState.setConfettiIntensity(v),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Preview
+          Center(
+            child: FilledButton.tonalIcon(
+              icon: const Icon(Icons.preview, size: 18),
+              label: const Text('预览效果'),
+              onPressed: () => _previewConfetti(context, appState),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _previewConfetti(BuildContext context, AppState appState) {
+    final controller = ConfettiController(duration: const Duration(seconds: 2));
+    controller.play();
+
+    final colors = _getConfettiColors(appState, Theme.of(context));
+    final directionality = appState.confettiMode == 0
+        ? BlastDirectionality.explosive
+        : BlastDirectionality.directional;
+    final blastDirection = appState.confettiMode == 1
+        ? 3.14159 / 2 // rain - downward
+        : appState.confettiMode == 2
+            ? 0 // side - rightward
+            : 5.49779; // corner - bottom-right
+    final particleCount = (30 + appState.confettiIntensity * 70).round();
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.transparent,
+      builder: (_) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (Navigator.of(context).canPop()) Navigator.pop(context);
+        });
+        return IgnorePointer(
+          child: Align(
+            alignment: appState.confettiMode == 1
+                ? Alignment.topCenter
+                : appState.confettiMode == 2
+                    ? Alignment.centerLeft
+                    : appState.confettiMode == 3
+                        ? Alignment.topLeft
+                        : Alignment.center,
+            child: ConfettiWidget(
+              confettiController: controller,
+              blastDirectionality: directionality,
+              blastDirection: blastDirection,
+              shouldLoop: false,
+              numberOfParticles: particleCount,
+              colors: colors,
+              createParticlePath: (size) {
+                if (appState.confettiShape == 0) {
+                  return Path()..addOval(Rect.fromCenter(center: Offset.zero, width: size.width, height: size.height));
+                } else if (appState.confettiShape == 1) {
+                  return Path()..addRect(Rect.fromCenter(center: Offset.zero, width: size.width * 0.7, height: size.height));
+                } else {
+                  final rnd = math.Random();
+                  if (rnd.nextBool()) {
+                    return Path()..addOval(Rect.fromCenter(center: Offset.zero, width: size.width, height: size.height));
+                  } else {
+                    return Path()..addRect(Rect.fromCenter(center: Offset.zero, width: size.width * 0.7, height: size.height));
+                  }
+                }
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<Color> _getConfettiColors(AppState appState, ThemeData theme) {
+    switch (appState.confettiColor) {
+      case 0: return [theme.colorScheme.primary];
+      case 1: return [theme.colorScheme.secondary];
+      case 2: return [theme.colorScheme.tertiary];
+      default: return const [
+        Color(0xFF4CAF50), Color(0xFFF44336), Color(0xFF2196F3),
+        Color(0xFFFFC107), Color(0xFF9C27B0), Color(0xFFFF9800),
+        Color(0xFF00BCD4), Color(0xFFE91E63),
+      ];
     }
   }
 

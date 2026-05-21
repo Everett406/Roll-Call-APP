@@ -294,7 +294,7 @@ class MemberHistoryScreen extends ConsumerWidget {
                                     child: Text(
                                       entry.tag!.name,
                                       style: const TextStyle(
-                                        color: Colors.white,
+                                        color: theme.colorScheme.onPrimary,
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
                                       ),

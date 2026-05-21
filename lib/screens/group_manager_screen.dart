@@ -147,8 +147,8 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
                     child: Icon(
                       Icons.group,
                       color: color.computeLuminance() > 0.5 
-                          ? Colors.black87 
-                          : Colors.white,
+                          ? theme.colorScheme.onSurface
+                          : theme.colorScheme.onPrimary,
                       size: 20,
                     ),
                   ),
@@ -361,8 +361,8 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                         ? Icon(
                             Icons.check,
                             color: groupColors[index].computeLuminance() > 0.5
-                                ? Colors.black87
-                                : Colors.white,
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onPrimary,
                           )
                         : null,
                   ),
@@ -452,8 +452,8 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                               child: Icon(
                                 Icons.check,
                                 color: color.computeLuminance() > 0.5
-                                    ? Colors.black87
-                                    : Colors.white,
+                                    ? theme.colorScheme.onSurface
+                                    : theme.colorScheme.onPrimary,
                                 size: 18,
                               ),
                             )

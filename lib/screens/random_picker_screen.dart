@@ -277,7 +277,10 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                   ),
                 ),
           // Confetti overlay
-          ConfettiOverlay(controller: _confettiController),
+          ConfettiOverlay(
+            controller: _confettiController,
+            appState: state,
+          ),
         ],
       ),
     );

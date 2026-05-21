@@ -345,7 +345,7 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
                             : null,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: theme.colorScheme.onSurface.withOpacity(0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -354,7 +354,7 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
                       child: isSelected
                           ? const Icon(
                               Icons.check,
-                              color: Colors.white,
+                              color: theme.colorScheme.onPrimary,
                               size: 20,
                             )
                           : null,
