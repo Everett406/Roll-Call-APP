@@ -272,6 +272,20 @@ class StorageService {
     await _configBox.put(_attendanceTagIdsKey, ids);
   }
 
+  static const String _showPercentageKey = 'showPercentageOnCards';
+
+  /// Whether to show percentage (true) or count (false) on session cards.
+  /// Defaults to true (percentage).
+  static bool getShowPercentageOnCards() {
+    final dynamic raw = _configBox.get(_showPercentageKey);
+    if (raw == null) return true;
+    return raw as bool;
+  }
+
+  static Future<void> setShowPercentageOnCards(bool value) async {
+    await _configBox.put(_showPercentageKey, value);
+  }
+
   // ==================== Utility ====================
   static Future<void> clearAll() async {
     await _memberBox.clear();

@@ -19,7 +19,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.2.6';
+  String _currentVersion = '1.2.7';
 
   @override
   void initState() {
@@ -128,6 +128,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         value: themeState.dynamicColorEnabled,
                         onChanged: (value) {
                           themeState.setDynamicColorEnabled(value);
+                        },
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      // 卡片显示格式
+                      SwitchListTile(
+                        secondary: const Icon(Icons.format_list_numbered_outlined),
+                        title: const Text('卡片显示百分比'),
+                        subtitle: Text(
+                          appState.showPercentageOnCards
+                              ? '显示占比百分比'
+                              : '显示实际人数',
+                        ),
+                        value: appState.showPercentageOnCards,
+                        onChanged: (value) {
+                          appState.setShowPercentageOnCards(value);
                         },
                       ),
                       const SizedBox(height: 4),

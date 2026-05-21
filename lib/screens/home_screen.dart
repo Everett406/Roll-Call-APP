@@ -787,8 +787,15 @@ class _LegendItem {
 class _ProgressSegment {
   final Color color;
   final int percentage;
+  final int count;
+  final String label;
 
-  _ProgressSegment({required this.color, required this.percentage});
+  _ProgressSegment({
+    required this.color,
+    required this.percentage,
+    this.count = 0,
+    this.label = '',
+  });
 }
 
 class _SessionCard extends ConsumerWidget {
@@ -1002,6 +1009,8 @@ class _SessionCard extends ConsumerWidget {
           segments.add(_ProgressSegment(
             color: Color(tag.colorValue),
             percentage: percentage,
+            count: count,
+            label: tag.name,
           ));
         }
       }
@@ -1015,6 +1024,8 @@ class _SessionCard extends ConsumerWidget {
         segments.add(_ProgressSegment(
           color: Colors.grey.shade300,
           percentage: percentage,
+          count: uncheckedCount,
+          label: '未标记',
         ));
       }
     }
@@ -1050,24 +1061,13 @@ class _SessionCard extends ConsumerWidget {
   }
 
   Widget _buildSegmentLegend(List<_ProgressSegment> segments, ThemeData theme, WidgetRef ref) {
-    // Build legend from session status counts
-    final state = ref.read(appStateProvider);
-    final statusCounts = state.getSessionStatusCounts(session.id);
+    final state = ref.watch(appStateProvider);
+    final showPercentage = state.showPercentageOnCards;
 
     return Wrap(
       spacing: 12,
       runSpacing: 4,
       children: segments.map((seg) {
-        // Find the tag name for this segment's color
-        String tagName = '未标记';
-        for (final entry in statusCounts.entries) {
-          final tag = state.getTagById(entry.key) ?? _getDefaultTag(entry.key);
-          if (Color(tag.colorValue) == seg.color) {
-            tagName = tag.name;
-            break;
-          }
-        }
-
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1081,7 +1081,9 @@ class _SessionCard extends ConsumerWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              '$tagName ${seg.percentage}%',
+              showPercentage
+                  ? '${seg.label} ${seg.percentage}%'
+                  : '${seg.label} ${seg.count}人',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 fontSize: 10,

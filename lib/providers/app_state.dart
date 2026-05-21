@@ -25,6 +25,7 @@ class AppState extends ChangeNotifier {
   List<OperationLog> _logs = [];
   List<Group> _groups = [];
   List<String> _attendanceTagIds = [];
+  bool _showPercentageOnCards = true;
 
   // ==================== Getters ====================
   List<Member> get members => _members;
@@ -34,6 +35,7 @@ class AppState extends ChangeNotifier {
   List<OperationLog> get logs => _logs;
   List<Group> get groups => _groups;
   List<String> get attendanceTagIds => _attendanceTagIds;
+  bool get showPercentageOnCards => _showPercentageOnCards;
 
   /// Check if a tag is considered as "attended" (present).
   bool isAttendanceTag(String tagId) => _attendanceTagIds.contains(tagId);
@@ -56,6 +58,7 @@ class AppState extends ChangeNotifier {
     _logs = StorageService.getAllLogs();
     _groups = StorageService.getAllGroups();
     _attendanceTagIds = StorageService.getAttendanceTagIds();
+    _showPercentageOnCards = StorageService.getShowPercentageOnCards();
     notifyListeners();
   }
 
@@ -63,6 +66,12 @@ class AppState extends ChangeNotifier {
   Future<void> setAttendanceTagIds(List<String> ids) async {
     _attendanceTagIds = ids;
     await StorageService.setAttendanceTagIds(ids);
+    notifyListeners();
+  }
+
+  Future<void> setShowPercentageOnCards(bool value) async {
+    _showPercentageOnCards = value;
+    await StorageService.setShowPercentageOnCards(value);
     notifyListeners();
   }
 
@@ -526,8 +535,11 @@ class AppState extends ChangeNotifier {
         break;
     }
 
+    // Only include check-ins from sessions that currently exist
+    final validSessionIds = _sessions.map((s) => s.id).toSet();
     return _checkIns.where((ci) {
       if (ci.isUndone) return false;
+      if (!validSessionIds.contains(ci.sessionId)) return false;
       return ci.checkedAt.isAfter(startDate) &&
           ci.checkedAt.isBefore(endDate.add(const Duration(days: 1)));
     }).toList();
