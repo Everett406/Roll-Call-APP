@@ -93,54 +93,56 @@ class ExpressiveDurations {
 /// Enhanced Typography for M3 Expressive
 /// ============================================================
 class ExpressiveTypography {
-  /// Build expressive text theme on top of base typography
+  /// Build expressive text theme on top of base typography.
+  /// Uses colorScheme.onSurface for all text to ensure proper dark mode support.
   static TextTheme buildTextTheme(TextTheme base, ColorScheme colors) {
+    final onSurface = colors.onSurface;
+    final onSurfaceVariant = colors.onSurfaceVariant;
     return base.copyWith(
-      // Display - massive, bold (M3 Expressive emphasizes large type)
       displayLarge: base.displayLarge?.copyWith(
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
+        fontWeight: FontWeight.w800, letterSpacing: -0.5, color: onSurface,
       ),
       displayMedium: base.displayMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
+        fontWeight: FontWeight.w700, letterSpacing: -0.3, color: onSurface,
       ),
-      // Headline - larger, bolder
+      displaySmall: base.displaySmall?.copyWith(
+        fontWeight: FontWeight.w700, color: onSurface,
+      ),
       headlineLarge: base.headlineLarge?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
+        fontWeight: FontWeight.w700, letterSpacing: -0.3, color: onSurface,
       ),
       headlineMedium: base.headlineMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
+        fontWeight: FontWeight.w700, letterSpacing: -0.2, color: onSurface,
       ),
       headlineSmall: base.headlineSmall?.copyWith(
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w600, color: onSurface,
       ),
-      // Title - more prominent
       titleLarge: base.titleLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
+        fontWeight: FontWeight.w600, letterSpacing: 0.1, color: onSurface,
       ),
       titleMedium: base.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w600, color: onSurface,
       ),
-      // Body - comfortable reading
+      titleSmall: base.titleSmall?.copyWith(
+        fontWeight: FontWeight.w600, color: onSurfaceVariant,
+      ),
       bodyLarge: base.bodyLarge?.copyWith(
-        fontWeight: FontWeight.w400,
-        height: 1.5,
+        fontWeight: FontWeight.w400, height: 1.5, color: onSurface,
       ),
       bodyMedium: base.bodyMedium?.copyWith(
-        fontWeight: FontWeight.w400,
-        height: 1.4,
+        fontWeight: FontWeight.w400, height: 1.4, color: onSurface,
       ),
-      // Label - bolder for emphasis
+      bodySmall: base.bodySmall?.copyWith(
+        fontWeight: FontWeight.w400, color: onSurfaceVariant,
+      ),
       labelLarge: base.labelLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.5,
+        fontWeight: FontWeight.w600, letterSpacing: 0.5, color: onSurface,
       ),
       labelMedium: base.labelMedium?.copyWith(
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w600, color: onSurfaceVariant,
+      ),
+      labelSmall: base.labelSmall?.copyWith(
+        fontWeight: FontWeight.w500, color: onSurfaceVariant,
       ),
     );
   }

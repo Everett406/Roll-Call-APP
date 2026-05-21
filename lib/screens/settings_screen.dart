@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.3.6';
+  String _currentVersion = '1.3.7';
 
   @override
   void initState() {
@@ -732,7 +732,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  /// 纸屑特效详细设置
+  /// 纸屑特效详细设置 - 默认折叠为高级选项
   Widget _buildConfettiSettings(BuildContext context, ThemeData theme, AppState appState) {
     final colorOptions = [
       ('主要色', theme.colorScheme.primary),
@@ -744,80 +744,105 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final modeLabels = ['爆炸', '下雨', '侧边', '边角'];
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Divider(),
-          // Color theme
-          Text('颜色主题', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: colorOptions.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final (label, color) = entry.value;
-              final isSelected = appState.confettiColor == idx;
-              return ChoiceChip(
-                selected: isSelected,
-                label: Text(label),
-                avatar: color != null
-                    ? Container(width: 14, height: 14, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
-                    : null,
-                onSelected: (_) => appState.setConfettiColor(idx),
-              );
-            }).toList(),
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: ExpansionTile(
+          title: const Text('高级选项'),
+          subtitle: Text(
+            '颜色·形状·模式·强度',
+            style: theme.textTheme.bodySmall,
           ),
-          const SizedBox(height: 12),
-          // Shape
-          Text('纸屑形状', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          SegmentedButton<int>(
-            segments: shapeLabels.asMap().entries.map((e) =>
-              ButtonSegment(value: e.key, label: Text(e.value))
-            ).toList(),
-            selected: {appState.confettiShape},
-            onSelectionChanged: (s) => appState.setConfettiShape(s.first),
-          ),
-          const SizedBox(height: 12),
-          // Mode
-          Text('发射模式', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          SegmentedButton<int>(
-            segments: modeLabels.asMap().entries.map((e) =>
-              ButtonSegment(value: e.key, label: Text(e.value))
-            ).toList(),
-            selected: {appState.confettiMode},
-            onSelectionChanged: (s) => appState.setConfettiMode(s.first),
-          ),
-          const SizedBox(height: 12),
-          // Intensity
-          Row(
-            children: [
-              Text('强度', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Slider(
-                  value: appState.confettiIntensity,
-                  min: 0.1,
-                  max: 1.0,
-                  divisions: 9,
-                  label: '${(appState.confettiIntensity * 100).toStringAsFixed(0)}%',
-                  onChanged: (v) => appState.setConfettiIntensity(v),
+          leading: const Icon(Icons.tune, size: 20),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            // Color theme
+            Row(
+              children: [
+                Text('颜色主题', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    children: colorOptions.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final (label, color) = entry.value;
+                      final isSelected = appState.confettiColor == idx;
+                      return ChoiceChip(
+                        selected: isSelected,
+                        label: Text(label, style: const TextStyle(fontSize: 12)),
+                        avatar: color != null
+                            ? Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+                            : const Icon(Icons.palette, size: 12),
+                        padding: EdgeInsets.zero,
+                        onSelected: (_) => appState.setConfettiColor(idx),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Preview
-          Center(
-            child: FilledButton.tonalIcon(
-              icon: const Icon(Icons.preview, size: 18),
-              label: const Text('预览效果'),
-              onPressed: () => _previewConfetti(context, appState),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            // Shape
+            Row(
+              children: [
+                Text('纸屑形状', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SegmentedButton<int>(
+                    segments: shapeLabels.asMap().entries.map((e) =>
+                      ButtonSegment(value: e.key, label: Text(e.value, style: const TextStyle(fontSize: 12)))
+                    ).toList(),
+                    selected: {appState.confettiShape},
+                    onSelectionChanged: (s) => appState.setConfettiShape(s.first),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Mode
+            Row(
+              children: [
+                Text('发射模式', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SegmentedButton<int>(
+                    segments: modeLabels.asMap().entries.map((e) =>
+                      ButtonSegment(value: e.key, label: Text(e.value, style: const TextStyle(fontSize: 12)))
+                    ).toList(),
+                    selected: {appState.confettiMode},
+                    onSelectionChanged: (s) => appState.setConfettiMode(s.first),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Intensity
+            Row(
+              children: [
+                Text('强度', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                Expanded(
+                  child: Slider(
+                    value: appState.confettiIntensity,
+                    min: 0.1,
+                    max: 1.0,
+                    divisions: 9,
+                    label: '${(appState.confettiIntensity * 100).toStringAsFixed(0)}%',
+                    onChanged: (v) => appState.setConfettiIntensity(v),
+                  ),
+                ),
+              ],
+            ),
+            // Preview
+            Center(
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.preview, size: 18),
+                label: const Text('预览效果'),
+                onPressed: () => _previewConfetti(context, appState),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

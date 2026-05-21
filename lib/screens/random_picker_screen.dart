@@ -6,6 +6,7 @@ import 'package:confetti/confetti.dart';
 import 'package:vibration/vibration.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/app_state.dart';
+import '../models/member.dart';
 import '../models/random_pick_record.dart';
 import '../utils/expressive_theme.dart';
 import '../widgets/confetti_overlay.dart';
@@ -24,6 +25,7 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
   String? _selectedMemberName;
   String? _selectedMemberStudentId;
   bool _isRolling = false;
+  final Set<String> _selectedCandidateIds = {};
 
   @override
   void initState() {
@@ -50,9 +52,17 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
     super.dispose();
   }
 
+  void _ensureAllSelected(List<Member> members) {
+    if (_selectedCandidateIds.isEmpty && members.isNotEmpty) {
+      _selectedCandidateIds.addAll(members.map((m) => m.id));
+    }
+  }
+
   void _startRoll() async {
     final state = ref.read(appStateProvider);
-    final members = state.members;
+    final members = state.members.where(
+      (m) => _selectedCandidateIds.contains(m.id),
+    ).toList();
     if (members.isEmpty) return;
 
     setState(() {
@@ -62,7 +72,6 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
     });
     _animationController.forward();
 
-    // Roll animation
     final random = math.Random();
     const rollDuration = Duration(milliseconds: 1800);
     final startTime = DateTime.now();
@@ -76,14 +85,12 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
         _selectedMemberName = members[idx].name;
         _selectedMemberStudentId = members[idx].studentId;
       });
-      // Tactile feedback during rolling (every 5th tick = ~300ms)
       tickCount++;
       if (tickCount % 5 == 0) {
         Vibration.vibrate(duration: 15);
       }
     }
 
-    // Final pick
     if (!mounted) return;
     final finalIdx = random.nextInt(members.length);
     final pickedMember = members[finalIdx];
@@ -94,12 +101,10 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
     });
     _animationController.stop();
 
-    // Vibrate
     if (await Vibration.hasVibrator() ?? false) {
       Vibration.vibrate(duration: 300);
     }
 
-    // Save record
     final record = RandomPickRecord(
       id: const Uuid().v4(),
       memberId: pickedMember.id,
@@ -109,7 +114,6 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
     );
     await state.addRandomPickRecord(record);
 
-    // Confetti
     if (state.confettiEnabled) {
       _confettiController.play();
     }
@@ -122,19 +126,14 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
     final theme = Theme.of(context);
     final records = state.randomPickRecords;
 
+    _ensureAllSelected(members);
+
+    final candidateCount = members.where(
+      (m) => _selectedCandidateIds.contains(m.id),
+    ).length;
+
     return Scaffold(
       appBar: AppBar(
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
         title: const Text('随机点名'),
         centerTitle: true,
         elevation: 0,
@@ -154,104 +153,16 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      const SizedBox(height: 40),
-                      // Result card
-                      AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) {
-                          final scale = 1.0 + (_animationController.value * 0.08);
-                          return Transform.scale(scale: scale, child: child);
-                        },
-                        child: Card(
-                          shape: ExpressiveShapes.cardLarge,
-                          elevation: 2,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
-                            child: Column(
-                              children: [
-                                if (_selectedMemberName == null) ...[
-                                  Icon(
-                                    Icons.casino_outlined,
-                                    size: 48,
-                                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    '点击按钮开始抽取',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ] else ...[
-                                  Text(
-                                    _isRolling ? '抽取中...' : '选中',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    _selectedMemberName!,
-                                    style: theme.textTheme.displaySmall?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  if (_selectedMemberStudentId != null) ...[
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '学号: ${_selectedMemberStudentId!}',
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ] else if (!_isRolling) ...[
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '未设置学号',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      const SizedBox(height: 24),
+                      _buildResultCard(theme),
                       const Spacer(),
-                      // Pool info
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.people_outline,
-                                size: 16, color: theme.colorScheme.onSurfaceVariant),
-                            const SizedBox(width: 6),
-                            Text(
-                              '候选池: ${members.length} 人',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildCandidatePool(theme, members, candidateCount),
                       const SizedBox(height: 16),
-                      // Roll button
                       SizedBox(
                         width: double.infinity,
                         height: 56,
                         child: FilledButton.icon(
-                          onPressed: _isRolling || members.isEmpty ? null : _startRoll,
+                          onPressed: _isRolling || candidateCount == 0 ? null : _startRoll,
                           icon: _isRolling
                               ? SizedBox(
                                   width: 20,
@@ -276,13 +187,215 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                     ],
                   ),
                 ),
-          // Confetti overlay
           ConfettiOverlay(
             controller: _confettiController,
             appState: state,
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildResultCard(ThemeData theme) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        final scale = 1.0 + (_animationController.value * 0.08);
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: Card(
+        shape: ExpressiveShapes.cardLarge,
+        elevation: 2,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+          child: Column(
+            children: [
+              if (_selectedMemberName == null) ...[
+                Icon(
+                  Icons.casino_outlined,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '点击按钮开始抽取',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  _isRolling ? '抽取中...' : '选中',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _selectedMemberName!,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.primary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (_selectedMemberStudentId != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '学号: ${_selectedMemberStudentId!}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ] else if (!_isRolling) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '未设置学号',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCandidatePool(ThemeData theme, List<Member> members, int count) {
+    return InkWell(
+      onTap: () => _showCandidatePicker(context, theme, members),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.people_outline,
+                size: 18, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '候选: $count / ${members.length} 人',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Text(
+              '点选',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right,
+                size: 18, color: theme.colorScheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCandidatePicker(BuildContext context, ThemeData theme, List<Member> members) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final allSelected = _selectedCandidateIds.length == members.length;
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.6,
+              minChildSize: 0.3,
+              maxChildSize: 0.85,
+              expand: false,
+              builder: (_, scrollController) {
+                return Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 12, bottom: 8),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Row(
+                        children: [
+                          Text(
+                            '候选池',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () {
+                              setModalState(() {
+                                if (allSelected) {
+                                  _selectedCandidateIds.clear();
+                                } else {
+                                  _selectedCandidateIds.addAll(members.map((m) => m.id));
+                                }
+                              });
+                              setState(() {});
+                            },
+                            child: Text(allSelected ? '全不选' : '全选'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        itemCount: members.length,
+                        itemBuilder: (_, index) {
+                          final m = members[index];
+                          final isSelected = _selectedCandidateIds.contains(m.id);
+                          return CheckboxListTile(
+                            title: Text(m.name),
+                            subtitle: m.studentId != null ? Text(m.studentId!) : null,
+                            value: isSelected,
+                            onChanged: (checked) {
+                              setModalState(() {
+                                if (checked == true) {
+                                  _selectedCandidateIds.add(m.id);
+                                } else {
+                                  _selectedCandidateIds.remove(m.id);
+                                }
+                              });
+                              setState(() {});
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -360,7 +473,7 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                               ),
                               title: Text(record.memberName),
                               subtitle: record.studentId != null
-                                  ? Text('学号: ${record.studentId}')
+                                  ? Text(record.studentId!)
                                   : null,
                               trailing: TextButton(
                                 child: const Text('复制'),
