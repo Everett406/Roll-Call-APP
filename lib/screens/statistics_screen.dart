@@ -224,6 +224,16 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
             ),
           ),
 
+          // ===== Weekly Heatmap =====
+          SliverToBoxAdapter(
+            child: ContainmentGroup(
+              title: '本周出勤热力',
+              titleIcon: Icons.calendar_view_week,
+              padding: const EdgeInsets.all(16),
+              child: _buildHeatmap(state, theme),
+            ),
+          ),
+
           // ===== Member Rankings (Dual Tabs) =====
           SliverToBoxAdapter(
             child: ContainmentGroup(
@@ -604,5 +614,131 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
       case TimePeriod.lastMonth:
         return '近一月';
     }
+  }
+
+  Widget _buildHeatmap(AppState state, ThemeData theme) {
+    final heatmapData = state.getWeeklyHeatmapData();
+    final weekLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    final now = DateTime.now();
+    final todayWeekday = now.weekday;
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: heatmapData.asMap().entries.map((entry) {
+            final index = entry.key;
+            final weekday = entry.value.key;
+            final rate = entry.value.value;
+            final isToday = weekday == todayWeekday;
+
+            Color cellColor;
+            String label;
+            if (rate < 0) {
+              cellColor = theme.colorScheme.surfaceContainerHighest;
+              label = '—';
+            } else if (rate >= 0.9) {
+              cellColor = const Color(0xFF4CAF50);
+              label = '${(rate * 100).toStringAsFixed(0)}%';
+            } else if (rate >= 0.7) {
+              cellColor = const Color(0xFF8BC34A);
+              label = '${(rate * 100).toStringAsFixed(0)}%';
+            } else if (rate >= 0.5) {
+              cellColor = const Color(0xFFFFC107);
+              label = '${(rate * 100).toStringAsFixed(0)}%';
+            } else if (rate >= 0.3) {
+              cellColor = const Color(0xFFFF9800);
+              label = '${(rate * 100).toStringAsFixed(0)}%';
+            } else {
+              cellColor = const Color(0xFFE53935);
+              label = '${(rate * 100).toStringAsFixed(0)}%';
+            }
+
+            return Column(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: cellColor.withOpacity(rate < 0 ? 0.5 : 0.85),
+                    borderRadius: BorderRadius.circular(12),
+                    border: isToday
+                        ? Border.all(
+                            color: theme.colorScheme.primary,
+                            width: 2,
+                          )
+                        : null,
+                  ),
+                  child: Center(
+                    child: rate < 0
+                        ? Icon(
+                            Icons.remove,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          )
+                        : Text(
+                            label,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  weekLabels[index],
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                    color: isToday ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                    fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 8),
+        // Legend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _HeatLegend(color: const Color(0xFF4CAF50), label: '优', theme: theme),
+            _HeatLegend(color: const Color(0xFF8BC34A), label: '良', theme: theme),
+            _HeatLegend(color: const Color(0xFFFFC107), label: '中', theme: theme),
+            _HeatLegend(color: const Color(0xFFFF9800), label: '低', theme: theme),
+            _HeatLegend(color: const Color(0xFFE53935), label: '差', theme: theme),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _HeatLegend extends StatelessWidget {
+  final Color color;
+  final String label;
+  final ThemeData theme;
+
+  const _HeatLegend({required this.color, required this.label, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color.withOpacity(0.85), borderRadius: BorderRadius.circular(3)),
+          ),
+          const SizedBox(width: 3),
+          Text(label, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
+        ],
+      ),
+    );
   }
 }

@@ -14,6 +14,7 @@ import 'session_screen.dart';
 import 'new_session_screen.dart';
 import 'statistics_screen.dart';
 import 'settings_screen.dart';
+import 'random_picker_screen.dart';
 
 /// 页面过渡动画辅助
 PageRouteBuilder<T> _zoomRoute<T>(Widget page) {
@@ -522,6 +523,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.casino_outlined),
+            tooltip: '随机点名',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RandomPickerScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.help_outline),
             onPressed: () => _showHelpPanel(context),

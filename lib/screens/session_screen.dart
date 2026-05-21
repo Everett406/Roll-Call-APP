@@ -68,6 +68,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   _isSearchExpanded = true;
                 });
                 break;
+              case 'markAll':
+                _confirmMarkAllArrived(state);
+                break;
               case 'export':
                 Navigator.push(
                   context,
@@ -94,6 +97,19 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   Icon(Icons.search),
                   SizedBox(width: 8),
                   Text('搜索'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'markAll',
+              child: Row(
+                children: [
+                  Icon(Icons.done_all, color: AppColors.success),
+                  const SizedBox(width: 8),
+                  Text(
+                    '全部标记已到',
+                    style: TextStyle(color: AppColors.success),
+                  ),
                 ],
               ),
             ),
@@ -686,6 +702,56 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     await state.archiveSession(widget.sessionId);
     if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _confirmMarkAllArrived(AppState state) async {
+    final session = state.getSessionById(widget.sessionId);
+    if (session == null) return;
+
+    // Count unchecked members
+    final uncheckedCount = session.memberIds.where((id) {
+      final ci = state.getActiveCheckIn(widget.sessionId, id);
+      return ci == null || ci.statusId != 'tag_arrived';
+    }).length;
+
+    if (uncheckedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('所有人员已标记为已到')),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(Icons.done_all, color: AppColors.success, size: 32),
+        title: const Text('全部标记已到'),
+        content: Text('将 $uncheckedCount 位未标记人员全部设为"已到达"，确定吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.done_all),
+            label: const Text('确认标记'),
+            style: FilledButton.styleFrom(
+              shape: ExpressiveShapes.pill,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final count = await state.markAllAsArrived(widget.sessionId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('已标记 $count 人为已到达')),
+        );
+      }
+    }
   }
 
 }

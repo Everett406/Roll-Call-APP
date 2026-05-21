@@ -323,6 +323,63 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Mark all unchecked members in a session as arrived
+  /// Returns the count of newly marked members
+  Future<int> markAllAsArrived(String sessionId) async {
+    final session = getSessionById(sessionId);
+    if (session == null) return 0;
+
+    final arrivedTag = this.arrivedTag;
+    var count = 0;
+
+    for (final memberId in session.memberIds) {
+      final existing = getActiveCheckIn(sessionId, memberId);
+      if (existing != null && existing.statusId == arrivedTag.id) {
+        continue; // Already marked as arrived
+      }
+
+      final now = DateTime.now();
+      if (existing != null) {
+        final updated = existing.copyWith(
+          statusId: arrivedTag.id,
+          statusName: arrivedTag.name,
+          colorValue: arrivedTag.colorValue,
+          checkedAt: now,
+        );
+        final idx = _checkIns.indexOf(existing);
+        _checkIns[idx] = updated;
+        await StorageService.putCheckIn(updated);
+      } else {
+        final member = getMemberById(memberId);
+        final checkIn = CheckIn(
+          sessionId: sessionId,
+          memberId: memberId,
+          memberName: member?.name ?? '未知',
+          statusId: arrivedTag.id,
+          statusName: arrivedTag.name,
+          colorValue: arrivedTag.colorValue,
+          checkedAt: now,
+        );
+        _checkIns.add(checkIn);
+        await StorageService.putCheckIn(checkIn);
+      }
+
+      final log = OperationLog(
+        sessionId: sessionId,
+        type: 'check_in',
+        targetMemberId: memberId,
+        newStatusId: arrivedTag.id,
+        prevStatusId: existing?.statusId,
+      );
+      _logs.add(log);
+      await StorageService.putLog(log);
+      count++;
+    }
+
+    if (count > 0) notifyListeners();
+    return count;
+  }
+
   // ==================== Query Helpers ====================
   CheckIn? getActiveCheckIn(String sessionId, String memberId) {
     try {
@@ -543,6 +600,35 @@ class AppState extends ChangeNotifier {
       return ci.checkedAt.isAfter(startDate) &&
           ci.checkedAt.isBefore(endDate.add(const Duration(days: 1)));
     }).toList();
+  }
+
+  /// Get weekly heatmap data: list of (weekday 1-7, attendanceRate)
+  /// Each entry represents one day's overall attendance rate
+  List<MapEntry<int, double>> getWeeklyHeatmapData() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+
+    final validSessionIds = _sessions.map((s) => s.id).toSet();
+    final result = <MapEntry<int, double>>[];
+
+    for (int i = 0; i < 7; i++) {
+      final date = monday.add(Duration(days: i));
+      final dayCheckIns = _checkIns.where((ci) {
+        if (ci.isUndone) return false;
+        if (!validSessionIds.contains(ci.sessionId)) return false;
+        final ciDate = DateTime(ci.checkedAt.year, ci.checkedAt.month, ci.checkedAt.day);
+        return ciDate == date;
+      }).toList();
+
+      if (dayCheckIns.isEmpty) {
+        result.add(MapEntry(i + 1, -1.0)); // -1 means no data
+      } else {
+        final attended = dayCheckIns.where((c) => _attendanceTagIds.contains(c.statusId)).length;
+        result.add(MapEntry(i + 1, attended / dayCheckIns.length));
+      }
+    }
+    return result;
   }
 
   /// Get member attendance stats for a time period
