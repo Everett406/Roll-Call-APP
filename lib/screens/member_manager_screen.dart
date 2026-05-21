@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
-import '../widgets/predictive_back_page.dart';
 import 'import_screen.dart';
 import 'member_history_screen.dart';
 
@@ -40,8 +39,8 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
     final hasSelected = _selectedMemberIds.isNotEmpty;
     final allSelected = members.length == _selectedMemberIds.length && members.isNotEmpty;
 
-    return PredictiveBackPage(
-      child: Scaffold(
+    return Scaffold(
+      Scaffold(
       appBar: _isMultiSelectMode
           ? AppBar(
               leading: IconButton(
@@ -313,7 +312,6 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
               onPressed: () => _showAddDialog(context, state),
               child: const Icon(Icons.person_add),
             ),
-      ),
     );
   }
 
@@ -336,7 +334,6 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
             child: const Text('删除'),
           ),
         ],
-      ),
     );
 
     if (confirmed == true) {
@@ -405,7 +402,6 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
             child: const Text('添加'),
           ),
         ],
-      ),
     );
   }
 
@@ -478,7 +474,6 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
             child: const Text('保存'),
           ),
         ],
-      ),
     );
   }
 }

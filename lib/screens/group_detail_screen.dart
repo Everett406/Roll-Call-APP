@@ -4,7 +4,6 @@ import '../providers/app_state.dart';
 import '../models/group.dart';
 import '../models/member.dart';
 import '../utils/constants.dart';
-import '../widgets/predictive_back_page.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {
   final Group group;
@@ -43,8 +42,8 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
     final color = groupColors[_group.colorIndex % groupColors.length];
 
-    return PredictiveBackPage(
-      child: Scaffold(
+    return Scaffold(
+      Scaffold(
       appBar: AppBar(
         title: Text(_group.name),
         actions: [
@@ -59,7 +58,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             tooltip: '删除',
           ),
         ],
-      ),
       body: Column(
         children: [
           // 分组信息卡片
@@ -218,8 +216,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   ),
           ),
         ],
-      ),
-      ),
     );
   }
 
@@ -309,7 +305,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -334,7 +329,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             child: const Text('删除'),
           ),
         ],
-      ),
     );
 
     if (confirm == true) {
@@ -429,7 +423,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -451,7 +444,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             child: const Text('移除'),
           ),
         ],
-      ),
     );
 
     if (confirm == true) {

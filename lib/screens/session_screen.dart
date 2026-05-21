@@ -9,7 +9,6 @@ import '../widgets/filter_chip_bar.dart';
 import '../widgets/swipe_person_card.dart';
 import '../widgets/status_bottom_sheet.dart';
 import '../widgets/undo_bar.dart';
-import '../widgets/predictive_back_page.dart';
 import 'member_history_screen.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
@@ -275,85 +274,82 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     if (isShowingAll) {
       // Fixed list: all members in studentId order, no splitting
-      return PredictiveBackPage(
-        child: Scaffold(
+      return Scaffold(
         appBar: _isSearchExpanded
             ? _buildSearchAppBar(session)
             : _buildNormalAppBar(session, state),
         body: Column(
-        children: [
-          // Filter chip bar
-          FilterChipBar(
-            sessionId: widget.sessionId,
-            selectedFilter: _selectedFilter,
-            onFilterChanged: (filter) {
-              setState(() {
-                _selectedFilter = filter;
-              });
-            },
-          ),
-          // Info row
-          if (!_isSearchExpanded)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '共 ${session.memberIds.length} 人，已标记 ${state.getSessionCheckedCount(widget.sessionId)} 人',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+          children: [
+            // Filter chip bar
+            FilterChipBar(
+              sessionId: widget.sessionId,
+              selectedFilter: _selectedFilter,
+              onFilterChanged: (filter) {
+                setState(() {
+                  _selectedFilter = filter;
+                });
+              },
+            ),
+            // Info row
+            if (!_isSearchExpanded)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.people_outline,
+                      size: 18,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      '共 ${session.memberIds.length} 人，已标记 ${state.getSessionCheckedCount(widget.sessionId)} 人',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            // Member list - fixed order when showing all
+            Expanded(
+              child: members.isEmpty
+                  ? _buildEmptyState(theme, _isSearchExpanded, _selectedFilter)
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      itemCount: members.length,
+                      itemBuilder: (context, index) {
+                        final member = members[index];
+                        final checkIn =
+                            state.getActiveCheckIn(widget.sessionId, member.id);
+                        final tag = checkIn?.statusId != null
+                            ? state.getTagById(checkIn!.statusId!)
+                            : null;
+                        return SwipePersonCard(
+                          member: member,
+                          currentTag: tag,
+                          onSwipeRight: () => _markAsArrived(state, member),
+                          onSwipeLeft: () =>
+                              _showStatusSheet(context, state, member),
+                          onLongPress: () =>
+                              _showMemberHistory(context, member),
+                        );
+                      },
+                    ),
             ),
-          // Member list - fixed order when showing all
-          Expanded(
-            child: members.isEmpty
-                ? _buildEmptyState(theme, _isSearchExpanded, _selectedFilter)
-                : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: members.length,
-                    itemBuilder: (context, index) {
-                      final member = members[index];
-                      final checkIn =
-                          state.getActiveCheckIn(widget.sessionId, member.id);
-                      final tag = checkIn?.statusId != null
-                          ? state.getTagById(checkIn!.statusId!)
-                          : null;
-                      return SwipePersonCard(
-                        member: member,
-                        currentTag: tag,
-                        onSwipeRight: () => _markAsArrived(state, member),
-                        onSwipeLeft: () =>
-                            _showStatusSheet(context, state, member),
-                        onLongPress: () =>
-                            _showMemberHistory(context, member),
-                      );
-                    },
-                  ),
-          ),
-          // Undo bar
-          if (session.status == 'ongoing')
-            SafeArea(
-              top: false,
-              child: UndoBar(sessionId: widget.sessionId),
-            ),
-        ],
-      ),
+            // Undo bar
+            if (session.status == 'ongoing')
+              SafeArea(
+                top: false,
+                child: UndoBar(sessionId: widget.sessionId),
+              ),
+          ],
         ),
       );
     }
 
     // ---- Filtered view: show only matching members ----
-    return PredictiveBackPage(
-      child: Scaffold(
+    return Scaffold(
       appBar: _isSearchExpanded
           ? _buildSearchAppBar(session)
           : _buildNormalAppBar(session, state),
@@ -399,7 +395,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               child: UndoBar(sessionId: widget.sessionId),
             ),
         ],
-      ),
       ),
     );
   }

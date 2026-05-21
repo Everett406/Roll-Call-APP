@@ -5,12 +5,8 @@ import '../providers/app_state.dart';
 import '../models/session.dart';
 import '../models/status_tag.dart';
 import '../utils/constants.dart';
-import '../widgets/predictive_back_page.dart';
 import 'session_screen.dart';
 import 'new_session_screen.dart';
-import 'member_manager_screen.dart';
-import 'tag_manager_screen.dart';
-import 'group_manager_screen.dart';
 import 'statistics_screen.dart';
 import 'settings_screen.dart';
 
@@ -42,13 +38,35 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _currentIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appStateProvider).loadData();
     });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _onNavItemTapped(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -60,57 +78,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('点到为止'),
         centerTitle: true,
-        actions: [
-          if (_currentIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.label_outline),
-              tooltip: '标签管理',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  _zoomRoute(const TagManagerScreen()),
-                );
-              },
-            ),
-          if (_currentIndex == 3)
-            IconButton(
-              icon: const Icon(Icons.folder_outlined),
-              tooltip: '分组管理',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  _zoomRoute(const GroupManagerScreen()),
-                );
-              },
-            ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: '设置',
-            onPressed: () {
-              Navigator.push(
-                context,
-                _zoomRoute(const SettingsScreen()),
-              );
-            },
-          ),
-        ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
+        physics: const BouncingScrollPhysics(),
         children: [
           _buildOngoingList(state, theme),
           _buildArchivedList(state, theme),
           const StatisticsScreen(),
-          const MemberManagerScreen(),
+          const SettingsScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onDestinationSelected: _onNavItemTapped,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.radio_button_checked_outlined),
@@ -128,9 +110,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             label: '统计',
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: '成员',
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: '设置',
           ),
         ],
       ),
@@ -410,7 +392,6 @@ class _SessionCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final arrivedCount = state.getSessionArrivedCount(session.id);
     final totalCount = session.memberIds.length;
-    final checkedCount = state.getSessionCheckedCount(session.id);
     final dateFormat = DateFormat('MM/dd HH:mm');
 
     // Get status counts for segmented progress bar
@@ -555,15 +536,6 @@ class _SessionCard extends ConsumerWidget {
     }
 
     return segments;
-  }
-
-  StatusTag _getDefaultTag(String tagId) {
-    return StatusTag(
-      id: tagId,
-      name: tagId == 'tag_arrived' ? '已到达' : tagId == 'tag_absent' ? '未到' : '其他',
-      colorValue: tagId == 'tag_arrived' ? 0xFF4CAF50 : 0xFF9E9E9E,
-      isBuiltIn: true,
-    );
   }
 
   Widget _buildSegmentedProgressBar(

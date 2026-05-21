@@ -88,6 +88,11 @@ class ThemeState extends ChangeNotifier {
         useMaterial3: true,
         colorScheme: _platformColorScheme!.copyWith(brightness: Brightness.light),
         fontFamily: 'NotoSansSC',
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: <TargetPlatform, PageTransitionsBuilder>{
+            TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          },
+        ),
       );
     }
     final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
@@ -98,6 +103,11 @@ class ThemeState extends ChangeNotifier {
         brightness: Brightness.light,
       ),
       fontFamily: 'NotoSansSC',
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        },
+      ),
     );
   }
 
@@ -107,6 +117,11 @@ class ThemeState extends ChangeNotifier {
         useMaterial3: true,
         colorScheme: _platformColorScheme!.copyWith(brightness: Brightness.dark),
         fontFamily: 'NotoSansSC',
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: <TargetPlatform, PageTransitionsBuilder>{
+            TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          },
+        ),
       );
     }
     final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
@@ -117,6 +132,11 @@ class ThemeState extends ChangeNotifier {
         brightness: Brightness.dark,
       ),
       fontFamily: 'NotoSansSC',
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        },
+      ),
     );
   }
 }

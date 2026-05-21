@@ -4,7 +4,6 @@ import '../providers/app_state.dart';
 import '../models/group.dart';
 import '../models/member.dart';
 import '../utils/constants.dart';
-import '../widgets/predictive_back_page.dart';
 import 'group_detail_screen.dart';
 
 class GroupManagerScreen extends ConsumerStatefulWidget {
@@ -22,11 +21,10 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
     final groups = state.groups;
     final theme = Theme.of(context);
 
-    return PredictiveBackPage(
-      child: Scaffold(
+    return Scaffold(
+      Scaffold(
       appBar: AppBar(
         title: const Text('分组管理'),
-      ),
       body: groups.isEmpty
           ? _buildEmptyState(theme)
           : ListView.builder(
@@ -41,8 +39,6 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
         onPressed: () => _navigateToCreateGroup(context),
         icon: const Icon(Icons.add),
         label: const Text('创建分组'),
-      ),
-      ),
     );
   }
 
@@ -79,7 +75,6 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
             ),
           ),
         ],
-      ),
     );
   }
 
@@ -200,7 +195,6 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -209,7 +203,6 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => const CreateGroupScreen(),
-      ),
     );
 
     if (result == true && context.mounted) {
@@ -224,7 +217,6 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => GroupDetailScreen(group: group),
-      ),
     );
   }
 }
@@ -265,7 +257,6 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
             child: const Text('创建'),
           ),
         ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -437,7 +428,6 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
               ),
           ],
         ),
-      ),
     );
   }
 

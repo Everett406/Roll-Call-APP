@@ -6,7 +6,6 @@ import '../models/member.dart';
 import '../models/session.dart';
 import '../models/group.dart';
 import '../utils/constants.dart';
-import '../widgets/predictive_back_page.dart';
 
 class NewSessionScreen extends ConsumerStatefulWidget {
   const NewSessionScreen({super.key});
@@ -68,11 +67,10 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
     final theme = Theme.of(context);
     final allSessions = [...state.archivedSessions, ...state.ongoingSessions];
 
-    return PredictiveBackPage(
-      child: Scaffold(
+    return Scaffold(
+      Scaffold(
       appBar: AppBar(
         title: const Text('新建点名'),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -273,7 +271,6 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
               ),
           ],
         ),
-      ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -291,8 +288,6 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
             ),
           ),
         ),
-      ),
-      ),
     );
   }
 
