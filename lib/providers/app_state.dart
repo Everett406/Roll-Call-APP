@@ -354,10 +354,7 @@ class AppState extends ChangeNotifier {
         final checkIn = CheckIn(
           sessionId: sessionId,
           memberId: memberId,
-          memberName: member?.name ?? '未知',
           statusId: arrivedTag.id,
-          statusName: arrivedTag.name,
-          colorValue: arrivedTag.colorValue,
           checkedAt: now,
         );
         _checkIns.add(checkIn);

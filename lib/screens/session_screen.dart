@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
+import '../utils/constants.dart';
 import '../models/session.dart';
 import '../models/status_tag.dart';
 import '../widgets/filter_chip_bar.dart';
