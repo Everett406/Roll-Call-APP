@@ -114,11 +114,22 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
                             : null,
                         trailing: tag.isBuiltIn
                             ? null
-                            : IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                color: theme.colorScheme.error,
-                                onPressed: () =>
-                                    _deleteTag(context, state, tag),
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined),
+                                    color: theme.colorScheme.primary,
+                                    onPressed: () =>
+                                        _editTag(context, state, tag),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    color: theme.colorScheme.error,
+                                    onPressed: () =>
+                                        _deleteTag(context, state, tag),
+                                  ),
+                                ],
                               ),
                       );
                     },
@@ -274,6 +285,118 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
             child: const Text('删除'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _editTag(BuildContext context, AppState state, StatusTag tag) {
+    final nameController = TextEditingController(text: tag.name);
+    int selectedColorValue = tag.colorValue;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('编辑标签'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: '标签名称',
+                  hintText: '例如：请假、迟到',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                '选择颜色',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: _presetColors.map((color) {
+                  final isSelected = selectedColorValue == color;
+                  return GestureDetector(
+                    onTap: () {
+                      setDialogState(() {
+                        selectedColorValue = color;
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Color(color),
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 3,
+                              )
+                            : null,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: isSelected
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
+                          : null,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('请输入标签名称')),
+                  );
+                  return;
+                }
+                // Check duplicate name (excluding current tag)
+                if (state.tags.any((t) => t.id != tag.id && t.name == name)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('标签"$name"已存在')),
+                  );
+                  return;
+                }
+                final updatedTag = tag.copyWith(
+                  name: name,
+                  colorValue: selectedColorValue,
+                );
+                state.updateTag(updatedTag);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('标签 "$name" 已更新')),
+                );
+              },
+              child: const Text('保存'),
+            ),
+          ],
+        ),
       ),
     );
   }

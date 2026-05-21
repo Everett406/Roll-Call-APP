@@ -50,15 +50,32 @@ class MemberHistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Hero(
-          tag: 'memberName_$memberId',
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              memberName,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        title: Column(
+          children: [
+            Hero(
+              tag: 'memberName_$memberId',
+              child: Material(
+                type: MaterialType.transparency,
+                child: Text(
+                  memberName,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
-          ),
+            if (member?.studentId != null)
+              Hero(
+                tag: 'studentId_$memberId',
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Text(
+                    member!.studentId!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
         centerTitle: true,
       ),

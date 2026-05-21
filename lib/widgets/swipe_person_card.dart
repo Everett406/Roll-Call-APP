@@ -181,21 +181,33 @@ class _SwipePersonCardState extends State<SwipePersonCard>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              widget.member.name,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: widget.currentTag != null
-                                    ? tagColor
-                                    : theme.colorScheme.onSurface,
+                            Hero(
+                              tag: 'memberName_${widget.member.id}',
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: Text(
+                                  widget.member.name,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: widget.currentTag != null
+                                        ? tagColor
+                                        : theme.colorScheme.onSurface,
+                                  ),
+                                ),
                               ),
                             ),
                             if (widget.member.studentId != null &&
                                 widget.member.studentId!.isNotEmpty)
-                              Text(
-                                widget.member.studentId!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                              Hero(
+                                tag: 'studentId_${widget.member.id}',
+                                child: Material(
+                                  type: MaterialType.transparency,
+                                  child: Text(
+                                    widget.member.studentId!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
                                 ),
                               ),
                           ],

@@ -172,19 +172,22 @@ class _StatusButton extends StatelessWidget {
 /// 添加新标签对话框
 class AddTagDialog extends StatefulWidget {
   final Function(String name, int colorValue) onConfirm;
+  final int? defaultColor;
 
   const AddTagDialog({
     super.key,
     required this.onConfirm,
+    this.defaultColor,
   });
 
   static Future<void> show(
     BuildContext context, {
     required Function(String name, int colorValue) onConfirm,
+    int? defaultColor,
   }) {
     return showDialog(
       context: context,
-      builder: (_) => AddTagDialog(onConfirm: onConfirm),
+      builder: (_) => AddTagDialog(onConfirm: onConfirm, defaultColor: defaultColor),
     );
   }
 
@@ -194,7 +197,13 @@ class AddTagDialog extends StatefulWidget {
 
 class _AddTagDialogState extends State<AddTagDialog> {
   final _nameController = TextEditingController();
-  int _selectedColor = 0xFF4CAF50;
+  late int _selectedColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedColor = widget.defaultColor ?? 0xFF4CAF50;
+  }
 
   // 预设颜色列表
   final List<Map<String, dynamic>> _presetColors = [

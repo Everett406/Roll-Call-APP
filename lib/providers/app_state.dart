@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/member.dart';
 import '../models/status_tag.dart';
@@ -110,9 +112,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> updateTag(StatusTag tag) async {
-    final idx = _tags.indexWhere((t) => t.id == tag.id);
-    if (idx != -1) {
-      _tags[idx] = tag;
+    final index = _tags.indexWhere((t) => t.id == tag.id);
+    if (index >= 0) {
+      _tags[index] = tag;
       await StorageService.putTag(tag);
       notifyListeners();
     }
@@ -664,5 +666,53 @@ class AppState extends ChangeNotifier {
   Future<void> clearAllData() async {
     await StorageService.clearAll();
     notifyListeners();
+  }
+
+  // ==================== Color Generation ====================
+
+  /// 计算两个颜色的差异度（0-1，越大差异越大）
+  double _colorDifference(Color c1, Color c2) {
+    final dr = (c1.red - c2.red) / 255.0;
+    final dg = (c1.green - c2.green) / 255.0;
+    final db = (c1.blue - c2.blue) / 255.0;
+    return (dr * dr + dg * dg + db * db) / 3.0;
+  }
+
+  /// 生成与现有标签颜色有足够差异的随机颜色
+  int generateDistinctColor() {
+    final random = Random();
+    final existingColors = _tags.map((t) => Color(t.colorValue)).toList();
+
+    const minDifference = 0.15; // 最小差异阈值
+
+    for (int attempt = 0; attempt < 100; attempt++) {
+      // 生成 HSL 颜色，确保饱和度足够
+      final hue = random.nextInt(360);
+      final saturation = 0.6 + random.nextDouble() * 0.4; // 0.6-1.0
+      final lightness = 0.4 + random.nextDouble() * 0.3; // 0.4-0.7
+
+      final newColor = HSLColor.fromAHSL(1.0, hue.toDouble(), saturation, lightness).toColor();
+
+      // 检查与现有颜色的差异
+      bool isDistinct = true;
+      for (final existing in existingColors) {
+        if (_colorDifference(newColor, existing) < minDifference) {
+          isDistinct = false;
+          break;
+        }
+      }
+
+      if (isDistinct) {
+        return newColor.value;
+      }
+    }
+
+    // 如果找不到足够不同的颜色，返回随机颜色
+    return Color.fromRGBO(
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+      1.0,
+    ).value;
   }
 }

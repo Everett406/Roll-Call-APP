@@ -71,7 +71,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                 _showExportDialog(context, state, session);
                 break;
               case 'addTag':
-                _showAddTagDialog(context, state);
+                _showAddTagDialog(context, state, useDistinctColor: true);
                 break;
               case 'toggleView':
                 setState(() {
@@ -179,9 +179,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 
   /// 显示添加标签对话框
-  void _showAddTagDialog(BuildContext context, AppState state) {
+  void _showAddTagDialog(BuildContext context, AppState state, {bool useDistinctColor = false}) {
     final nameController = TextEditingController();
-    int selectedColorValue = Colors.blue.value;
+    int selectedColorValue = useDistinctColor ? state.generateDistinctColor() : Colors.blue.value;
     final colorOptions = [
       ('蓝色', Colors.blue),
       ('绿色', Colors.green),
@@ -554,24 +554,36 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // 姓名（居中，粗体）
-                Text(
-                  member.name,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
+                Hero(
+                  tag: 'memberName_${member.id}',
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Text(
+                      member.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 // 学号后两位
                 if (shortId.isNotEmpty)
-                  Text(
-                    shortId,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: theme.colorScheme.onSurfaceVariant,
+                  Hero(
+                    tag: 'studentId_${member.id}',
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: Text(
+                        shortId,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                   ),
               ],
