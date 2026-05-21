@@ -108,8 +108,8 @@ class _UndoBarState extends ConsumerState<UndoBar>
     final tag = lastLog.newStatusId != null
         ? state.getTagById(lastLog.newStatusId!)
         : null;
-    final prevTag = lastLog.previousStatusId != null
-        ? state.getTagById(lastLog.previousStatusId!)
+    final prevTag = lastLog.prevStatusId != null
+        ? state.getTagById(lastLog.prevStatusId!)
         : null;
     final memberName = member?.name ?? '未知';
     final tagName = tag?.name ?? '未知';
