@@ -18,7 +18,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.1.7';
+  String _currentVersion = '1.1.8';
 
   @override
   void initState() {
@@ -162,7 +162,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('关于点到为止'),
-            subtitle: const Text('点到为止 v1.1.7'),
+            subtitle: const Text('点到为止 v1.1.8'),
             onTap: () => _showAboutDialog(),
           ),
 
@@ -346,7 +346,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: '点到为止',
-      applicationVersion: '1.1.7',
+      applicationVersion: '1.1.8',
       applicationLegalese: '© 2026 Everett',
       children: [
         const SizedBox(height: 16),
@@ -517,7 +517,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
-/// 下载进度对话框
+/// 下载进度对话框 - 支持后台下载
 class _DownloadProgressDialog extends StatefulWidget {
   final String downloadUrl;
 
@@ -532,7 +532,9 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
   String _status = '准备下载...';
   bool _isComplete = false;
   bool _hasError = false;
-  StreamSubscription<DownloadProgress>? _subscription;
+  bool _isBackground = false;
+  StreamSubscription<DownloadTask>? _subscription;
+  final _updateService = UpdateService();
 
   @override
   void initState() {
@@ -546,18 +548,39 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
     super.dispose();
   }
 
-  void _startDownload() {
-    final stream = UpdateService.downloadAndInstall(widget.downloadUrl);
-    _subscription = stream.listen(
-      (progress) {
+  void _startDownload() async {
+    // 请求权限
+    final hasPermission = await UpdateService.requestPermissions();
+    if (!hasPermission) {
+      setState(() {
+        _status = '缺少安装权限，请在设置中开启';
+        _hasError = true;
+        _isComplete = true;
+      });
+      return;
+    }
+
+    // 开始后台下载
+    _updateService.startBackgroundDownload(widget.downloadUrl);
+
+    // 监听下载进度
+    _subscription = _updateService.downloadStream?.listen(
+      (task) {
         if (mounted) {
           setState(() {
-            _progress = progress.progress;
-            _status = progress.status;
-            _isComplete = progress.progress >= 1.0 &&
-                (progress.status.contains('安装') || progress.status.contains('失败'));
-            _hasError = progress.status.contains('失败') || progress.status.contains('错误');
+            _progress = task.progress;
+            _status = task.statusText;
+            _isComplete = task.status == DownloadStatus.completed ||
+                task.status == DownloadStatus.failed;
+            _hasError = task.status == DownloadStatus.failed;
           });
+
+          // 下载完成且成功，自动关闭对话框
+          if (task.status == DownloadStatus.completed && !_isBackground) {
+            Future.delayed(const Duration(seconds: 1), () {
+              if (mounted) Navigator.pop(context);
+            });
+          }
         }
       },
       onError: (error) {
@@ -569,9 +592,20 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
           });
         }
       },
-      onDone: () {
-        // 下载完成后的处理
-      },
+    );
+  }
+
+  void _switchToBackground() {
+    setState(() {
+      _isBackground = true;
+    });
+    Navigator.pop(context);
+    // 显示后台下载提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('正在后台下载更新，完成后将自动提示安装'),
+        duration: Duration(seconds: 3),
+      ),
     );
   }
 
@@ -580,7 +614,17 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: const Text('下载更新'),
+      title: Row(
+        children: [
+          const Expanded(child: Text('下载更新')),
+          if (!_isComplete)
+            IconButton(
+              icon: const Icon(Icons.close),
+              tooltip: '后台下载',
+              onPressed: _switchToBackground,
+            ),
+        ],
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -607,6 +651,15 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
               ),
             ),
           ],
+          if (!_isComplete) ...[
+            const SizedBox(height: 12),
+            Text(
+              '点击右上角关闭按钮可后台下载',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          ],
         ],
       ),
       actions: [
@@ -615,14 +668,19 @@ class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
             onPressed: () => Navigator.pop(context),
             child: Text(_hasError ? '关闭' : '完成'),
           )
-        else
+        else ...[
           TextButton(
             onPressed: () {
-              _subscription?.cancel();
+              _updateService.cancelDownload();
               Navigator.pop(context);
             },
             child: const Text('取消'),
           ),
+          TextButton(
+            onPressed: _switchToBackground,
+            child: const Text('后台下载'),
+          ),
+        ],
       ],
     );
   }
