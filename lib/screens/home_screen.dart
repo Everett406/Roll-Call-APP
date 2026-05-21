@@ -500,7 +500,7 @@ class _SessionCard extends ConsumerWidget {
                 const SizedBox(height: 8),
                 // Legend for segments (only shown if there are segments)
                 if (segments.isNotEmpty)
-                  _buildSegmentLegend(segments, theme),
+                  _buildSegmentLegend(segments, theme, ref),
               ],
             ),
           ),
@@ -584,7 +584,7 @@ class _SessionCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildSegmentLegend(List<_ProgressSegment> segments, ThemeData theme) {
+  Widget _buildSegmentLegend(List<_ProgressSegment> segments, ThemeData theme, WidgetRef ref) {
     // Build legend from session status counts
     final state = ref.read(appStateProvider);
     final statusCounts = state.getSessionStatusCounts(session.id);
