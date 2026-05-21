@@ -238,6 +238,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   ),
           ),
         ],
+      ),
       bottomNavigationBar: _hasParsed && _parsedMembers.isNotEmpty
           ? SafeArea(
               child: Padding(
@@ -258,7 +259,6 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               ),
             )
           : null,
-      ),
     );
   }
 

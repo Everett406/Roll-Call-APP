@@ -538,6 +538,15 @@ class _SessionCard extends ConsumerWidget {
     return segments;
   }
 
+  StatusTag _getDefaultTag(String tagId) {
+    return StatusTag(
+      id: tagId,
+      name: tagId == 'tag_arrived' ? '已到达' : tagId == 'tag_absent' ? '未到' : '其他',
+      colorValue: tagId == 'tag_arrived' ? 0xFF4CAF50 : 0xFF9E9E9E,
+      isBuiltIn: true,
+    );
+  }
+
   Widget _buildSegmentedProgressBar(
       List<_ProgressSegment> segments, ThemeData theme) {
     return ClipRRect(

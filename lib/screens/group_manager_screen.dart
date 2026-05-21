@@ -76,6 +76,7 @@ class _GroupManagerScreenState extends ConsumerState<GroupManagerScreen> {
             ),
           ),
         ],
+      ),
     );
   }
 
