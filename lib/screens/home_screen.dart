@@ -405,105 +405,87 @@ class _SessionCard extends ConsumerWidget {
     final statusCounts = state.getSessionStatusCounts(session.id);
     final segments = _buildSegments(state, statusCounts, totalCount);
 
-    return Dismissible(
-      key: ValueKey(session.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      confirmDismiss: (direction) async {
-        return await _showDeleteConfirmDialog(context, state);
-      },
-      child: GestureDetector(
-        onLongPress: isArchived
-            ? () => _deleteSession(context, state)
-            : null,
-        child: Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                _zoomRoute(SessionScreen(sessionId: session.id)),
-              );
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            _zoomRoute(SessionScreen(sessionId: session.id)),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          session.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  Expanded(
+                    child: Text(
+                      session.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      if (isArchived)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '已归档',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      if (isArchived)
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 20),
-                          color: theme.colorScheme.error,
-                          onPressed: () => _deleteSession(context, state),
-                          tooltip: '删除',
-                        ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time,
-                          size: 14, color: theme.colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Text(
-                        dateFormat.format(session.createdAt),
+                  if (isArchived)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '已归档',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const Spacer(),
-                      Text(
-                        '实到 $arrivedCount / 应到 $totalCount',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: arrivedCount == totalCount
-                              ? AppColors.success
-                              : theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                    ),
+                  // 删除按钮：归档和历史记录都显示
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    color: theme.colorScheme.error,
+                    onPressed: () => _deleteSession(context, state),
+                    tooltip: '删除',
                   ),
-                  const SizedBox(height: 12),
-                  // Segmented progress bar
-                  _buildSegmentedProgressBar(segments, theme),
-                  const SizedBox(height: 8),
-                  // Legend for segments (only shown if there are segments)
-                  if (segments.isNotEmpty)
-                    _buildSegmentLegend(segments, theme, ref),
                 ],
               ),
-            ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.access_time,
+                      size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text(
+                    dateFormat.format(session.createdAt),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '实到 $arrivedCount / 应到 $totalCount',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: arrivedCount == totalCount
+                          ? AppColors.success
+                          : theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Segmented progress bar
+              _buildSegmentedProgressBar(segments, theme),
+              const SizedBox(height: 8),
+              // Legend for segments (only shown if there are segments)
+              if (segments.isNotEmpty)
+                _buildSegmentLegend(segments, theme, ref),
+            ],
           ),
         ),
       ),

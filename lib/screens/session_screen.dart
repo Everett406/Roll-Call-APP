@@ -461,13 +461,49 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     return studentId.length >= 2 ? studentId.substring(studentId.length - 2) : studentId;
   }
 
+  /// 获取网格格子背景色（暗色模式适配）
+  Color _getGridCellColor(StatusTag? tag, ThemeData theme) {
+    if (tag == null) {
+      // 未标记：使用卡片背景色
+      return theme.colorScheme.surfaceContainerHighest;
+    }
+    // 已标记：使用标签颜色的浅色版本
+    final baseColor = Color(tag.colorValue);
+    final isDark = theme.brightness == Brightness.dark;
+    if (isDark) {
+      // 暗色模式：降低饱和度
+      return baseColor.withOpacity(0.3);
+    } else {
+      // 亮色模式：浅色背景
+      return baseColor.withOpacity(0.15);
+    }
+  }
+
+  /// 获取网格格子文字颜色（暗色模式适配）
+  Color _getGridCellTextColor(StatusTag? tag, ThemeData theme) {
+    if (tag == null) {
+      return theme.colorScheme.onSurface;
+    }
+    final baseColor = Color(tag.colorValue);
+    final isDark = theme.brightness == Brightness.dark;
+    if (isDark) {
+      // 暗色模式：使用较亮的颜色
+      return baseColor.withOpacity(0.9);
+    } else {
+      // 亮色模式：使用原色
+      return baseColor;
+    }
+  }
+
   /// 构建网格视图
   Widget _buildGridView(List<Member> members, AppState state) {
+    final theme = Theme.of(context);
+    
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        childAspectRatio: 0.85,
+        mainAxisExtent: 60,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
       ),
@@ -479,24 +515,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             ? state.getTagById(checkIn!.statusId!)
             : null;
 
-        // 确定背景色
-        Color backgroundColor;
-        Color textColor;
-        if (tag != null) {
-          if (tag.id == 'tag_arrived') {
-            backgroundColor = Colors.green.shade50;
-            textColor = Colors.green.shade800;
-          } else {
-            backgroundColor = Color(tag.colorValue).withOpacity(0.12);
-            textColor = Color(tag.colorValue);
-          }
-        } else {
-          backgroundColor = Colors.white;
-          textColor = Colors.black87;
-        }
-
+        final backgroundColor = _getGridCellColor(tag, theme);
+        final textColor = _getGridCellTextColor(tag, theme);
         final shortId = _getShortStudentId(member.studentId);
-        final sequenceNumber = (index + 1).toString().padLeft(2, '0');
 
         return GestureDetector(
           onTap: () => _showStatusSheet(context, state, member),
@@ -506,33 +527,18 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               color: backgroundColor,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Colors.grey.shade200,
+                color: theme.colorScheme.outlineVariant,
                 width: 0.5,
               ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 序号（左上角）
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 6, top: 4),
-                    child: Text(
-                      sequenceNumber,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 2),
                 // 姓名（居中，粗体）
                 Text(
                   member.name,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
@@ -546,7 +552,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                     shortId,
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.grey.shade500,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
               ],
