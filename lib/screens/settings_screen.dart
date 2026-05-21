@@ -7,6 +7,7 @@ import '../services/update_service.dart';
 import 'member_manager_screen.dart';
 import 'group_manager_screen.dart';
 import 'tag_manager_screen.dart';
+import 'about_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -17,7 +18,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.2.3';
+  String _currentVersion = '1.2.4';
 
   @override
   void initState() {
@@ -127,15 +128,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         onChanged: (value) {
                           themeState.setDynamicColorEnabled(value);
                         },
-                      ),
-                      const Divider(height: 1, indent: 52),
-                      // 图标风格
-                      ListTile(
-                        leading: const Icon(Icons.palette_outlined),
-                        title: const Text('图标风格'),
-                        subtitle: Text(_getIconStyleName(themeState.iconStyle)),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _showIconStylePicker(context, themeState),
                       ),
                       const SizedBox(height: 4),
                     ],
@@ -304,9 +296,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ListTile(
                         leading: const Icon(Icons.info_outline),
                         title: const Text('关于点到为止'),
-                        subtitle: const Text('点到为止 v1.2.3'),
+                        subtitle: const Text('点到为止 v1.2.4'),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _showAboutDialog(),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AboutScreen()),
+                          );
+                        },
                       ),
                       const Divider(height: 1, indent: 52),
                       ListTile(
@@ -384,32 +381,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
     }
     return '自定义';
-  }
-
-  String _getIconStyleName(AppIconStyle style) {
-    switch (style) {
-      case AppIconStyle.defaultStyle:
-        return '默认';
-      case AppIconStyle.rounded:
-        return '圆角';
-      case AppIconStyle.outlined:
-        return '线条';
-      case AppIconStyle.sharp:
-        return '尖角';
-    }
-  }
-
-  IconData _getPreviewIcon(AppIconStyle style) {
-    switch (style) {
-      case AppIconStyle.defaultStyle:
-        return Icons.favorite;
-      case AppIconStyle.rounded:
-        return Icons.favorite_rounded;
-      case AppIconStyle.outlined:
-        return Icons.favorite_outline;
-      case AppIconStyle.sharp:
-        return Icons.favorite_sharp;
-    }
   }
 
   void _showThemeModeDialog() {
@@ -511,48 +482,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showIconStylePicker(BuildContext context, ThemeState themeState) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final currentStyle = themeState.iconStyle;
-        return AlertDialog(
-          title: const Text('选择图标风格'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: AppIconStyle.values.map((style) {
-              final isSelected = style == currentStyle;
-              return RadioListTile<AppIconStyle>(
-                title: Text(_getIconStyleName(style)),
-                secondary: Icon(
-                  _getPreviewIcon(style),
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                value: style,
-                groupValue: currentStyle,
-                selected: isSelected,
-                onChanged: (value) {
-                  if (value != null) {
-                    themeState.setIconStyle(value);
-                  }
-                  Navigator.pop(context);
-                },
-              );
-            }).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _exportData() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('导出功能开发中')),
@@ -590,31 +519,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
     }
-  }
-
-  void _showAboutDialog() {
-    showAboutDialog(
-      context: context,
-      applicationName: '点到为止',
-      applicationVersion: '1.2.3',
-      applicationLegalese: '\u00a9 2026 Everett',
-      children: [
-        const SizedBox(height: 16),
-        const Text(
-          '一款专为班级骨干设计的点名应用，让点名操作更快速、更直觉。',
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          '功能特性：',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        const Text('\u2022 滑动点名，快速标记'),
-        const Text('\u2022 自定义标签，灵活分类'),
-        const Text('\u2022 多会话管理，历史可追溯'),
-        const Text('\u2022 出勤统计，一目了然'),
-      ],
-    );
   }
 
   /// 检查更新

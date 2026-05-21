@@ -11,14 +11,6 @@ enum AppThemeMode {
   dark,    // 暗色
 }
 
-/// Icon 风格
-enum AppIconStyle {
-  defaultStyle,  // 默认 Material Icons
-  rounded,       // 圆角图标
-  outlined,      // 线条图标
-  sharp,         // 尖角图标
-}
-
 /// 主题颜色选项
 class ThemeColor {
   final String name;
@@ -59,13 +51,11 @@ class ThemeState extends ChangeNotifier {
   Color _seedColor = Colors.indigo;
   bool _dynamicColorEnabled = false;
   ColorScheme? _platformColorScheme;
-  AppIconStyle _iconStyle = AppIconStyle.defaultStyle;
   bool _autoCheckUpdate = true;
 
   AppThemeMode get themeMode => _themeMode;
   Color get seedColor => _seedColor;
   bool get dynamicColorEnabled => _dynamicColorEnabled;
-  AppIconStyle get iconStyle => _iconStyle;
   bool get autoCheckUpdate => _autoCheckUpdate;
 
   /// 设置平台动态颜色方案（在 main.dart 中调用）
@@ -88,12 +78,6 @@ class ThemeState extends ChangeNotifier {
 
   void setDynamicColorEnabled(bool value) {
     _dynamicColorEnabled = value;
-    _saveSettings();
-    notifyListeners();
-  }
-
-  void setIconStyle(AppIconStyle style) {
-    _iconStyle = style;
     _saveSettings();
     notifyListeners();
   }
@@ -178,11 +162,6 @@ class ThemeState extends ChangeNotifier {
       }
       // 动态取色
       _dynamicColorEnabled = box.get('dynamicColorEnabled', defaultValue: false) as bool;
-      // Icon 风格
-      final iconStyleIndex = box.get('iconStyle', defaultValue: 0) as int;
-      if (iconStyleIndex >= 0 && iconStyleIndex < AppIconStyle.values.length) {
-        _iconStyle = AppIconStyle.values[iconStyleIndex];
-      }
       // 自动检查更新
       _autoCheckUpdate = box.get('autoCheckUpdate', defaultValue: true) as bool;
       notifyListeners();
@@ -198,7 +177,6 @@ class ThemeState extends ChangeNotifier {
       await box.put('themeMode', _themeMode.index);
       await box.put('seedColor', _seedColor.value);
       await box.put('dynamicColorEnabled', _dynamicColorEnabled);
-      await box.put('iconStyle', _iconStyle.index);
       await box.put('autoCheckUpdate', _autoCheckUpdate);
     } catch (e) {
       // 保存失败时静默处理

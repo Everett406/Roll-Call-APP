@@ -110,23 +110,23 @@ class _SwipePersonCardState extends State<SwipePersonCard>
                 ),
               ),
             ),
-          // Left swipe background (action hint)
+          // Left swipe background (orange/blue - tag selection)
           if (_dragOffset < 0)
             Positioned.fill(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: theme.colorScheme.primaryContainer.withOpacity(
+                  color: AppColors.warning.withOpacity(
                       (-_dragOffset / 120).clamp(0.0, 1.0)),
                 ),
                 alignment: Alignment.centerRight,
                 padding: const EdgeInsets.only(right: 24),
                 child: Opacity(
                   opacity: (-_dragOffset / 60).clamp(0.0, 1.0),
-                  child: Icon(
-                    Icons.more_horiz,
-                    color: theme.colorScheme.onPrimaryContainer,
+                  child: const Icon(
+                    Icons.label_outline,
+                    color: Colors.white,
                     size: 32,
                   ),
                 ),

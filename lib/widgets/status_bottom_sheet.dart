@@ -198,6 +198,7 @@ class AddTagDialog extends StatefulWidget {
 class _AddTagDialogState extends State<AddTagDialog> {
   final _nameController = TextEditingController();
   late int _selectedColor;
+  bool _showCustomColor = false;
 
   @override
   void initState() {
@@ -261,56 +262,93 @@ class _AddTagDialogState extends State<AddTagDialog> {
             autofocus: true,
           ),
           const SizedBox(height: 20),
-          // 颜色选择标题
-          Text(
-            '选择颜色',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+          // 自定义颜色折叠区域
+          InkWell(
+            onTap: () {
+              setState(() {
+                _showCustomColor = !_showCustomColor;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Text(
+                    '自定义颜色',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: _showCustomColor ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.expand_more,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          // 颜色网格
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: _presetColors.map((color) {
-              final isSelected = _selectedColor == color['value'];
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedColor = color['value'];
-                  });
-                },
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Color(color['value']),
-                    shape: BoxShape.circle,
-                    border: isSelected
-                        ? Border.all(
-                            color: theme.colorScheme.primary,
-                            width: 3,
-                          )
-                        : null,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity, height: 0),
+            secondChild: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                // 颜色网格
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: _presetColors.map((color) {
+                    final isSelected = _selectedColor == color['value'];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedColor = color['value'];
+                        });
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Color(color['value']),
+                          shape: BoxShape.circle,
+                          border: isSelected
+                              ? Border.all(
+                                  color: theme.colorScheme.primary,
+                                  width: 3,
+                                )
+                              : null,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: isSelected
+                            ? const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 20,
+                              )
+                            : null,
                       ),
-                    ],
-                  ),
-                  child: isSelected
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 20,
-                        )
-                      : null,
+                    );
+                  }).toList(),
                 ),
-              );
-            }).toList(),
+              ],
+            ),
+            crossFadeState: _showCustomColor
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
           ),
         ],
       ),
