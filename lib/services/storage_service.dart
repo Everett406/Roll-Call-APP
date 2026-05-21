@@ -13,7 +13,7 @@ class StorageService {
   static const String _checkInsBox = 'checkIns';
   static const String _logsBox = 'operationLogs';
   static const String _groupsBox = 'groups';
-  static const String _configBox = 'config';
+  static const String _configBoxName = 'config';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -23,7 +23,7 @@ class StorageService {
     await Hive.openBox(_checkInsBox);
     await Hive.openBox(_logsBox);
     await Hive.openBox(_groupsBox);
-    await Hive.openBox(_configBox);
+    await Hive.openBox(_configBoxName);
     await _initDefaultTags();
   }
 
@@ -254,7 +254,7 @@ class StorageService {
   }
 
   // ==================== Attendance Config ====================
-  static Box get _configBox => Hive.box(_configBox);
+  static Box get _configBox => Hive.box(_configBoxName);
 
   static const String _attendanceTagIdsKey = 'attendanceTagIds';
 
