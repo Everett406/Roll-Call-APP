@@ -9,6 +9,7 @@ import '../models/check_in.dart';
 import '../models/operation_log.dart';
 import '../models/group.dart';
 import '../models/time_period.dart';
+import '../models/random_pick_record.dart';
 import '../services/storage_service.dart';
 import '../utils/search_helper.dart';
 
@@ -26,6 +27,8 @@ class AppState extends ChangeNotifier {
   List<Group> _groups = [];
   List<String> _attendanceTagIds = [];
   bool _showPercentageOnCards = true;
+  bool _confettiEnabled = true;
+  List<RandomPickRecord> _randomPickRecords = [];
 
   // ==================== Getters ====================
   List<Member> get members => _members;
@@ -36,6 +39,8 @@ class AppState extends ChangeNotifier {
   List<Group> get groups => _groups;
   List<String> get attendanceTagIds => _attendanceTagIds;
   bool get showPercentageOnCards => _showPercentageOnCards;
+  bool get confettiEnabled => _confettiEnabled;
+  List<RandomPickRecord> get randomPickRecords => _randomPickRecords;
 
   /// Check if a tag is considered as "attended" (present).
   bool isAttendanceTag(String tagId) => _attendanceTagIds.contains(tagId);
@@ -59,6 +64,10 @@ class AppState extends ChangeNotifier {
     _groups = StorageService.getAllGroups();
     _attendanceTagIds = StorageService.getAttendanceTagIds();
     _showPercentageOnCards = StorageService.getShowPercentageOnCards();
+    _confettiEnabled = StorageService.getConfettiEnabled();
+    _randomPickRecords = StorageService.getAllRandomPickRecords()
+        .map((r) => RandomPickRecord.fromJson(r))
+        .toList();
     notifyListeners();
   }
 
@@ -72,6 +81,25 @@ class AppState extends ChangeNotifier {
   Future<void> setShowPercentageOnCards(bool value) async {
     _showPercentageOnCards = value;
     await StorageService.setShowPercentageOnCards(value);
+    notifyListeners();
+  }
+
+  Future<void> setConfettiEnabled(bool value) async {
+    _confettiEnabled = value;
+    await StorageService.setConfettiEnabled(value);
+    notifyListeners();
+  }
+
+  // ==================== Random Pick Records ====================
+  Future<void> addRandomPickRecord(RandomPickRecord record) async {
+    _randomPickRecords.insert(0, record);
+    await StorageService.putRandomPickRecord(record.toJson());
+    notifyListeners();
+  }
+
+  Future<void> clearRandomPickRecords() async {
+    _randomPickRecords.clear();
+    await StorageService.clearRandomPickRecords();
     notifyListeners();
   }
 

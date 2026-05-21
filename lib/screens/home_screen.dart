@@ -45,6 +45,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
   late PageController _pageController;
+  int _archivedFilterDays = 7; // Default: show last 7 days
 
   @override
   void initState() {
@@ -755,39 +756,92 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildArchivedList(AppState state, ThemeData theme) {
-    final sessions = state.archivedSessions;
+    final now = DateTime.now();
 
-    if (sessions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 80,
-              color: theme.colorScheme.primary.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '暂无历史记录',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+    // Filter sessions based on _archivedFilterDays
+    final sessions = _archivedFilterDays == 0
+        ? state.archivedSessions.toList()
+        : state.archivedSessions.where((s) {
+            final endTime = s.endTime;
+            if (endTime == null) return false;
+            return endTime.isAfter(now.subtract(Duration(days: _archivedFilterDays)));
+          }).toList();
+
+    return Column(
+      children: [
+        // Filter bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 7, label: Text('7天')),
+                    ButtonSegment(value: 30, label: Text('30天')),
+                    ButtonSegment(value: 0, label: Text('全部')),
+                  ],
+                  selected: <int>{_archivedFilterDays},
+                  onSelectionChanged: (Set<int> newSelection) {
+                    setState(() {
+                      _archivedFilterDays = newSelection.first;
+                    });
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: sessions.length,
-      itemBuilder: (context, index) {
-        return _SessionCard(
-          session: sessions[index],
-          isArchived: true,
-        );
-      },
+        // Count
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              Text(
+                '共 ${sessions.length} 条记录',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // List
+        Expanded(
+          child: sessions.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.inventory_2_outlined,
+                        size: 64,
+                        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _archivedFilterDays == 0
+                            ? '暂无历史记录'
+                            : '该时间段暂无记录',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: sessions.length,
+                  itemBuilder: (context, index) {
+                    return _SessionCard(
+                      session: sessions[index],
+                      isArchived: true,
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

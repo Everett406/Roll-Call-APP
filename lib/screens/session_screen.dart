@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:confetti/confetti.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
 import '../utils/constants.dart';
@@ -9,6 +10,7 @@ import '../widgets/filter_chip_bar.dart';
 import '../widgets/swipe_person_card.dart';
 import '../widgets/status_bottom_sheet.dart';
 import '../widgets/operation_log_panel.dart';
+import '../widgets/confetti_overlay.dart';
 import 'member_history_screen.dart';
 import 'export_screen.dart';
 import '../utils/expressive_theme.dart';
@@ -702,7 +704,20 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     }
 
     await state.archiveSession(widget.sessionId);
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      // Show confetti effect if enabled
+      if (state.confettiEnabled) {
+        await Navigator.push(
+          context,
+          PageRouteBuilder(
+            opaque: false,
+            barrierDismissible: false,
+            pageBuilder: (context, _, __) => const _ArchiveConfettiPage(),
+          ),
+        );
+      }
+      Navigator.pop(context);
+    }
   }
 
   Future<void> _confirmMarkAllArrived(AppState state) async {
@@ -754,5 +769,60 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       }
     }
   }
+}
 
+/// Temporary full-screen confetti overlay shown after archiving a session
+class _ArchiveConfettiPage extends StatefulWidget {
+  const _ArchiveConfettiPage();
+
+  @override
+  State<_ArchiveConfettiPage> createState() => _ArchiveConfettiPageState();
+}
+
+class _ArchiveConfettiPageState extends State<_ArchiveConfettiPage> {
+  late ConfettiController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ConfettiController(duration: const Duration(seconds: 3));
+    _controller.play();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ConfettiOverlay.explosion(controller: _controller),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.celebration,
+                size: 56,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '点名完成！',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

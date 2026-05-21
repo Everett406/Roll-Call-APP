@@ -19,7 +19,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.3.3';
+  String _currentVersion = '1.3.4';
 
   @override
   void initState() {
@@ -143,6 +143,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         value: appState.showPercentageOnCards,
                         onChanged: (value) {
                           appState.setShowPercentageOnCards(value);
+                        },
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      SwitchListTile(
+                        secondary: Icon(
+                          Icons.celebration_outlined,
+                          color: appState.confettiEnabled ? Colors.amber : null,
+                        ),
+                        title: const Text('纸屑特效'),
+                        subtitle: Text(
+                          appState.confettiEnabled
+                              ? '点名完成和随机抽选时显示庆祝特效'
+                              : '已关闭纸屑特效',
+                        ),
+                        value: appState.confettiEnabled,
+                        onChanged: (value) {
+                          appState.setConfettiEnabled(value);
                         },
                       ),
                       const SizedBox(height: 4),

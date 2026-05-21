@@ -24,6 +24,7 @@ class StorageService {
     await Hive.openBox(_logsBox);
     await Hive.openBox(_groupsBox);
     await Hive.openBox(_configBoxName);
+    await Hive.openBox(_randomPickBox);
     await _initDefaultTags();
   }
 
@@ -284,6 +285,54 @@ class StorageService {
 
   static Future<void> setShowPercentageOnCards(bool value) async {
     await _configBox.put(_showPercentageKey, value);
+  }
+
+  static const String _confettiEnabledKey = 'confettiEnabled';
+
+  /// Whether confetti effects are enabled.
+  /// Defaults to true.
+  static bool getConfettiEnabled() {
+    final dynamic raw = _configBox.get(_confettiEnabledKey);
+    if (raw == null) return true;
+    return raw as bool;
+  }
+
+  static Future<void> setConfettiEnabled(bool value) async {
+    await _configBox.put(_confettiEnabledKey, value);
+  }
+
+  // ==================== Random Pick Records ====================
+  static const String _randomPickBox = 'randomPicks';
+  static Box? _randomPickBoxInstance;
+
+  static Box get _randomPickBoxInstanceGetter {
+    _randomPickBoxInstance ??= Hive.box(_randomPickBox);
+    return _randomPickBoxInstance!;
+  }
+
+  static Future<void> initRandomPickBox() async {
+    await Hive.openBox(_randomPickBox);
+  }
+
+  static Future<void> putRandomPickRecord(Map<String, dynamic> data) async {
+    await _randomPickBoxInstanceGetter.put(data['id'], data);
+  }
+
+  static List<Map<String, dynamic>> getAllRandomPickRecords() {
+    final box = _randomPickBoxInstanceGetter;
+    return box.values
+        .map((v) => Map<String, dynamic>.from(v as Map))
+        .toList()
+      ..sort((a, b) => DateTime.parse(b['pickedAt'] as String)
+          .compareTo(DateTime.parse(a['pickedAt'] as String)));
+  }
+
+  static Future<void> deleteRandomPickRecord(String id) async {
+    await _randomPickBoxInstanceGetter.delete(id);
+  }
+
+  static Future<void> clearRandomPickRecords() async {
+    await _randomPickBoxInstanceGetter.clear();
   }
 
   // ==================== Utility ====================
