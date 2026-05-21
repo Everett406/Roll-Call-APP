@@ -514,7 +514,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('点到为止'),
+        title: const Text(
+          '点到为止',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+        ),
         centerTitle: true,
         backgroundColor: theme.colorScheme.surface.withOpacity(0.8),
         flexibleSpace: ClipRect(
@@ -762,9 +765,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final sessions = _archivedFilterDays == 0
         ? state.archivedSessions.toList()
         : state.archivedSessions.where((s) {
-            final endTime = s.endTime;
-            if (endTime == null) return false;
-            return endTime.isAfter(now.subtract(Duration(days: _archivedFilterDays)));
+            final endedAt = s.endedAt;
+            if (endedAt == null) return false;
+            return endedAt.isAfter(now.subtract(Duration(days: _archivedFilterDays)));
           }).toList();
 
     return Column(

@@ -50,7 +50,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: const Text('设置'),
+            title: const Text(
+              '设置',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+            ),
             floating: true,
             elevation: 0,
             scrolledUnderElevation: 4,
