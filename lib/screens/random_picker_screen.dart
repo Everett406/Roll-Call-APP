@@ -264,8 +264,9 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
   }
 
   Widget _buildCandidatePool(ThemeData theme, List<Member> members, int count) {
+    final appState = ref.read(appStateProvider);
     return InkWell(
-      onTap: () => _showCandidatePicker(context, theme, state),
+      onTap: () => _showCandidatePicker(context, theme, appState),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
