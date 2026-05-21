@@ -416,7 +416,8 @@ class ExpressiveAnimations {
 class ContainmentGroup extends StatelessWidget {
   final String? title;
   final IconData? titleIcon;
-  final List<Widget> children;
+  final List<Widget>? children;
+  final Widget? child;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
 
@@ -424,10 +425,12 @@ class ContainmentGroup extends StatelessWidget {
     super.key,
     this.title,
     this.titleIcon,
-    required this.children,
+    this.children,
+    this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  });
+  }) : assert(children != null || child != null,
+           'Either children or child must be provided');
 
   @override
   Widget build(BuildContext context) {
@@ -462,7 +465,7 @@ class ContainmentGroup extends StatelessWidget {
               ),
               const SizedBox(height: 12),
             ],
-            ...children,
+            if (child != null) child! else ...children!,
           ],
         ),
       ),
