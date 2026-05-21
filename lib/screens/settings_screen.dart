@@ -7,6 +7,7 @@ import '../services/update_service.dart';
 import 'member_manager_screen.dart';
 import 'group_manager_screen.dart';
 import 'tag_manager_screen.dart';
+import 'attendance_config_screen.dart';
 import 'about_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -18,7 +19,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.2.5';
+  String _currentVersion = '1.2.6';
 
   @override
   void initState() {
@@ -211,6 +212,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => const TagManagerScreen()),
+                          );
+                        },
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      ListTile(
+                        leading: Icon(
+                          Icons.fact_check_outlined,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        title: const Text('出勤标签配置'),
+                        subtitle: Text(
+                          '视为出勤：${appState.attendanceTagIds.length} 个标签',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const AttendanceConfigScreen()),
                           );
                         },
                       ),

@@ -13,6 +13,7 @@ class StorageService {
   static const String _checkInsBox = 'checkIns';
   static const String _logsBox = 'operationLogs';
   static const String _groupsBox = 'groups';
+  static const String _configBox = 'config';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -22,6 +23,7 @@ class StorageService {
     await Hive.openBox(_checkInsBox);
     await Hive.openBox(_logsBox);
     await Hive.openBox(_groupsBox);
+    await Hive.openBox(_configBox);
     await _initDefaultTags();
   }
 
@@ -133,6 +135,36 @@ class StorageService {
     await _sessionBox.delete(id);
   }
 
+  /// Delete all check-ins for a session
+  static Future<int> deleteCheckInsForSession(String sessionId) async {
+    final keysToDelete = <dynamic>[];
+    for (final entry in _checkInBox.toMap().entries) {
+      final data = entry.value as Map<dynamic, dynamic>;
+      if (data['sessionId'] == sessionId) {
+        keysToDelete.add(entry.key);
+      }
+    }
+    for (final key in keysToDelete) {
+      await _checkInBox.delete(key);
+    }
+    return keysToDelete.length;
+  }
+
+  /// Delete all operation logs for a session
+  static Future<int> deleteLogsForSession(String sessionId) async {
+    final keysToDelete = <dynamic>[];
+    for (final entry in _logBox.toMap().entries) {
+      final data = entry.value as Map<dynamic, dynamic>;
+      if (data['sessionId'] == sessionId) {
+        keysToDelete.add(entry.key);
+      }
+    }
+    for (final key in keysToDelete) {
+      await _logBox.delete(key);
+    }
+    return keysToDelete.length;
+  }
+
   static Session? getSession(String id) {
     final data = _sessionBox.get(id);
     if (data == null) return null;
@@ -221,6 +253,25 @@ class StorageService {
     return Group.fromMap(Map<String, dynamic>.from(data as Map));
   }
 
+  // ==================== Attendance Config ====================
+  static Box get _configBox => Hive.box(_configBox);
+
+  static const String _attendanceTagIdsKey = 'attendanceTagIds';
+
+  /// Get the list of tag IDs that count as "attended" (present).
+  /// Defaults to ['tag_arrived'] if not configured.
+  static List<String> getAttendanceTagIds() {
+    final dynamic raw = _configBox.get(_attendanceTagIdsKey);
+    if (raw == null || raw is! List || raw.isEmpty) {
+      return ['tag_arrived'];
+    }
+    return raw.cast<String>();
+  }
+
+  static Future<void> setAttendanceTagIds(List<String> ids) async {
+    await _configBox.put(_attendanceTagIdsKey, ids);
+  }
+
   // ==================== Utility ====================
   static Future<void> clearAll() async {
     await _memberBox.clear();
@@ -229,6 +280,7 @@ class StorageService {
     await _checkInBox.clear();
     await _logBox.clear();
     await _groupBox.clear();
+    await _configBox.clear();
     await _initDefaultTags();
   }
 }

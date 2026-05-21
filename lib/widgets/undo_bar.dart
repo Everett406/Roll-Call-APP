@@ -21,6 +21,7 @@ class _UndoBarState extends ConsumerState<UndoBar>
   Timer? _hideTimer;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  String? _lastDisplayedLogId;
 
   @override
   void initState() {
@@ -59,10 +60,16 @@ class _UndoBarState extends ConsumerState<UndoBar>
 
     if (lastLog == null) {
       _animationController.reverse();
+      _lastDisplayedLogId = null;
       return const SizedBox.shrink();
     }
 
-    _resetTimer();
+    // Only reset timer when a new undoable action occurs
+    // This prevents the bar from flickering/resetting on every rebuild
+    if (_lastDisplayedLogId != lastLog.id) {
+      _lastDisplayedLogId = lastLog.id;
+      _resetTimer();
+    }
 
     final member = state.getMemberById(lastLog.targetMemberId);
     final tag = lastLog.newStatusId != null

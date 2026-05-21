@@ -22,8 +22,11 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
 
     final statusCounts = state.getStatusCountsForPeriod(_selectedPeriod);
     final totalCheckIns = statusCounts.values.fold(0, (a, b) => a + b);
-    final arrivedCount = statusCounts['tag_arrived'] ?? 0;
-    final attendanceRate = totalCheckIns > 0 ? arrivedCount / totalCheckIns : 0.0;
+    // Use attendance tag config to calculate attended count
+    final attendedCount = statusCounts.entries
+        .where((e) => state.attendanceTagIds.contains(e.key))
+        .fold(0, (a, b) => a + b.value);
+    final attendanceRate = totalCheckIns > 0 ? attendedCount / totalCheckIns : 0.0;
     final absenteeismRanking = state.getMemberAbsenteeismRanking(_selectedPeriod);
 
     return Scaffold(

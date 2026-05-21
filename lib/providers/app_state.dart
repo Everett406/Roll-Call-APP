@@ -24,6 +24,7 @@ class AppState extends ChangeNotifier {
   List<CheckIn> _checkIns = [];
   List<OperationLog> _logs = [];
   List<Group> _groups = [];
+  List<String> _attendanceTagIds = [];
 
   // ==================== Getters ====================
   List<Member> get members => _members;
@@ -32,6 +33,10 @@ class AppState extends ChangeNotifier {
   List<CheckIn> get checkIns => _checkIns;
   List<OperationLog> get logs => _logs;
   List<Group> get groups => _groups;
+  List<String> get attendanceTagIds => _attendanceTagIds;
+
+  /// Check if a tag is considered as "attended" (present).
+  bool isAttendanceTag(String tagId) => _attendanceTagIds.contains(tagId);
 
   List<Session> get ongoingSessions =>
       _sessions.where((s) => s.status == 'ongoing').toList()
@@ -50,6 +55,14 @@ class AppState extends ChangeNotifier {
     _checkIns = StorageService.getAllCheckIns();
     _logs = StorageService.getAllLogs();
     _groups = StorageService.getAllGroups();
+    _attendanceTagIds = StorageService.getAttendanceTagIds();
+    notifyListeners();
+  }
+
+  // ==================== Attendance Config ====================
+  Future<void> setAttendanceTagIds(List<String> ids) async {
+    _attendanceTagIds = ids;
+    await StorageService.setAttendanceTagIds(ids);
     notifyListeners();
   }
 
@@ -176,6 +189,11 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> deleteSession(String sessionId) async {
+    // Cascade delete: also remove check-ins and logs for this session
+    await StorageService.deleteCheckInsForSession(sessionId);
+    await StorageService.deleteLogsForSession(sessionId);
+    _checkIns.removeWhere((c) => c.sessionId == sessionId);
+    _logs.removeWhere((l) => l.sessionId == sessionId);
     _sessions.removeWhere((s) => s.id == sessionId);
     await StorageService.deleteSession(sessionId);
     notifyListeners();
@@ -374,10 +392,10 @@ class AppState extends ChangeNotifier {
   double getMemberAttendanceRate(String memberId) {
     final memberCheckIns = getMemberCheckIns(memberId);
     if (memberCheckIns.isEmpty) return 0.0;
-    final arrivedCount = memberCheckIns
-        .where((c) => c.statusId == 'tag_arrived')
+    final attendedCount = memberCheckIns
+        .where((c) => _attendanceTagIds.contains(c.statusId))
         .length;
-    return arrivedCount / memberCheckIns.length;
+    return attendedCount / memberCheckIns.length;
   }
 
   List<MapEntry<String, double>> getAbsentRateRanking() {
@@ -526,7 +544,8 @@ class AppState extends ChangeNotifier {
         memberStats[ci.memberId] = {'total': 0, 'absent': 0};
       }
       memberStats[ci.memberId]!['total'] = memberStats[ci.memberId]!['total']! + 1;
-      if (ci.statusId != 'tag_arrived') {
+      // A check-in is "absent" if its tag is NOT in the attendance tag list
+      if (ci.statusId != null && !_attendanceTagIds.contains(ci.statusId)) {
         memberStats[ci.memberId]!['absent'] = memberStats[ci.memberId]!['absent']! + 1;
       }
     }

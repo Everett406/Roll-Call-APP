@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
@@ -10,6 +9,7 @@ import '../widgets/swipe_person_card.dart';
 import '../widgets/status_bottom_sheet.dart';
 import '../widgets/undo_bar.dart';
 import 'member_history_screen.dart';
+import 'export_screen.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -68,7 +68,12 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                 });
                 break;
               case 'export':
-                _showExportDialog(context, state, session);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ExportScreen(sessionId: widget.sessionId),
+                  ),
+                );
                 break;
               case 'addTag':
                 _showAddTagDialog(context, state, useDistinctColor: true);
@@ -682,128 +687,4 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     if (mounted) Navigator.pop(context);
   }
 
-  /// 生成文字导出摘要
-  String _generateExportText(AppState state, Session session, {bool includeArrived = true}) {
-    final checkIns = state.getSessionCheckIns(widget.sessionId);
-    final totalPeople = session.memberIds.length;
-
-    // 按状态分组
-    final statusGroups = <String, List<String>>{};
-    for (final ci in checkIns) {
-      if (ci.statusId == null) continue;
-      // 如果不包含已到达，跳过
-      if (!includeArrived && ci.statusId == 'tag_arrived') continue;
-      final tag = state.getTagById(ci.statusId!);
-      final tagName = tag?.name ?? '未知状态';
-      // 获取成员名称
-      final memberIdx = session.memberIds.indexOf(ci.memberId);
-      String memberName;
-      if (memberIdx >= 0 && memberIdx < session.memberNames.length) {
-        memberName = session.memberNames[memberIdx];
-      } else {
-        final member = state.getMemberById(ci.memberId);
-        memberName = member?.name ?? '未知';
-      }
-      statusGroups.putIfAbsent(tagName, () => []);
-      statusGroups[tagName]!.add(memberName);
-    }
-
-    // 计算已到人数
-    final arrivedCount = checkIns
-        .where((c) => c.statusId == 'tag_arrived')
-        .length;
-
-    final buffer = StringBuffer();
-    buffer.writeln(session.title);
-    buffer.writeln('应到：$totalPeople人  实到：$arrivedCount人');
-    buffer.writeln();
-
-    // 按状态分组输出
-    for (final entry in statusGroups.entries) {
-      final names = entry.value;
-      if (names.isEmpty) continue;
-      buffer.writeln('${entry.key}（${names.length}）：');
-      buffer.writeln(names.join('\u3001'));
-      buffer.writeln();
-    }
-
-    return buffer.toString().trimRight();
-  }
-
-  /// 显示导出对话框
-  void _showExportDialog(BuildContext context, AppState state, Session session) {
-    bool includeArrived = true;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final exportText = _generateExportText(state, session, includeArrived: includeArrived);
-            final theme = Theme.of(context);
-
-            return AlertDialog(
-              title: const Text('导出点名摘要'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 开关：是否包含已到达
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('包含已到达人员'),
-                    subtitle: const Text('关闭后只显示未到和其他状态'),
-                    value: includeArrived,
-                    onChanged: (val) {
-                      setDialogState(() {
-                        includeArrived = val;
-                      });
-                    },
-                    dense: true,
-                  ),
-                  const SizedBox(height: 8),
-                  // 导出内容预览
-                  Container(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    width: double.maxFinite,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: SingleChildScrollView(
-                      child: SelectableText(
-                        exportText,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('关闭'),
-                ),
-                FilledButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: exportText));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('已复制到剪贴板'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.copy, size: 18),
-                  label: const Text('复制'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 }
