@@ -8,6 +8,7 @@ import '../providers/theme_provider.dart';
 import '../models/session.dart';
 import '../models/status_tag.dart';
 import '../utils/constants.dart';
+import '../utils/expressive_theme.dart';
 import '../services/update_service.dart';
 import 'session_screen.dart';
 import 'new_session_screen.dart';
@@ -587,8 +588,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ref.read(appStateProvider).loadData();
                     }
                   },
+                  shape: ExpressiveShapes.fab,
+                  elevation: 2,
                   icon: const Icon(Icons.add),
-                  label: const Text('新建点名'),
+                  label: const Text(
+                    '新建点名',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             )
@@ -883,6 +889,7 @@ class _SessionCard extends ConsumerWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: ExpressiveShapes.cardMedium,
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -890,7 +897,7 @@ class _SessionCard extends ConsumerWidget {
             _zoomRoute(SessionScreen(sessionId: session.id)),
           );
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -907,7 +914,7 @@ class _SessionCard extends ConsumerWidget {
                               child: Text(
                                 session.title,
                                 style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),

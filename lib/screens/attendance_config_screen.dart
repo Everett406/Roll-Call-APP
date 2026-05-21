@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
+import '../utils/expressive_theme.dart';
 
 class AttendanceConfigScreen extends ConsumerStatefulWidget {
   const AttendanceConfigScreen({super.key});

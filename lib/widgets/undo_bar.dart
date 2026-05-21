@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/operation_log.dart';
+import '../utils/expressive_theme.dart';
 import '../providers/app_state.dart';
+import '../utils/expressive_theme.dart';
 
 class UndoBar extends ConsumerStatefulWidget {
   final String sessionId;

@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
+import '../utils/expressive_theme.dart';
 import '../models/session.dart';
+import '../utils/expressive_theme.dart';
 import '../models/check_in.dart';
+import '../utils/expressive_theme.dart';
 import '../models/status_tag.dart';
+import '../utils/expressive_theme.dart';
 import '../utils/constants.dart';
+import '../utils/expressive_theme.dart';
 
 class MemberHistoryScreen extends ConsumerWidget {
   final String memberId;

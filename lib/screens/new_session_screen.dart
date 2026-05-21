@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
+import '../utils/expressive_theme.dart';
 import '../models/member.dart';
+import '../utils/expressive_theme.dart';
 import '../models/session.dart';
+import '../utils/expressive_theme.dart';
 import '../models/group.dart';
+import '../utils/expressive_theme.dart';
 import '../utils/constants.dart';
+import '../utils/expressive_theme.dart';
 
 class NewSessionScreen extends ConsumerStatefulWidget {
   const NewSessionScreen({super.key});
@@ -299,9 +304,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
                 onPressed: members.isEmpty ? null : () => _createSession(state),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: ExpressiveShapes.pill,
                 ),
                 child: const Text(
                   '确认创建',

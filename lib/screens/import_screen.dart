@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
+import '../utils/expressive_theme.dart';
 import '../models/member.dart';
+import '../utils/expressive_theme.dart';
 
 class ImportScreen extends ConsumerStatefulWidget {
   const ImportScreen({super.key});
@@ -263,9 +265,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                   onPressed: () => _doImport(),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: ExpressiveShapes.pill,
                   ),
                   child: Text(
                     '确认导入 ${_parsedMembers.length} 人',

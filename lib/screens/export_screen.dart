@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../models/session.dart';
+import '../utils/expressive_theme.dart';
 
 class ExportScreen extends ConsumerStatefulWidget {
   final String sessionId;

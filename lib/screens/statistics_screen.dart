@@ -4,6 +4,7 @@ import '../providers/app_state.dart';
 import '../models/time_period.dart';
 import '../utils/constants.dart';
 import 'member_history_screen.dart';
+import '../utils/expressive_theme.dart';
 
 class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
@@ -86,7 +87,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               crossAxisSpacing: 12,
               childAspectRatio: 1.5,
               children: [
-                _StatCard(
+                ExpressiveStatCard(
                   title: '出勤率',
                   value: '${(attendanceRate * 100).toStringAsFixed(1)}%',
                   icon: Icons.check_circle_outline,
@@ -95,28 +96,24 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                       : attendanceRate >= 0.6
                           ? AppColors.warning
                           : AppColors.error,
-                  theme: theme,
                 ),
-                _StatCard(
+                ExpressiveStatCard(
                   title: '签到人次',
                   value: '$totalCheckIns',
                   icon: Icons.people_outline,
                   color: theme.colorScheme.primary,
-                  theme: theme,
                 ),
-                _StatCard(
+                ExpressiveStatCard(
                   title: '点名次数',
                   value: '${state.sessions.length}',
                   icon: Icons.event_note_outlined,
                   color: theme.colorScheme.secondary,
-                  theme: theme,
                 ),
-                _StatCard(
+                ExpressiveStatCard(
                   title: '成员数',
                   value: '${state.members.length}',
                   icon: Icons.group_outlined,
                   color: theme.colorScheme.tertiary,
-                  theme: theme,
                 ),
               ],
             ),
@@ -358,54 +355,3 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-  final ThemeData theme;
-
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, color: color),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

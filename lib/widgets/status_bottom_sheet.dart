@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/status_tag.dart';
+import '../utils/expressive_theme.dart';
 
 class StatusBottomSheet extends StatefulWidget {
   final List<StatusTag> tags;
@@ -23,7 +24,7 @@ class StatusBottomSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (_) => StatusBottomSheet(
         tags: tags,

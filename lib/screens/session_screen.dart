@@ -10,6 +10,7 @@ import '../widgets/status_bottom_sheet.dart';
 import '../widgets/undo_bar.dart';
 import 'member_history_screen.dart';
 import 'export_screen.dart';
+import '../utils/expressive_theme.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -59,7 +60,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         // 更多菜单按钮
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: ExpressiveShapes.cardSmall,
           onSelected: (value) {
             switch (value) {
               case 'search':

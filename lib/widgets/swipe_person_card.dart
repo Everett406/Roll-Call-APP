@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/member.dart';
+import '../utils/expressive_theme.dart';
 import '../models/status_tag.dart';
+import '../utils/expressive_theme.dart';
 import '../utils/constants.dart';
+import '../utils/expressive_theme.dart';
 
 class SwipePersonCard extends StatefulWidget {
   final Member member;

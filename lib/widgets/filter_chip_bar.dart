@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
+import '../utils/expressive_theme.dart';
 
 class FilterChipBar extends ConsumerWidget {
   final String sessionId;

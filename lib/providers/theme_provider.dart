@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'dart:ui';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../utils/expressive_theme.dart';
 
 /// 主题模式
 enum AppThemeMode {
@@ -110,39 +111,31 @@ class ThemeState extends ChangeNotifier {
   ThemeData get lightTheme {
     // 动态取色优先使用平台颜色
     if (_dynamicColorEnabled && _platformColorScheme != null) {
-      return ThemeData(
-        useMaterial3: true,
+      return ExpressiveTheme.buildTheme(
         colorScheme: _platformColorScheme!.copyWith(brightness: Brightness.light),
-        fontFamily: 'NotoSansSC',
       );
     }
     final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
-    return ThemeData(
-      useMaterial3: true,
+    return ExpressiveTheme.buildTheme(
       colorScheme: ColorScheme.fromSeed(
         seedColor: seed,
         brightness: Brightness.light,
       ),
-      fontFamily: 'NotoSansSC',
     );
   }
 
   ThemeData get darkTheme {
     if (_dynamicColorEnabled && _platformColorScheme != null) {
-      return ThemeData(
-        useMaterial3: true,
+      return ExpressiveTheme.buildTheme(
         colorScheme: _platformColorScheme!.copyWith(brightness: Brightness.dark),
-        fontFamily: 'NotoSansSC',
       );
     }
     final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
-    return ThemeData(
-      useMaterial3: true,
+    return ExpressiveTheme.buildTheme(
       colorScheme: ColorScheme.fromSeed(
         seedColor: seed,
         brightness: Brightness.dark,
       ),
-      fontFamily: 'NotoSansSC',
     );
   }
 
