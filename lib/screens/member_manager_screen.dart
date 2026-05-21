@@ -33,10 +33,16 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
     final state = ref.watch(appStateProvider);
     final theme = Theme.of(context);
 
-    // Filter members based on search
-    final members = _isSearchExpanded
-        ? state.searchMembers(_searchQuery)
-        : state.members;
+    // Filter members based on search, sorted by studentId
+    final members = (_isSearchExpanded
+            ? state.searchMembers(_searchQuery)
+            : [...state.members])
+        ..sort((a, b) {
+          if (a.studentId != null && b.studentId != null) {
+            return a.studentId!.compareTo(b.studentId!);
+          }
+          return a.name.compareTo(b.name);
+        });
 
     final hasSelected = _selectedMemberIds.isNotEmpty;
     final allSelected = members.length == _selectedMemberIds.length && members.isNotEmpty;

@@ -417,16 +417,24 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: ListView.separated(
+                child: Builder(builder: (context) {
+                  final sortedMembers = [...state.members]
+                    ..sort((a, b) {
+                      if (a.studentId != null && b.studentId != null) {
+                        return a.studentId!.compareTo(b.studentId!);
+                      }
+                      return a.name.compareTo(b.name);
+                    });
+                  return ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: state.members.length,
+                  itemCount: sortedMembers.length,
                   separatorBuilder: (context, index) => Divider(
                     height: 1,
                     color: theme.colorScheme.outlineVariant,
                   ),
                   itemBuilder: (context, index) {
-                    final member = state.members[index];
+                    final member = sortedMembers[index];
                     final isSelected = _selectedMemberIds.contains(member.id);
                     return CheckboxListTile(
                       title: Text(member.name),
@@ -462,7 +470,8 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       },
                     );
                   },
-                ),
+                );
+              }),
               ),
             ],
           ),
