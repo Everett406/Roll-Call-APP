@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'dart:ui';
 
 /// 主题模式
@@ -34,10 +35,17 @@ class ThemeState extends ChangeNotifier {
   AppThemeMode _themeMode = AppThemeMode.system;
   Color _seedColor = Colors.indigo;
   bool _dynamicColorEnabled = false;
+  ColorScheme? _platformColorScheme;
 
   AppThemeMode get themeMode => _themeMode;
   Color get seedColor => _seedColor;
   bool get dynamicColorEnabled => _dynamicColorEnabled;
+
+  /// 设置平台动态颜色方案（在 main.dart 中调用）
+  void setPlatformColorScheme(ColorScheme? scheme) {
+    _platformColorScheme = scheme;
+    notifyListeners();
+  }
 
   void setThemeMode(AppThemeMode mode) {
     _themeMode = mode;
@@ -74,6 +82,14 @@ class ThemeState extends ChangeNotifier {
   }
 
   ThemeData get lightTheme {
+    // 动态取色优先使用平台颜色
+    if (_dynamicColorEnabled && _platformColorScheme != null) {
+      return ThemeData(
+        useMaterial3: true,
+        colorScheme: _platformColorScheme!.copyWith(brightness: Brightness.light),
+        fontFamily: 'NotoSansSC',
+      );
+    }
     final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
     return ThemeData(
       useMaterial3: true,
@@ -86,6 +102,13 @@ class ThemeState extends ChangeNotifier {
   }
 
   ThemeData get darkTheme {
+    if (_dynamicColorEnabled && _platformColorScheme != null) {
+      return ThemeData(
+        useMaterial3: true,
+        colorScheme: _platformColorScheme!.copyWith(brightness: Brightness.dark),
+        fontFamily: 'NotoSansSC',
+      );
+    }
     final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
     return ThemeData(
       useMaterial3: true,

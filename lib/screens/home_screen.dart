@@ -12,6 +12,25 @@ import 'group_manager_screen.dart';
 import 'statistics_screen.dart';
 import 'settings_screen.dart';
 
+/// 页面过渡动画辅助
+PageRouteBuilder<T> _zoomRoute<T>(Widget page) {
+  return PageRouteBuilder<T>(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return ScaleTransition(
+        scale: Tween(begin: 0.9, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        ),
+        child: FadeTransition(
+          opacity: animation,
+          child: child,
+        ),
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 250),
+  );
+}
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -47,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  _zoomRoute(
                     builder: (_) => const TagManagerScreen(),
                   ),
                 );
@@ -60,7 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  _zoomRoute(
                     builder: (_) => const GroupManagerScreen(),
                   ),
                 );
@@ -72,7 +91,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
+                _zoomRoute(
                   builder: (_) => const SettingsScreen(),
                 ),
               );
@@ -124,7 +143,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  _zoomRoute(
                     builder: (_) => const NewSessionScreen(),
                   ),
                 );
@@ -275,7 +294,7 @@ class _SessionCard extends ConsumerWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
+            _zoomRoute(
               builder: (_) => SessionScreen(sessionId: session.id),
             ),
           );

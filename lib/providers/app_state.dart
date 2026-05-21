@@ -424,18 +424,24 @@ class AppState extends ChangeNotifier {
       }).toList();
     }
 
-    // When no filter (showing all), keep original order from session.memberIds.
-    // Only sort when filtering: unchecked first, then by studentId.
-    if (filterStatusId != null) {
-      memberList.sort((a, b) {
+    // When no filter (showing all), sort by studentId but keep position fixed after marking.
+    // When filtering, sort unchecked first, then by studentId.
+    memberList.sort((a, b) {
+      if (filterStatusId == null) {
+        // Showing all: sort by studentId only, no status-based reordering
+        final aId = a.studentId ?? a.name;
+        final bId = b.studentId ?? b.name;
+        return aId.compareTo(bId);
+      } else {
+        // Filtering: unchecked first, then by studentId
         final aChecked = getActiveCheckIn(sessionId, a.id) != null;
         final bChecked = getActiveCheckIn(sessionId, b.id) != null;
         if (aChecked != bChecked) return aChecked ? 1 : -1;
         final aId = a.studentId ?? a.name;
         final bId = b.studentId ?? b.name;
         return aId.compareTo(bId);
-      });
-    }
+      }
+    });
 
     if (filterStatusId != null) {
       if (filterStatusId == 'unchecked') {
@@ -601,6 +607,22 @@ class AppState extends ChangeNotifier {
       memberIds: group.memberIds.where((id) => id != memberId).toList(),
     );
     await updateGroup(updatedGroup);
+  }
+
+  /// Copy check-in records from one session to another
+  Future<void> copyCheckInsFromSession(String fromSessionId, String toSessionId) async {
+    final sourceCheckIns = StorageService.getCheckInsForSession(fromSessionId);
+    for (final ci in sourceCheckIns) {
+      final newCi = CheckIn(
+        sessionId: toSessionId,
+        memberId: ci.memberId,
+        statusId: ci.statusId,
+        note: ci.note,
+      );
+      _checkIns.add(newCi);
+      await StorageService.putCheckIn(newCi);
+    }
+    notifyListeners();
   }
 
   /// Clear all data

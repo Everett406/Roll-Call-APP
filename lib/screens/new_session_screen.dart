@@ -23,10 +23,34 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
   @override
   void initState() {
     super.initState();
+    _titleController.text = _generateDefaultTitle();
+  }
+
+  /// 根据当前时间自动生成默认标题
+  String _generateDefaultTitle() {
     final now = DateTime.now();
     final month = now.month;
     final day = now.day;
-    _titleController.text = '$month月${day}日 晚自习';
+    final hour = now.hour;
+
+    String periodName;
+    if (hour >= 5 && hour < 8) {
+      periodName = '早点名';
+    } else if (hour >= 8 && hour < 11) {
+      periodName = '常规点名';
+    } else if (hour >= 11 && hour < 14) {
+      periodName = '午点名';
+    } else if (hour >= 14 && hour < 17) {
+      periodName = '常规点名';
+    } else if (hour >= 17 && hour < 19) {
+      periodName = '训练点名';
+    } else if (hour >= 19 && hour < 22) {
+      periodName = '晚点名';
+    } else {
+      periodName = '晚点名';
+    }
+
+    return '$month月$day日 $periodName';
   }
 
   @override
@@ -63,7 +87,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(
-                hintText: '例如：5月20日 晚自习',
+                hintText: '例如：5月21日 晚点名',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -154,6 +178,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
 
             RadioListTile<int>(
               title: const Text('从历史点名复制'),
+              subtitle: const Text('复制参与人员及上次签到结果'),
               value: 1,
               groupValue: _selectionMode,
               onChanged: (val) {
@@ -298,6 +323,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
 
     List<String> memberIds;
     List<String> memberNames;
+    String? sourceSessionId;
 
     if (_selectionMode == 0) {
       memberIds = state.members.map((m) => m.id).toList();
@@ -312,6 +338,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
       }
       memberIds = List.from(session.memberIds);
       memberNames = List.from(session.memberNames);
+      sourceSessionId = _copyFromSessionId;
     } else if (_selectionMode == 2) {
       final memberIdSet = <String>{};
       final memberMap = <String, Member>{};
@@ -351,11 +378,16 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
       return;
     }
 
-    await state.createSession(
+    final newSession = await state.createSession(
       title: title,
       memberIds: memberIds,
       memberNames: memberNames,
     );
+
+    // 如果是从历史点名复制，同时复制签到结果
+    if (sourceSessionId != null) {
+      await state.copyCheckInsFromSession(sourceSessionId, newSession.id);
+    }
 
     if (mounted) {
       Navigator.pop(context, true);

@@ -137,14 +137,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('关于点到为止'),
-            subtitle: const Text('点到为止 v1.1.4'),
+            subtitle: const Text('点到为止 v1.1.5'),
             onTap: () => _showAboutDialog(),
           ),
           
           ListTile(
             leading: const Icon(Icons.update),
             title: const Text('版本信息'),
-            subtitle: const Text('当前版本: 1.1.4 (Build 4)'),
+            subtitle: const Text('当前版本: 1.1.5 (Build 5)'),
           ),
         ],
       ),
@@ -303,7 +303,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: '点到为止',
-      applicationVersion: '1.1.4',
+      applicationVersion: '1.1.5',
       applicationLegalese: '© 2026 Everett',
       children: [
         const SizedBox(height: 16),
