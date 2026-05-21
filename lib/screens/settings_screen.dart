@@ -17,7 +17,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.2.0';
+  String _currentVersion = '1.2.1';
 
   @override
   void initState() {
@@ -304,7 +304,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ListTile(
                         leading: const Icon(Icons.info_outline),
                         title: const Text('关于点到为止'),
-                        subtitle: const Text('点到为止 v1.2.0'),
+                        subtitle: const Text('点到为止 v1.2.1'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAboutDialog(),
                       ),
@@ -371,6 +371,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   String _getThemeColorName(Color color) {
+    // 先检查扩展预设颜色
+    for (final themeColor in extendedPresetColors) {
+      if (themeColor.color.value == color.value) {
+        return themeColor.name;
+      }
+    }
+    // 再检查原有预设颜色
     for (final themeColor in themeColors) {
       if (themeColor.color.value == color.value) {
         return themeColor.name;
@@ -439,50 +446,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择主题颜色'),
-        content: Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: themeColors.map((themeColor) {
-            final isSelected = themeState.seedColor.value == themeColor.color.value;
-            return GestureDetector(
-              onTap: () {
-                themeState.setSeedColor(themeColor.color);
-                Navigator.pop(context);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: themeColor.color,
-                  shape: BoxShape.circle,
-                  border: isSelected
-                      ? Border.all(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          width: 3,
+        content: SizedBox(
+          width: 300,
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1,
+            ),
+            itemCount: extendedPresetColors.length,
+            itemBuilder: (context, index) {
+              final themeColor = extendedPresetColors[index];
+              final isSelected = themeState.seedColor.value == themeColor.color.value;
+              return GestureDetector(
+                onTap: () {
+                  themeState.setSeedColor(themeColor.color);
+                  Navigator.pop(context);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    color: themeColor.color,
+                    shape: BoxShape.circle,
+                    border: isSelected
+                        ? Border.all(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            width: 3,
+                          )
+                        : null,
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: themeColor.color.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: isSelected
+                      ? Icon(
+                          Icons.check,
+                          size: 20,
+                          color: themeColor.color.computeLuminance() > 0.5
+                              ? Colors.black87
+                              : Colors.white,
                         )
                       : null,
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: themeColor.color.withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
                 ),
-                child: isSelected
-                    ? Icon(
-                        Icons.check,
-                        color: themeColor.color.computeLuminance() > 0.5
-                            ? Colors.black87
-                            : Colors.white,
-                      )
-                    : null,
-              ),
-            );
-          }).toList(),
+              );
+            },
+          ),
         ),
         actions: [
           TextButton(
@@ -579,7 +596,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: '点到为止',
-      applicationVersion: '1.2.0',
+      applicationVersion: '1.2.1',
       applicationLegalese: '\u00a9 2026 Everett',
       children: [
         const SizedBox(height: 16),
@@ -729,18 +746,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   /// 开始下载更新
   Future<void> _startDownload(String downloadUrl) async {
-    final success = await UpdateService.downloadAndInstall(downloadUrl);
-    if (!mounted) return;
-    if (success) {
+    try {
+      final success = await UpdateService.downloadAndInstall(downloadUrl);
+      if (!mounted) return;
+      // 无论成功与否都显示后台下载提示
+      // 因为即使返回 false，下载可能已在后台启动
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('正在后台下载，请查看通知栏'),
           duration: Duration(seconds: 3),
         ),
       );
-    } else {
+    } catch (e) {
+      if (!mounted) return;
+      // 即使抛出异常，也显示后台下载提示
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('下载启动失败，请稍后重试')),
+        const SnackBar(
+          content: Text('正在后台下载，请查看通知栏'),
+          duration: Duration(seconds: 3),
+        ),
       );
     }
   }

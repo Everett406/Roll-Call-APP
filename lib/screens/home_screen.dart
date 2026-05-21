@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
+import '../providers/theme_provider.dart';
 import '../models/session.dart';
 import '../models/status_tag.dart';
 import '../utils/constants.dart';
@@ -53,8 +54,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// 启动时自动检查更新
   Future<void> _checkForUpdate() async {
-    final autoCheck = await UpdateService.getAutoCheckUpdate();
-    if (!autoCheck) return;
+    // 从 ThemeState 读取自动检查更新设置
+    final themeState = ref.read(themeProvider);
+    if (!themeState.autoCheckUpdate) return;
 
     final release = await UpdateService.checkUpdate();
     if (release != null && mounted) {

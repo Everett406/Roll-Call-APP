@@ -39,6 +39,20 @@ const List<ThemeColor> themeColors = [
   ThemeColor('红色', Colors.red),
 ];
 
+/// 扩展预设颜色（用于网格选择器）
+const List<ThemeColor> extendedPresetColors = [
+  ThemeColor('紫色', Color(0xFF6750A4)),     // 紫色（默认）
+  ThemeColor('蓝色', Color(0xFF1976D2)),     // 蓝色
+  ThemeColor('绿色', Color(0xFF388E3C)),     // 绿色
+  ThemeColor('橙色', Color(0xFFF57C00)),     // 橙色
+  ThemeColor('红色', Color(0xFFD32F2F)),     // 红色
+  ThemeColor('深紫', Color(0xFF7B1FA2)),     // 深紫
+  ThemeColor('青色', Color(0xFF00796B)),     // 青色
+  ThemeColor('棕色', Color(0xFF5D4037)),     // 棕色
+  ThemeColor('粉红', Color(0xFFC2185B)),     // 粉红
+  ThemeColor('靛蓝', Color(0xFF303F9F)),     // 靛蓝
+];
+
 /// 主题状态
 class ThemeState extends ChangeNotifier {
   AppThemeMode _themeMode = AppThemeMode.system;
@@ -116,11 +130,6 @@ class ThemeState extends ChangeNotifier {
         useMaterial3: true,
         colorScheme: _platformColorScheme!.copyWith(brightness: Brightness.light),
         fontFamily: 'NotoSansSC',
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: <TargetPlatform, PageTransitionsBuilder>{
-            TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-          },
-        ),
       );
     }
     final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
@@ -131,11 +140,6 @@ class ThemeState extends ChangeNotifier {
         brightness: Brightness.light,
       ),
       fontFamily: 'NotoSansSC',
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: <TargetPlatform, PageTransitionsBuilder>{
-          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-        },
-      ),
     );
   }
 
@@ -145,11 +149,6 @@ class ThemeState extends ChangeNotifier {
         useMaterial3: true,
         colorScheme: _platformColorScheme!.copyWith(brightness: Brightness.dark),
         fontFamily: 'NotoSansSC',
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: <TargetPlatform, PageTransitionsBuilder>{
-            TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-          },
-        ),
       );
     }
     final seed = _dynamicColorEnabled ? _vibrantSeedColor : _seedColor;
@@ -160,11 +159,6 @@ class ThemeState extends ChangeNotifier {
         brightness: Brightness.dark,
       ),
       fontFamily: 'NotoSansSC',
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: <TargetPlatform, PageTransitionsBuilder>{
-          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-        },
-      ),
     );
   }
 
