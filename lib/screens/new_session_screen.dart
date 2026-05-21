@@ -275,17 +275,23 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: FilledButton(
-            onPressed: members.isEmpty ? null : () => _createSession(state),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: Hero(
+            tag: 'createButton',
+            child: Material(
+              type: MaterialType.transparency,
+              child: FilledButton(
+                onPressed: members.isEmpty ? null : () => _createSession(state),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  '确认创建',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
-            ),
-            child: const Text(
-              '确认创建',
-              style: TextStyle(fontSize: 16),
             ),
           ),
         ),

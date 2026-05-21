@@ -117,18 +117,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       floatingActionButton: _currentIndex <= 1
-          ? FloatingActionButton.extended(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  _zoomRoute(const NewSessionScreen()),
-                );
-                if (result == true) {
-                  ref.read(appStateProvider).loadData();
-                }
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('新建点名'),
+          ? Hero(
+              tag: 'createButton',
+              child: Material(
+                type: MaterialType.transparency,
+                child: FloatingActionButton.extended(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      _zoomRoute(const NewSessionScreen()),
+                    );
+                    if (result == true) {
+                      ref.read(appStateProvider).loadData();
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('新建点名'),
+                ),
+              ),
             )
           : null,
     );
