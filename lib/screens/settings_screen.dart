@@ -830,10 +830,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final directionality = appState.confettiMode == 0
         ? BlastDirectionality.explosive
         : BlastDirectionality.directional;
-    final blastDirection = appState.confettiMode == 1
+    final double blastDirection = appState.confettiMode == 1
         ? 3.14159 / 2 // rain - downward
         : appState.confettiMode == 2
-            ? 0 // side - rightward
+            ? 0.0 // side - rightward
             : 5.49779; // corner - bottom-right
     final particleCount = (30 + appState.confettiIntensity * 70).round();
 

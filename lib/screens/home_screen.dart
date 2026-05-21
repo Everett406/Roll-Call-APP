@@ -957,7 +957,7 @@ class _SessionCard extends ConsumerWidget {
 
     // Get status counts for segmented progress bar
     final statusCounts = state.getSessionStatusCounts(session.id);
-    final segments = _buildSegments(state, statusCounts, totalCount);
+    final segments = _buildSegments(state, statusCounts, totalCount, theme);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
