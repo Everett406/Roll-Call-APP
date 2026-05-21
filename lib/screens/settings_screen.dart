@@ -17,7 +17,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.2.1';
+  String _currentVersion = '1.2.2';
 
   @override
   void initState() {
@@ -304,7 +304,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ListTile(
                         leading: const Icon(Icons.info_outline),
                         title: const Text('关于点到为止'),
-                        subtitle: const Text('点到为止 v1.2.1'),
+                        subtitle: const Text('点到为止 v1.2.2'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAboutDialog(),
                       ),
@@ -596,7 +596,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: '点到为止',
-      applicationVersion: '1.2.1',
+      applicationVersion: '1.2.2',
       applicationLegalese: '\u00a9 2026 Everett',
       children: [
         const SizedBox(height: 16),

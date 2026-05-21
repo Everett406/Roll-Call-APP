@@ -622,6 +622,28 @@ class AppState extends ChangeNotifier {
     await updateGroup(updatedGroup);
   }
 
+  /// 检查超时的进行中点名
+  /// 返回需要自动归档的和需要提醒的
+  ({List<Session> toArchive, List<Session> toRemind}) checkSessionTimeouts() {
+    final now = DateTime.now();
+    final toArchive = <Session>[];
+    final toRemind = <Session>[];
+
+    for (final session in _sessions) {
+      if (session.status != 'ongoing') continue;
+
+      final elapsed = now.difference(session.createdAt);
+
+      if (elapsed.inHours >= 24) {
+        toArchive.add(session);
+      } else if (elapsed.inHours >= 12) {
+        toRemind.add(session);
+      }
+    }
+
+    return (toArchive: toArchive, toRemind: toRemind);
+  }
+
   /// Copy check-in records from one session to another
   Future<void> copyCheckInsFromSession(String fromSessionId, String toSessionId) async {
     final sourceCheckIns = StorageService.getCheckInsForSession(fromSessionId);

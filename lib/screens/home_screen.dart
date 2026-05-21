@@ -49,6 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appStateProvider).loadData();
       _checkForUpdate();
+      _checkSessionTimeouts();
     });
   }
 
@@ -61,6 +62,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final release = await UpdateService.checkUpdate();
     if (release != null && mounted) {
       _showUpdateDialog(release);
+    }
+  }
+
+  /// 检查超时的进行中点名并处理
+  Future<void> _checkSessionTimeouts() async {
+    final state = ref.read(appStateProvider);
+    final result = state.checkSessionTimeouts();
+
+    // 自动归档超过24小时的
+    for (final session in result.toArchive) {
+      await state.archiveSession(session.id);
+    }
+
+    // 提醒12-24小时的
+    if (result.toRemind.isNotEmpty && mounted) {
+      for (final session in result.toRemind) {
+        final elapsed = DateTime.now().difference(session.createdAt);
+        final hours = elapsed.inHours;
+        final minutes = elapsed.inMinutes % 60;
+
+        if (!mounted) return;
+        final action = await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('点名超时提醒'),
+            content: Text('「${session.title}」已创建 ${hours}小时${minutes}分钟，是否需要处理？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'keep'),
+                child: const Text('继续保留'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'archive'),
+                child: const Text('归档'),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+                onPressed: () => Navigator.pop(context, 'delete'),
+                child: const Text('删除'),
+              ),
+            ],
+          ),
+        );
+
+        if (action == 'archive') {
+          await state.archiveSession(session.id);
+        } else if (action == 'delete') {
+          await state.deleteSession(session.id);
+        }
+      }
     }
   }
 
