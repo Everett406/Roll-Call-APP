@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.3.7';
+  String _currentVersion = '1.3.8';
 
   @override
   void initState() {
@@ -732,14 +732,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  /// 纸屑特效详细设置 - 默认折叠为高级选项
+  /// 纸屑特效详细设置 - 默认折叠为高级选项（仅形状/模式/强度）
   Widget _buildConfettiSettings(BuildContext context, ThemeData theme, AppState appState) {
-    final colorOptions = [
-      ('主要色', theme.colorScheme.primary),
-      ('次要色', theme.colorScheme.secondary),
-      ('三级色', theme.colorScheme.tertiary),
-      ('彩虹', null),
-    ];
     final shapeLabels = ['圆形', '方形', '混合'];
     final modeLabels = ['爆炸', '下雨', '侧边', '边角'];
 
@@ -750,39 +744,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: ExpansionTile(
           title: const Text('高级选项'),
           subtitle: Text(
-            '颜色·形状·模式·强度',
+            '形状·模式·强度',
             style: theme.textTheme.bodySmall,
           ),
           leading: const Icon(Icons.tune, size: 20),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           children: [
-            // Color theme
-            Row(
-              children: [
-                Text('颜色主题', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    children: colorOptions.asMap().entries.map((entry) {
-                      final idx = entry.key;
-                      final (label, color) = entry.value;
-                      final isSelected = appState.confettiColor == idx;
-                      return ChoiceChip(
-                        selected: isSelected,
-                        label: Text(label, style: const TextStyle(fontSize: 12)),
-                        avatar: color != null
-                            ? Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
-                            : const Icon(Icons.palette, size: 12),
-                        padding: EdgeInsets.zero,
-                        onSelected: (_) => appState.setConfettiColor(idx),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
             // Shape
             Row(
               children: [

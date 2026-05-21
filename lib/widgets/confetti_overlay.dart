@@ -1,17 +1,11 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import '../providers/app_state.dart';
 
-/// A reusable confetti overlay widget with full customization support.
+/// Reusable confetti overlay. Place as a full-screen Stack child.
 ///
-/// Usage:
-/// ```dart
-/// ConfettiOverlay(
-///   controller: myController,
-///   appState: appState,  // optional, uses config from AppState
-/// )
-/// ```
+/// Key fix: when using BlastDirectionality.explosive, do NOT set
+/// blastDirection. Let the library handle random directions.
 class ConfettiOverlay extends StatelessWidget {
   final ConfettiController controller;
   final AppState? appState;
@@ -22,114 +16,124 @@ class ConfettiOverlay extends StatelessWidget {
     this.appState,
   });
 
-  List<Color> _getColors(BuildContext context, AppState? state) {
-    final theme = Theme.of(context);
-    if (state == null) {
-      return const [
-        Color(0xFF4CAF50), Color(0xFFF44336), Color(0xFF2196F3),
-        Color(0xFFFFC107), Color(0xFF9C27B0), Color(0xFFFF9800),
-        Color(0xFF00BCD4), Color(0xFFE91E63),
-      ];
-    }
-    switch (state.confettiColor) {
-      case 0: return [theme.colorScheme.primary];
-      case 1: return [theme.colorScheme.secondary];
-      case 2: return [theme.colorScheme.tertiary];
-      default:
-        return const [
-          Color(0xFF4CAF50), Color(0xFFF44336), Color(0xFF2196F3),
-          Color(0xFFFFC107), Color(0xFF9C27B0), Color(0xFFFF9800),
-          Color(0xFF00BCD4), Color(0xFFE91E63),
-        ];
-    }
-  }
-
-  Path Function(Size) _getParticleBuilder(AppState? state) {
-    return (size) {
-      final shape = state?.confettiShape ?? 2;
-      if (shape == 0) {
-        // Circle
-        return Path()
-          ..addOval(Rect.fromCenter(
-            center: Offset.zero,
-            width: size.width,
-            height: size.height,
-          ));
-      } else if (shape == 1) {
-        // Square
-        return Path()
-          ..addRect(Rect.fromCenter(
-            center: Offset.zero,
-            width: size.width * 0.7,
-            height: size.height,
-          ));
-      } else {
-        // Mixed
-        final rnd = math.Random();
-        if (rnd.nextBool()) {
-          return Path()
-            ..addOval(Rect.fromCenter(
-              center: Offset.zero,
-              width: size.width,
-              height: size.height,
-            ));
-        } else {
-          return Path()
-            ..addRect(Rect.fromCenter(
-              center: Offset.zero,
-              width: size.width * 0.7,
-              height: size.height,
-            ));
-        }
-      }
-    };
-  }
-
-  (BlastDirectionality, double) _getMode(AppState? state) {
-    final mode = state?.confettiMode ?? 0;
-    switch (mode) {
-      case 1: // Rain
-        return (BlastDirectionality.directional, 3.14159 / 2);
-      case 2: // Side
-        return (BlastDirectionality.directional, 0);
-      case 3: // Corner
-        return (BlastDirectionality.directional, 5.49779);
-      default: // Explosive
-        return (BlastDirectionality.explosive, 0);
-    }
-  }
-
-  Alignment _getAlignment(AppState? state) {
-    final mode = state?.confettiMode ?? 0;
-    switch (mode) {
-      case 1: return Alignment.topCenter;    // Rain
-      case 2: return Alignment.centerLeft;   // Side
-      case 3: return Alignment.topLeft;      // Corner
-      default: return Alignment.center;      // Explosive
-    }
+  List<Color> _getColors() {
+    // Always rainbow
+    return const [
+      Color(0xFFFF6B6B), Color(0xFF4ECDC4), Color(0xFFFFE66D),
+      Color(0xFF95E1D3), Color(0xFFF38181), Color(0xFFAA96DA),
+      Color(0xFF2196F3), Color(0xFFFF9800),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    final (directionality, blastDirection) = _getMode(appState);
+    final mode = appState?.confettiMode ?? 0;
     final intensity = appState?.confettiIntensity ?? 0.7;
-    final particleCount = (30 + intensity * 70).round();
 
+    // Base particle count scaled by intensity
+    final particleCount = (20 + intensity * 60).round();
+
+    switch (mode) {
+      case 1: // Rain
+        return _rain(particleCount, intensity);
+      case 2: // Side spray
+        return _sideSpray(particleCount, intensity);
+      case 3: // Corner burst
+        return _cornerBurst(particleCount, intensity);
+      default: // Explosion (center)
+        return _explosion(particleCount, intensity);
+    }
+  }
+
+  /// Center explosion - particles spread in all directions
+  Widget _explosion(int count, double intensity) {
     return IgnorePointer(
       child: Align(
-        alignment: _getAlignment(appState),
+        alignment: Alignment.center,
         child: ConfettiWidget(
           confettiController: controller,
-          blastDirectionality: directionality,
-          blastDirection: blastDirection,
-          numberOfParticles: particleCount,
-          maxBlastForce: 20 + intensity * 20,
-          minBlastForce: 8 + intensity * 10,
-          gravity: 0.2 + intensity * 0.15,
-          emissionFrequency: 0.02 + intensity * 0.04,
+          blastDirectionality: BlastDirectionality.explosive,
+          // Do NOT set blastDirection when explosive
+          numberOfParticles: count,
+          maxBlastForce: 15 + intensity * 25, // 15~40
+          minBlastForce: 5 + intensity * 10, // 5~15
+          gravity: 0.1 + intensity * 0.15, // 0.1~0.25
+          emissionFrequency: 0.02 + intensity * 0.03, // 0.02~0.05
           shouldLoop: false,
-          colors: _getColors(context, appState),
-          createParticlePath: _getParticleBuilder(appState),
+          colors: _getColors(),
+          // Use default particle shapes (rect + circle mix)
+          // Do NOT set createParticlePath
+          minimumSize: const Size(8, 4),
+          maximumSize: const Size(16, 8),
+        ),
+      ),
+    );
+  }
+
+  /// Rain - falls from top
+  Widget _rain(int count, double intensity) {
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConfettiWidget(
+          confettiController: controller,
+          blastDirectionality: BlastDirectionality.directional,
+          blastDirection: 1.5708, // pi/2, straight down
+          numberOfParticles: count,
+          maxBlastForce: 2 + intensity * 5, // gentle fall
+          minBlastForce: 1 + intensity * 2,
+          gravity: 0.05 + intensity * 0.1,
+          emissionFrequency: 0.05 + intensity * 0.05,
+          shouldLoop: false,
+          colors: _getColors(),
+          minimumSize: const Size(6, 4),
+          maximumSize: const Size(12, 6),
+        ),
+      ),
+    );
+  }
+
+  /// Side spray - shoots from left
+  Widget _sideSpray(int count, double intensity) {
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: ConfettiWidget(
+          confettiController: controller,
+          blastDirectionality: BlastDirectionality.directional,
+          blastDirection: 0, // right
+          numberOfParticles: count,
+          maxBlastForce: 15 + intensity * 30,
+          minBlastForce: 8 + intensity * 12,
+          gravity: 0.1 + intensity * 0.1,
+          emissionFrequency: 0.03 + intensity * 0.04,
+          shouldLoop: false,
+          colors: _getColors(),
+          minimumSize: const Size(8, 4),
+          maximumSize: const Size(16, 8),
+        ),
+      ),
+    );
+  }
+
+  /// Corner burst - shoots from top-left corner
+  Widget _cornerBurst(int count, double intensity) {
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: ConfettiWidget(
+          confettiController: controller,
+          blastDirectionality: BlastDirectionality.directional,
+          blastDirection: 0.7854, // pi/4, diagonal
+          numberOfParticles: count,
+          maxBlastForce: 20 + intensity * 30,
+          minBlastForce: 10 + intensity * 15,
+          gravity: 0.1 + intensity * 0.15,
+          emissionFrequency: 0.02 + intensity * 0.03,
+          shouldLoop: false,
+          colors: _getColors(),
+          minimumSize: const Size(8, 4),
+          maximumSize: const Size(16, 8),
         ),
       ),
     );

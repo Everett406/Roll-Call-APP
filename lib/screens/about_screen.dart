@@ -70,7 +70,7 @@ class AboutScreen extends StatelessWidget {
 
             // 版本号
             Text(
-              'v1.2.5',
+              'v1.3.8',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

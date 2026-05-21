@@ -85,10 +85,8 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
         _selectedMemberName = members[idx].name;
         _selectedMemberStudentId = members[idx].studentId;
       });
-      tickCount++;
-      if (tickCount % 5 == 0) {
-        Vibration.vibrate(duration: 15);
-      }
+      // Tactile feedback every tick for rhythm
+      Vibration.vibrate(duration: 10);
     }
 
     if (!mounted) return;
@@ -267,7 +265,7 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
 
   Widget _buildCandidatePool(ThemeData theme, List<Member> members, int count) {
     return InkWell(
-      onTap: () => _showCandidatePicker(context, theme, members),
+      onTap: () => _showCandidatePicker(context, theme, state),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -307,7 +305,11 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
     );
   }
 
-  void _showCandidatePicker(BuildContext context, ThemeData theme, List<Member> members) {
+  void _showCandidatePicker(BuildContext context, ThemeData theme, AppState appState) {
+    final allMembers = appState.members;
+    final groups = appState.groups;
+    final allSelected = _selectedCandidateIds.length == allMembers.length;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -317,16 +319,15 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
-            final allSelected = _selectedCandidateIds.length == members.length;
-
             return DraggableScrollableSheet(
-              initialChildSize: 0.6,
+              initialChildSize: 0.65,
               minChildSize: 0.3,
-              maxChildSize: 0.85,
+              maxChildSize: 0.9,
               expand: false,
               builder: (_, scrollController) {
                 return Column(
                   children: [
+                    // Handle bar
                     Container(
                       margin: const EdgeInsets.only(top: 12, bottom: 8),
                       width: 40,
@@ -336,8 +337,9 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
+                    // Header
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                       child: Row(
                         children: [
                           Text(
@@ -347,13 +349,18 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                             ),
                           ),
                           const Spacer(),
+                          Text(
+                            '${_selectedCandidateIds.length}/${allMembers.length}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          const SizedBox(width: 8),
                           TextButton(
                             onPressed: () {
                               setModalState(() {
                                 if (allSelected) {
                                   _selectedCandidateIds.clear();
                                 } else {
-                                  _selectedCandidateIds.addAll(members.map((m) => m.id));
+                                  _selectedCandidateIds.addAll(allMembers.map((m) => m.id));
                                 }
                               });
                               setState(() {});
@@ -364,16 +371,54 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                       ),
                     ),
                     const Divider(height: 1),
+                    // Quick group selectors
+                    if (groups.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            ActionChip(
+                              avatar: const Icon(Icons.group, size: 16),
+                              label: const Text('全部'),
+                              onPressed: () {
+                                setModalState(() {
+                                  _selectedCandidateIds.addAll(allMembers.map((m) => m.id));
+                                });
+                                setState(() {});
+                              },
+                            ),
+                            ...groups.map((g) {
+                              return ActionChip(
+                                avatar: const Icon(Icons.group_outlined, size: 16),
+                                label: Text(g.name),
+                                onPressed: () {
+                                  setModalState(() {
+                                    _selectedCandidateIds.addAll(g.memberIds);
+                                  });
+                                  setState(() {});
+                                },
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1),
+                    ],
+                    // Member list
                     Expanded(
                       child: ListView.builder(
                         controller: scrollController,
-                        itemCount: members.length,
+                        itemCount: allMembers.length,
                         itemBuilder: (_, index) {
-                          final m = members[index];
+                          final m = allMembers[index];
                           final isSelected = _selectedCandidateIds.contains(m.id);
                           return CheckboxListTile(
-                            title: Text(m.name),
-                            subtitle: m.studentId != null ? Text(m.studentId!) : null,
+                            dense: true,
+                            title: Text(m.name, style: const TextStyle(fontSize: 14)),
+                            subtitle: m.studentId != null
+                                ? Text(m.studentId!, style: const TextStyle(fontSize: 12))
+                                : null,
                             value: isSelected,
                             onChanged: (checked) {
                               setModalState(() {
