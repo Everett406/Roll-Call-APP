@@ -37,7 +37,17 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   AppBar _buildNormalAppBar(Session session, AppState state) {
     final theme = Theme.of(context);
     return AppBar(
-      title: Text(session.title),
+      title: Hero(
+        tag: 'sessionTitle_${session.id}',
+        child: Material(
+          type: MaterialType.transparency,
+          child: Text(
+            session.title,
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+      centerTitle: true,
       actions: [
         // 归档按钮（仅 ongoing 状态显示）
         if (session.status == 'ongoing')
@@ -49,6 +59,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         // 更多菜单按钮
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           onSelected: (value) {
             switch (value) {
               case 'search':
@@ -118,16 +129,24 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
   /// 构建搜索模式AppBar
   AppBar _buildSearchAppBar(Session session) {
+    final theme = Theme.of(context);
     return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          setState(() {
-            _isSearchExpanded = false;
-            _searchController.clear();
-            _searchQuery = '';
-          });
-        },
+      leading: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          shape: BoxShape.circle,
+        ),
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            setState(() {
+              _isSearchExpanded = false;
+              _searchController.clear();
+              _searchQuery = '';
+            });
+          },
+        ),
       ),
       title: TextField(
         controller: _searchController,

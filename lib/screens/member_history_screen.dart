@@ -50,7 +50,17 @@ class MemberHistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(memberName),
+        title: Hero(
+          tag: 'memberName_$memberId',
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              memberName,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        centerTitle: true,
       ),
       body: CustomScrollView(
         slivers: [

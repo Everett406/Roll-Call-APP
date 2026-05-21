@@ -78,6 +78,17 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
               ],
             )
           : AppBar(
+              leading: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
               title: _isSearchExpanded
                   ? TextField(
                       controller: _searchController,
@@ -94,7 +105,24 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                       },
                       autofocus: true,
                     )
-                  : Text('人员管理 (${state.members.length} 人)'),
+                  : Row(
+                      children: [
+                        Hero(
+                          tag: 'settingsIcon_members',
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Icon(Icons.people_outline, color: theme.colorScheme.primary),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '人员管理 (${state.members.length} 人)',
+                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+              centerTitle: !_isSearchExpanded,
+              elevation: 0,
               actions: [
                 if (_isSearchExpanded)
                   IconButton(
@@ -274,10 +302,16 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      member.name,
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
+                                    Hero(
+                                      tag: 'memberName_${member.id}',
+                                      child: Material(
+                                        type: MaterialType.transparency,
+                                        child: Text(
+                                          member.name,
+                                          style: theme.textTheme.titleMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     if (member.studentId != null &&

@@ -17,7 +17,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.1.15';
+  String _currentVersion = '1.2.0';
 
   @override
   void initState() {
@@ -167,7 +167,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                       ),
                       ListTile(
-                        leading: const Icon(Icons.people_outline),
+                        leading: Hero(
+                          tag: 'settingsIcon_members',
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Icon(Icons.people_outline, color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                        ),
                         title: const Text('人员管理'),
                         subtitle: Text('共 ${appState.members.length} 人'),
                         trailing: const Icon(Icons.chevron_right),
@@ -180,7 +186,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const Divider(height: 1, indent: 52),
                       ListTile(
-                        leading: const Icon(Icons.folder_outlined),
+                        leading: Hero(
+                          tag: 'settingsIcon_groups',
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Icon(Icons.folder_outlined, color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                        ),
                         title: const Text('分组管理'),
                         subtitle: Text('共 ${appState.groups.length} 个分组'),
                         trailing: const Icon(Icons.chevron_right),
@@ -193,7 +205,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const Divider(height: 1, indent: 52),
                       ListTile(
-                        leading: const Icon(Icons.label_outline),
+                        leading: Hero(
+                          tag: 'settingsIcon_tags',
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Icon(Icons.label_outline, color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                        ),
                         title: const Text('标签管理'),
                         subtitle: Text('共 ${appState.tags.length} 个标签'),
                         trailing: const Icon(Icons.chevron_right),
@@ -286,7 +304,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ListTile(
                         leading: const Icon(Icons.info_outline),
                         title: const Text('关于点到为止'),
-                        subtitle: const Text('点到为止 v1.1.15'),
+                        subtitle: const Text('点到为止 v1.2.0'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showAboutDialog(),
                       ),
@@ -561,7 +579,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: '点到为止',
-      applicationVersion: '1.1.15',
+      applicationVersion: '1.2.0',
       applicationLegalese: '\u00a9 2026 Everett',
       children: [
         const SizedBox(height: 16),

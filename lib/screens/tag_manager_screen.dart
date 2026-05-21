@@ -48,7 +48,35 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('标签管理'),
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        title: Row(
+          children: [
+            Hero(
+              tag: 'settingsIcon_tags',
+              child: Material(
+                type: MaterialType.transparency,
+                child: Icon(Icons.label_outline, color: theme.colorScheme.primary),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '标签管理',
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        elevation: 0,
       ),
       body: Column(
         children: [
