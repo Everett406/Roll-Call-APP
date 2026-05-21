@@ -581,6 +581,112 @@ class AppState extends ChangeNotifier {
     return result;
   }
 
+  /// Get daily attendance rates for trend chart
+  /// Returns list of (date, attendanceRate) sorted by date ascending
+  List<MapEntry<DateTime, double>> getDailyAttendanceRates(TimePeriod period) {
+    final checkIns = getCheckInsForPeriod(period);
+    final validSessionIds = _sessions.map((s) => s.id).toSet();
+
+    // Group check-ins by date (normalized to day start)
+    final dailyCheckIns = <DateTime, List<CheckIn>>{};
+    for (final ci in checkIns) {
+      final date = DateTime(ci.checkedAt.year, ci.checkedAt.month, ci.checkedAt.day);
+      dailyCheckIns.putIfAbsent(date, () => []);
+      dailyCheckIns[date]!.add(ci);
+    }
+
+    // Fill in missing dates with 0% attendance
+    final now = DateTime.now();
+    DateTime startDate;
+    switch (period) {
+      case TimePeriod.today:
+        startDate = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.lastWeek:
+        startDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+        break;
+      case TimePeriod.lastMonth:
+        startDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 29));
+        break;
+    }
+
+    final result = <MapEntry<DateTime, double>>[];
+    for (int i = 0; i <= now.difference(startDate).inDays; i++) {
+      final date = startDate.add(Duration(days: i));
+      final dayCheckIns = dailyCheckIns[date] ?? [];
+      if (dayCheckIns.isEmpty) {
+        result.add(MapEntry(date, 0.0));
+      } else {
+        final attended = dayCheckIns.where((c) => _attendanceTagIds.contains(c.statusId)).length;
+        result.add(MapEntry(date, attended / dayCheckIns.length));
+      }
+    }
+    return result;
+  }
+
+  /// Get period-over-period comparison data
+  /// Returns map with current period stats and change percentages
+  Map<String, dynamic> getPeriodComparison(TimePeriod period) {
+    // Calculate previous period date range
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    DateTime currentStart;
+    DateTime previousStart;
+    DateTime previousEnd;
+
+    switch (period) {
+      case TimePeriod.today:
+        currentStart = today;
+        previousStart = today.subtract(const Duration(days: 1));
+        previousEnd = today.subtract(const Duration(seconds: 1));
+        break;
+      case TimePeriod.lastWeek:
+        currentStart = today.subtract(const Duration(days: 7));
+        previousStart = today.subtract(const Duration(days: 14));
+        previousEnd = today.subtract(const Duration(days: 8));
+        break;
+      case TimePeriod.lastMonth:
+        currentStart = today.subtract(const Duration(days: 30));
+        previousStart = today.subtract(const Duration(days: 60));
+        previousEnd = today.subtract(const Duration(days: 31));
+        break;
+    }
+
+    final validSessionIds = _sessions.map((s) => s.id).toSet();
+
+    // Helper to get stats for a date range
+    Map<String, int> getRangeStats(DateTime start, DateTime end) {
+      final rangeCheckIns = _checkIns.where((ci) {
+        if (ci.isUndone) return false;
+        if (!validSessionIds.contains(ci.sessionId)) return false;
+        return ci.checkedAt.isAfter(start.subtract(const Duration(seconds: 1))) &&
+            ci.checkedAt.isBefore(end.add(const Duration(days: 1)));
+      }).toList();
+
+      final total = rangeCheckIns.length;
+      final attended = rangeCheckIns.where((c) => _attendanceTagIds.contains(c.statusId)).length;
+      return {'total': total, 'attended': attended};
+    }
+
+    final currentStats = getRangeStats(currentStart, now);
+    final previousStats = getRangeStats(previousStart, previousEnd);
+
+    final currentRate = currentStats['total']! > 0
+        ? currentStats['attended']! / currentStats['total']! : 0.0;
+    final previousRate = previousStats['total']! > 0
+        ? previousStats['attended']! / previousStats['total']! : 0.0;
+
+    return {
+      'currentRate': currentRate,
+      'previousRate': previousRate,
+      'currentCount': currentStats['total'],
+      'previousCount': previousStats['total'],
+      'rateChange': currentRate - previousRate,
+      'countChange': currentStats['total']! - previousStats['total']!,
+    };
+  }
+
   /// Get status counts for a time period
   Map<String, int> getStatusCountsForPeriod(TimePeriod period, {String? sessionId}) {
     final checkIns = getCheckInsForPeriod(period, sessionId: sessionId);

@@ -1,10 +1,13 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../models/time_period.dart';
 import '../utils/constants.dart';
-import 'member_history_screen.dart';
 import '../utils/expressive_theme.dart';
+import '../utils/chart_painter.dart';
+import 'member_history_screen.dart';
 
 class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
@@ -13,103 +16,149 @@ class StatisticsScreen extends ConsumerStatefulWidget {
   ConsumerState<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
-class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
+class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
+    with SingleTickerProviderStateMixin {
   TimePeriod _selectedPeriod = TimePeriod.lastWeek;
+  late TabController _tabController;
+  int _selectedRankingTab = 0; // 0 = 缺勤榜, 1 = 出勤榜
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _selectedRankingTab = _tabController.index;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(appStateProvider);
     final theme = Theme.of(context);
 
+    // ---- Core data ----
     final statusCounts = state.getStatusCountsForPeriod(_selectedPeriod);
     final totalCheckIns = statusCounts.values.fold(0, (a, b) => a + b);
-    // Use attendance tag config to calculate attended count
     final attendedCount = statusCounts.entries
         .where((e) => state.attendanceTagIds.contains(e.key))
         .fold(0, (a, b) => a + b.value);
     final attendanceRate = totalCheckIns > 0 ? attendedCount / totalCheckIns : 0.0;
-    final absenteeismRanking = state.getMemberAbsenteeismRanking(_selectedPeriod);
+
+    // ---- Comparison (period-over-period) ----
+    final comparison = state.getPeriodComparison(_selectedPeriod);
+    final rateChange = comparison['rateChange'] as double;
+    final countChange = comparison['countChange'] as int;
+
+    // ---- Daily trend data ----
+    final dailyRates = state.getDailyAttendanceRates(_selectedPeriod);
+    final trendValues = dailyRates.map((e) => e.value).toList();
+
+    // ---- Status segments for donut ----
+    final donutData = state.tags
+        .where((t) => (statusCounts[t.id] ?? 0) > 0)
+        .map((t) => MapEntry(t.name, {
+              'count': statusCounts[t.id] ?? 0,
+              'color': Color(t.colorValue),
+            }))
+        .toList();
+
+    // ---- Ranking data ----
+    final ranking = state.getMemberAbsenteeismRanking(_selectedPeriod);
+    final attendanceRanking = List<Map<String, dynamic>>.from(ranking)
+      ..sort((a, b) {
+        final aRate = (a['total'] as int) > 0
+            ? 1.0 - (a['absentRate'] as double) : 0.0;
+        final bRate = (b['total'] as int) > 0
+            ? 1.0 - (b['absentRate'] as double) : 0.0;
+        return bRate.compareTo(aRate);
+      });
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Header with period selector
+          // ===== Header =====
           SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  Expanded(
                     child: Text(
                       '统计概览',
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: TimePeriod.values.map((period) {
-                        final isSelected = _selectedPeriod == period;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            selected: isSelected,
-                            label: Text(_getPeriodLabel(period)),
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() {
-                                  _selectedPeriod = period;
-                                });
-                              }
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
+                  // Period selector chips
+                  ...TimePeriod.values.map((period) {
+                    final isSelected = _selectedPeriod == period;
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: ChoiceChip(
+                        selected: isSelected,
+                        label: Text(_getPeriodLabel(period)),
+                        onSelected: (_) {
+                          setState(() => _selectedPeriod = period);
+                        },
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
           ),
 
-          // Quick Stats Cards
+          // ===== Stat Cards (2x2 grid with change badges) =====
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverGrid.count(
               crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.5,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.7,
               children: [
-                ExpressiveStatCard(
+                _buildStatCard(
                   title: '出勤率',
                   value: '${(attendanceRate * 100).toStringAsFixed(1)}%',
                   icon: Icons.check_circle_outline,
                   color: attendanceRate >= 0.8
                       ? AppColors.success
-                      : attendanceRate >= 0.6
-                          ? AppColors.warning
-                          : AppColors.error,
+                      : attendanceRate >= 0.6 ? AppColors.warning : AppColors.error,
+                  changeBadge: rateChange != 0
+                      ? ChangeBadge(change: rateChange)
+                      : null,
                 ),
-                ExpressiveStatCard(
+                _buildStatCard(
                   title: '签到人次',
                   value: '$totalCheckIns',
                   icon: Icons.people_outline,
                   color: theme.colorScheme.primary,
+                  changeBadge: countChange != 0
+                      ? ChangeBadge(
+                          change: comparison['previousCount'] as int > 0
+                              ? countChange / (comparison['previousCount'] as int)
+                              : 0,
+                          label: '$countChange',
+                        )
+                      : null,
                 ),
-                ExpressiveStatCard(
+                _buildStatCard(
                   title: '点名次数',
                   value: '${state.sessions.length}',
                   icon: Icons.event_note_outlined,
                   color: theme.colorScheme.secondary,
                 ),
-                ExpressiveStatCard(
+                _buildStatCard(
                   title: '成员数',
                   value: '${state.members.length}',
                   icon: Icons.group_outlined,
@@ -119,228 +168,431 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             ),
           ),
 
-          // Status distribution
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverToBoxAdapter(
+          // ===== Attendance Trend Line Chart =====
+          SliverToBoxAdapter(
+            child: ContainmentGroup(
+              title: '出勤率趋势',
+              titleIcon: Icons.show_chart,
+              padding: const EdgeInsets.all(16),
+              child: totalCheckIns == 0
+                  ? _buildEmptyState(theme, '暂无趋势数据')
+                  : Column(
+                      children: [
+                        LineChart(
+                          values: trendValues,
+                          lineColor: attendanceRate >= 0.8
+                              ? AppColors.success
+                              : attendanceRate >= 0.6
+                                  ? AppColors.warning
+                                  : theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 4),
+                        // Date range label
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _formatDateShort(dailyRates.first.key),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontSize: 10,
+                              ),
+                            ),
+                            Text(
+                              _formatDateShort(dailyRates.last.key),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+
+          // ===== Status Distribution (Donut Chart) =====
+          SliverToBoxAdapter(
+            child: ContainmentGroup(
+              title: '状态分布',
+              titleIcon: Icons.donut_large,
+              padding: const EdgeInsets.all(16),
+              child: donutData.isEmpty
+                  ? _buildEmptyState(theme, '暂无状态数据')
+                  : _buildDonutChart(donutData, totalCheckIns, theme),
+            ),
+          ),
+
+          // ===== Member Rankings (Dual Tabs) =====
+          SliverToBoxAdapter(
+            child: ContainmentGroup(
+              title: '人员概况',
+              titleIcon: Icons.format_list_numbered,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '状态分布',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  // Tab bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: theme.colorScheme.primaryContainer,
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      labelColor: theme.colorScheme.onPrimaryContainer,
+                      unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                      labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      tabs: const [
+                        Tab(text: '缺勤关注'),
+                        Tab(text: '出勤光荣'),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  if (totalCheckIns == 0)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          '暂无数据',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: ranking.isEmpty ? 80 : math.min(ranking.length * 64.0 + 16, 340),
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Absentee ranking
+                        _buildRankingList(
+                          ranking: ranking,
+                          theme: theme,
+                          type: 'absent',
                         ),
-                      ),
-                    )
-                  else
-                    ...state.tags.map((tag) {
-                      final count = statusCounts[tag.id] ?? 0;
-                      if (count == 0) return const SizedBox.shrink();
-                      final percentage = totalCheckIns > 0 ? count / totalCheckIns : 0.0;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: Color(tag.colorValue),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        tag.name,
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      '$count次',
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Color(tag.colorValue).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        '${(percentage * 100).toStringAsFixed(1)}%',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(tag.colorValue),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                LinearProgressIndicator(
-                                  value: percentage,
-                                  backgroundColor:
-                                      theme.colorScheme.surfaceContainerHighest,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Color(tag.colorValue),
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ],
-                            ),
-                          ),
+                        // Attendance honor roll
+                        _buildRankingList(
+                          ranking: attendanceRanking,
+                          theme: theme,
+                          type: 'attendance',
                         ),
-                      );
-                    }),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
 
-          // Absenteeism Ranking
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '缺勤排名',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (absenteeismRanking.isEmpty)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          '暂无数据',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    ...absenteeismRanking.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final stat = entry.value;
-                      final member = stat['member'];
-                      final absentRate = stat['absentRate'] as double;
-                      final total = stat['total'] as int;
-                      final absent = stat['absent'] as int;
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Card(
-                          child: ListTile(
-                            leading: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: index < 3
-                                    ? [
-                                        Colors.red.withOpacity(0.9),
-                                        Colors.orange.withOpacity(0.9),
-                                        Colors.yellow.withOpacity(0.9),
-                                      ][index]
-                                    : theme.colorScheme.surfaceContainerHighest,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '${index + 1}',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: index < 3
-                                        ? Colors.white
-                                        : theme.colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              member.name,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '缺勤 $absent / $total 次',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: absentRate >= 0.3
-                                    ? AppColors.error
-                                    : absentRate >= 0.15
-                                        ? AppColors.warning
-                                        : AppColors.success,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '${(absentRate * 100).toStringAsFixed(0)}%',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MemberHistoryScreen(
-                                    memberId: member.id,
-                                    memberName: member.name,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      );
-                    }),
-                ],
-              ),
-            ),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
     );
+  }
+
+  // ===== Builders =====
+
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    Widget? changeBadge,
+  }) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 16),
+                ),
+                const Spacer(),
+                if (changeBadge != null) changeBadge,
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: color,
+                fontSize: 22,
+              ),
+            ),
+            Text(
+              title,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDonutChart(
+    List<MapEntry<String, Map<String, dynamic>>> data,
+    int total,
+    ThemeData theme,
+  ) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 110,
+          height: 110,
+          child: CustomPaint(
+            painter: DonutChartPainter(
+              segments: data.map((d) {
+                final info = d.value as Map<String, dynamic>;
+                return DonutSegment(
+                  value: (info['count'] as int).toDouble(),
+                  color: info['color'] as Color,
+                  label: d.key,
+                );
+              }).toList(),
+              strokeWidth: 20,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$total',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                    ),
+                  ),
+                  Text(
+                    '总签到',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: data.map((d) {
+              final info = d.value as Map<String, dynamic>;
+              final count = info['count'] as int;
+              final color = info['color'] as Color;
+              final percentage = total > 0 ? (count / total * 100).toStringAsFixed(1) : '0';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        d.key,
+                        style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '$count次',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '$percentage%',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRankingList({
+    required List<Map<String, dynamic>> ranking,
+    required ThemeData theme,
+    required String type,
+  }) {
+    if (ranking.isEmpty) {
+      return Center(
+        child: Text(
+          '暂无数据',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
+    final showCount = math.min(ranking.length, 5);
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8),
+      itemCount: showCount,
+      physics: const NeverScrollableScrollPhysics(),
+      itemBuilder: (context, index) {
+        final stat = ranking[index];
+        final member = stat['member'];
+        final total = stat['total'] as int;
+        final absent = stat['absent'] as int;
+        final absentRate = stat['absentRate'] as double;
+        final attendanceRate = total > 0 ? 1.0 - absentRate : 0.0;
+
+        final isAbsentTab = type == 'absent';
+        final displayRate = isAbsentTab ? absentRate : attendanceRate;
+        final rateColor = isAbsentTab
+            ? (absentRate >= 0.3
+                ? AppColors.error
+                : absentRate >= 0.15 ? AppColors.warning : AppColors.success)
+            : (attendanceRate >= 0.9
+                ? AppColors.success
+                : attendanceRate >= 0.7 ? AppColors.warning : AppColors.error);
+
+        final rankColors = isAbsentTab
+            ? [const Color(0xFFE53935), const Color(0xFFFF9800), const Color(0xFFFFC107)]
+            : [const Color(0xFF4CAF50), const Color(0xFF81C784), const Color(0xFFA5D6A7)];
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MemberHistoryScreen(
+                    memberId: member.id,
+                    memberName: member.name,
+                  ),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  // Rank badge
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: index < 3 ? rankColors[index] : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: index < 3 ? Colors.white : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Name
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          member.name,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          isAbsentTab
+                              ? '缺勤 $absent / $total 次'
+                              : '出勤 ${(attendanceRate * 100).toStringAsFixed(0)}% · $total 次',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Rate badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: rateColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${(displayRate * 100).toStringAsFixed(0)}%',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: rateColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme, String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          message,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDateShort(DateTime date) {
+    return DateFormat('M/d').format(date);
   }
 
   String _getPeriodLabel(TimePeriod period) {
@@ -354,4 +606,3 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     }
   }
 }
-
