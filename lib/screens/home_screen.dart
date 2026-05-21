@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -215,12 +217,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
+      builder: (context) => ClipRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withOpacity(0.85),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
         child: Column(
           children: [
             // 拖动条
@@ -366,6 +371,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -506,6 +512,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('点到为止'),
         centerTitle: true,
+        backgroundColor: theme.colorScheme.surface.withOpacity(0.8),
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: Colors.transparent),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
@@ -524,31 +537,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _onNavItemTapped,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.radio_button_checked_outlined),
-            selectedIcon: Icon(Icons.radio_button_checked),
-            label: '进行中',
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: theme.colorScheme.surface.withOpacity(0.8),
+            child: NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: _onNavItemTapped,
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.radio_button_checked_outlined),
+                  selectedIcon: Icon(Icons.radio_button_checked),
+                  label: '进行中',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.archive_outlined),
+                  selectedIcon: Icon(Icons.archive),
+                  label: '历史',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.bar_chart_outlined),
+                  selectedIcon: Icon(Icons.bar_chart),
+                  label: '统计',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: '设置',
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.archive_outlined),
-            selectedIcon: Icon(Icons.archive),
-            label: '历史',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: '统计',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: '设置',
-          ),
-        ],
+        ),
       ),
       floatingActionButton: _currentIndex <= 1
           ? Hero(
