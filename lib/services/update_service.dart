@@ -229,142 +229,129 @@ class UpdateService {
 
   /// 下载并安装 APK
   /// 返回进度 Stream
-  static Stream<DownloadProgress> downloadAndInstall(String downloadUrl) async* {
-    if (!Platform.isAndroid) {
-      yield DownloadProgress(
-        received: 0,
-        total: 0,
-        progress: 0,
-        status: '仅支持 Android 平台',
-      );
-      return;
-    }
+  static Stream<DownloadProgress> downloadAndInstall(String downloadUrl) {
+    final controller = StreamController<DownloadProgress>();
 
-    // 请求权限
-    final hasPermission = await requestPermissions();
-    if (!hasPermission) {
-      yield DownloadProgress(
-        received: 0,
-        total: 0,
-        progress: 0,
-        status: '缺少必要权限',
-      );
-      return;
-    }
-
-    try {
-      final downloadPath = await getDownloadPath();
-      final fileName = 'update_${DateTime.now().millisecondsSinceEpoch}.apk';
-      final filePath = '$downloadPath/$fileName';
-
-      yield DownloadProgress(
-        received: 0,
-        total: 0,
-        progress: 0,
-        status: '开始下载...',
-      );
-
-      int totalBytes = 0;
-      int receivedBytes = 0;
-
-      await _dio.download(
-        downloadUrl,
-        filePath,
-        onReceiveProgress: (received, total) {
-          receivedBytes = received;
-          totalBytes = total;
-
-          if (total > 0) {
-            final progress = received / total;
-            yield DownloadProgress(
-              received: received,
-              total: total,
-              progress: progress,
-              status: '下载中 ${(progress * 100).toStringAsFixed(1)}%',
-            );
-          } else {
-            yield DownloadProgress(
-              received: received,
-              total: 0,
-              progress: 0,
-              status: '下载中...',
-            );
-          }
-        },
-      );
-
-      yield DownloadProgress(
-        received: receivedBytes,
-        total: totalBytes,
-        progress: 1.0,
-        status: '下载完成，准备安装...',
-      );
-
-      // 安装 APK
-      final success = await _installApk(filePath);
-
-      if (success) {
-        yield DownloadProgress(
-          received: receivedBytes,
-          total: totalBytes,
-          progress: 1.0,
-          status: '安装已启动',
-        );
-      } else {
-        yield DownloadProgress(
-          received: receivedBytes,
-          total: totalBytes,
-          progress: 1.0,
-          status: '安装失败',
-        );
+    () async {
+      if (!Platform.isAndroid) {
+        controller.add(DownloadProgress(
+          received: 0,
+          total: 0,
+          progress: 0,
+          status: '仅支持 Android 平台',
+        ));
+        controller.close();
+        return;
       }
 
-      // 清理下载的文件（可选，因为安装器可能需要访问）
-      // 可以延迟清理或使用定时任务
-    } catch (e) {
-      yield DownloadProgress(
-        received: 0,
-        total: 0,
-        progress: 0,
-        status: '下载失败: $e',
-      );
-    }
+      // 请求权限
+      final hasPermission = await requestPermissions();
+      if (!hasPermission) {
+        controller.add(DownloadProgress(
+          received: 0,
+          total: 0,
+          progress: 0,
+          status: '缺少必要权限',
+        ));
+        controller.close();
+        return;
+      }
+
+      try {
+        final downloadPath = await getDownloadPath();
+        final fileName = 'update_${DateTime.now().millisecondsSinceEpoch}.apk';
+        final filePath = '$downloadPath/$fileName';
+
+        controller.add(DownloadProgress(
+          received: 0,
+          total: 0,
+          progress: 0,
+          status: '开始下载...',
+        ));
+
+        int totalBytes = 0;
+        int receivedBytes = 0;
+
+        await _dio.download(
+          downloadUrl,
+          filePath,
+          onReceiveProgress: (received, total) {
+            receivedBytes = received;
+            totalBytes = total;
+
+            if (total > 0) {
+              final progress = received / total;
+              controller.add(DownloadProgress(
+                received: received,
+                total: total,
+                progress: progress,
+                status: '下载中 ${(progress * 100).toStringAsFixed(1)}%',
+              ));
+            } else {
+              controller.add(DownloadProgress(
+                received: received,
+                total: 0,
+                progress: 0,
+                status: '下载中...',
+              ));
+            }
+          },
+        );
+
+        controller.add(DownloadProgress(
+          received: receivedBytes,
+          total: totalBytes,
+          progress: 1.0,
+          status: '下载完成，准备安装...',
+        ));
+
+        // 安装 APK
+        final success = await _installApk(filePath);
+
+        if (success) {
+          controller.add(DownloadProgress(
+            received: receivedBytes,
+            total: totalBytes,
+            progress: 1.0,
+            status: '安装已启动',
+          ));
+        } else {
+          controller.add(DownloadProgress(
+            received: receivedBytes,
+            total: totalBytes,
+            progress: 1.0,
+            status: '安装失败',
+          ));
+        }
+      } catch (e) {
+        controller.add(DownloadProgress(
+          received: 0,
+          total: 0,
+          progress: 0,
+          status: '下载失败: $e',
+        ));
+      }
+
+      controller.close();
+    }();
+
+    return controller.stream;
   }
 
   /// 安装 APK（使用平台通道）
   static Future<bool> _installApk(String filePath) async {
     try {
-      // 使用 url_launcher 启动安装意图
-      // 需要在 AndroidManifest.xml 中配置 FileProvider
       final file = File(filePath);
       if (!await file.exists()) {
         debugPrint('APK 文件不存在: $filePath');
         return false;
       }
 
-      // 构建 content:// URI
-      // authority 需要与 AndroidManifest.xml 中的 FileProvider 一致
-      const authority = 'com.example.roll_call_app.fileprovider';
-      final uri = 'content://$authority/external_files/updates/${filePath.split('/').last}';
-
-      // 使用 intent 启动安装
-      final intentUrl = 'intent://$authority/external_files/updates/${filePath.split('/').last}'
-          '#Intent;'
-          'action=android.intent.action.VIEW;'
-          'category=android.intent.category.DEFAULT;'
-          'type=application/vnd.android.package-archive;'
-          'launchFlags=0x10000000;'
-          'end';
-
-      // 尝试使用 url_launcher
-      final launchUri = Uri.parse(intentUrl);
-      if (await canLaunchUrl(launchUri)) {
-        await launchUrl(launchUri, mode: LaunchMode.externalApplication);
-        return true;
-      }
-
-      // 备用方案：使用 file:// URI（仅适用于 Android 7.0 以下）
+      // Android 7.0+ 使用 content URI，需要通过 FileProvider
+      // 这里简化处理：直接使用 file:// URI
+      // 在 Android 7.0+ 上需要在 AndroidManifest 中添加 provider 并配置 paths
       final fileUri = Uri.file(filePath);
+
       if (await canLaunchUrl(fileUri)) {
         await launchUrl(fileUri, mode: LaunchMode.externalApplication);
         return true;
