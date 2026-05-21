@@ -17,7 +17,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = '1.1.14';
+  String _currentVersion = '1.1.15';
 
   @override
   void initState() {
@@ -45,148 +45,296 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appState = ref.watch(appStateProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-      ),
-      body: ListView(
-        children: [
-          // 外观设置
-          _SectionHeader(title: '外观', theme: theme),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('设置'),
+            floating: true,
+            elevation: 0,
+            scrolledUnderElevation: 4,
+          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
 
-          // 主题模式
-          ListTile(
-            leading: Icon(
-              themeState.themeMode == AppThemeMode.dark
-                  ? Icons.dark_mode
-                  : themeState.themeMode == AppThemeMode.light
-                      ? Icons.light_mode
-                      : Icons.brightness_auto,
+                // ===== 外观分组 =====
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  elevation: 0.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '外观',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // 主题模式
+                      ListTile(
+                        leading: Icon(
+                          themeState.themeMode == AppThemeMode.dark
+                              ? Icons.dark_mode
+                              : themeState.themeMode == AppThemeMode.light
+                                  ? Icons.light_mode
+                                  : Icons.brightness_auto,
+                        ),
+                        title: const Text('主题模式'),
+                        subtitle: Text(_getThemeModeLabel(themeState.themeMode)),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showThemeModeDialog(),
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      // 主题颜色
+                      ListTile(
+                        leading: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: themeState.seedColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        title: const Text('主题颜色'),
+                        subtitle: Text(_getThemeColorName(themeState.seedColor)),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showColorPickerDialog(),
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      // 动态取色
+                      SwitchListTile(
+                        secondary: const Icon(Icons.palette_outlined),
+                        title: const Text('动态取色'),
+                        subtitle: Text(
+                          themeState.dynamicColorEnabled
+                              ? '已开启 - 高饱和度配色'
+                              : '已关闭 - 柔和配色',
+                        ),
+                        value: themeState.dynamicColorEnabled,
+                        onChanged: (value) {
+                          themeState.setDynamicColorEnabled(value);
+                        },
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      // 图标风格
+                      ListTile(
+                        leading: const Icon(Icons.palette_outlined),
+                        title: const Text('图标风格'),
+                        subtitle: Text(_getIconStyleName(themeState.iconStyle)),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showIconStylePicker(context, themeState),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+
+                // ===== 数据管理分组 =====
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  elevation: 0.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '数据管理',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.people_outline),
+                        title: const Text('人员管理'),
+                        subtitle: Text('共 ${appState.members.length} 人'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MemberManagerScreen()),
+                          );
+                        },
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      ListTile(
+                        leading: const Icon(Icons.folder_outlined),
+                        title: const Text('分组管理'),
+                        subtitle: Text('共 ${appState.groups.length} 个分组'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const GroupManagerScreen()),
+                          );
+                        },
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      ListTile(
+                        leading: const Icon(Icons.label_outline),
+                        title: const Text('标签管理'),
+                        subtitle: Text('共 ${appState.tags.length} 个标签'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const TagManagerScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+
+                // ===== 数据操作分组 =====
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  elevation: 0.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '数据操作',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.import_export),
+                        title: const Text('导出数据'),
+                        subtitle: const Text('导出为JSON文件'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _exportData(),
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      ListTile(
+                        leading: Icon(
+                          Icons.delete_outline,
+                          color: theme.colorScheme.error,
+                        ),
+                        title: Text(
+                          '清除所有数据',
+                          style: TextStyle(color: theme.colorScheme.error),
+                        ),
+                        subtitle: const Text('删除所有人员、分组和点名记录'),
+                        trailing: Icon(Icons.chevron_right, color: theme.colorScheme.error),
+                        onTap: () => _confirmClearData(),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+
+                // ===== 关于分组 =====
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  elevation: 0.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '关于',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.info_outline),
+                        title: const Text('关于点到为止'),
+                        subtitle: const Text('点到为止 v1.1.15'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showAboutDialog(),
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      ListTile(
+                        leading: const Icon(Icons.update),
+                        title: const Text('版本信息'),
+                        subtitle: Text('当前版本: $_currentVersion'),
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      // 检查更新
+                      ListTile(
+                        leading: _isCheckingUpdate
+                            ? SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              )
+                            : Icon(Icons.system_update, color: theme.colorScheme.primary),
+                        title: const Text('检查更新'),
+                        subtitle: const Text('检查是否有新版本可用'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _isCheckingUpdate ? null : () => _checkForUpdate(),
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      // 启动时自动检查更新
+                      SwitchListTile(
+                        secondary: const Icon(Icons.sync),
+                        title: const Text('启动时自动检查更新'),
+                        subtitle: Text(
+                          themeState.autoCheckUpdate ? '已开启' : '已关闭',
+                        ),
+                        value: themeState.autoCheckUpdate,
+                        onChanged: (value) {
+                          themeState.setAutoCheckUpdate(value);
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+              ],
             ),
-            title: const Text('主题模式'),
-            subtitle: Text(_getThemeModeLabel(themeState.themeMode)),
-            onTap: () => _showThemeModeDialog(),
-          ),
-
-          // 主题颜色
-          ListTile(
-            leading: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: themeState.seedColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-            title: const Text('主题颜色'),
-            subtitle: Text(_getThemeColorName(themeState.seedColor)),
-            onTap: () => _showColorPickerDialog(),
-          ),
-
-          // 动态取色开关
-          SwitchListTile(
-            secondary: const Icon(Icons.palette_outlined),
-            title: const Text('动态取色'),
-            subtitle: Text(themeState.dynamicColorEnabled ? '已开启 - 高饱和度配色' : '已关闭 - 柔和配色'),
-            value: themeState.dynamicColorEnabled,
-            onChanged: (value) {
-              themeState.setDynamicColorEnabled(value);
-            },
-          ),
-
-          const Divider(),
-
-          // 数据管理
-          _SectionHeader(title: '数据管理', theme: theme),
-
-          ListTile(
-            leading: const Icon(Icons.people_outline),
-            title: const Text('人员管理'),
-            subtitle: Text('共 ${appState.members.length} 人'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberManagerScreen()));
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.folder_outlined),
-            title: const Text('分组管理'),
-            subtitle: Text('共 ${appState.groups.length} 个分组'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupManagerScreen()));
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.label_outline),
-            title: const Text('标签管理'),
-            subtitle: Text('共 ${appState.tags.length} 个标签'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const TagManagerScreen()));
-            },
-          ),
-
-          const Divider(),
-
-          // 数据操作
-          _SectionHeader(title: '数据操作', theme: theme),
-
-          ListTile(
-            leading: const Icon(Icons.import_export),
-            title: const Text('导出数据'),
-            subtitle: const Text('导出为JSON文件'),
-            onTap: () => _exportData(),
-          ),
-
-          ListTile(
-            leading: Icon(
-              Icons.delete_outline,
-              color: theme.colorScheme.error,
-            ),
-            title: Text(
-              '清除所有数据',
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-            subtitle: const Text('删除所有人员、分组和点名记录'),
-            onTap: () => _confirmClearData(),
-          ),
-
-          const Divider(),
-
-          // 关于
-          _SectionHeader(title: '关于', theme: theme),
-
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('关于点到为止'),
-            subtitle: const Text('点到为止 v1.1.14'),
-            onTap: () => _showAboutDialog(),
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.update),
-            title: const Text('版本信息'),
-            subtitle: Text('当前版本: $_currentVersion'),
-          ),
-
-          // 检查更新按钮
-          ListTile(
-            leading: _isCheckingUpdate
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: theme.colorScheme.primary,
-                    ),
-                  )
-                : Icon(Icons.system_update, color: theme.colorScheme.primary),
-            title: const Text('检查更新'),
-            subtitle: const Text('检查是否有新版本可用'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _isCheckingUpdate ? null : () => _checkForUpdate(),
           ),
         ],
       ),
@@ -211,6 +359,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
     }
     return '自定义';
+  }
+
+  String _getIconStyleName(AppIconStyle style) {
+    switch (style) {
+      case AppIconStyle.defaultStyle:
+        return '默认';
+      case AppIconStyle.rounded:
+        return '圆角';
+      case AppIconStyle.outlined:
+        return '线条';
+      case AppIconStyle.sharp:
+        return '尖角';
+    }
+  }
+
+  IconData _getPreviewIcon(AppIconStyle style) {
+    switch (style) {
+      case AppIconStyle.defaultStyle:
+        return Icons.favorite;
+      case AppIconStyle.rounded:
+        return Icons.favorite_rounded;
+      case AppIconStyle.outlined:
+        return Icons.favorite_outline;
+      case AppIconStyle.sharp:
+        return Icons.favorite_sharp;
+    }
   }
 
   void _showThemeModeDialog() {
@@ -302,6 +476,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  void _showIconStylePicker(BuildContext context, ThemeState themeState) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final currentStyle = themeState.iconStyle;
+        return AlertDialog(
+          title: const Text('选择图标风格'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: AppIconStyle.values.map((style) {
+              final isSelected = style == currentStyle;
+              return RadioListTile<AppIconStyle>(
+                title: Text(_getIconStyleName(style)),
+                secondary: Icon(
+                  _getPreviewIcon(style),
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                value: style,
+                groupValue: currentStyle,
+                selected: isSelected,
+                onChanged: (value) {
+                  if (value != null) {
+                    themeState.setIconStyle(value);
+                  }
+                  Navigator.pop(context);
+                },
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _exportData() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('导出功能开发中')),
@@ -345,8 +561,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: '点到为止',
-      applicationVersion: '1.1.14',
-      applicationLegalese: '© 2026 Everett',
+      applicationVersion: '1.1.15',
+      applicationLegalese: '\u00a9 2026 Everett',
       children: [
         const SizedBox(height: 16),
         const Text(
@@ -358,10 +574,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
-        const Text('• 滑动点名，快速标记'),
-        const Text('• 自定义标签，灵活分类'),
-        const Text('• 多会话管理，历史可追溯'),
-        const Text('• 出勤统计，一目了然'),
+        const Text('\u2022 滑动点名，快速标记'),
+        const Text('\u2022 自定义标签，灵活分类'),
+        const Text('\u2022 多会话管理，历史可追溯'),
+        const Text('\u2022 出勤统计，一目了然'),
       ],
     );
   }
@@ -522,29 +738,5 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } else {
       return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
     }
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final ThemeData theme;
-
-  const _SectionHeader({
-    required this.title,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
   }
 }

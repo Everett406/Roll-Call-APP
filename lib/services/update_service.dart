@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// 发布信息模型
 class ReleaseInfo {
@@ -134,5 +135,17 @@ class UpdateService {
       debugPrint('下载失败: ${e.message}');
       return false;
     }
+  }
+
+  /// 保存自动检查更新设置
+  static Future<void> setAutoCheckUpdate(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('auto_check_update', value);
+  }
+
+  /// 读取自动检查更新设置
+  static Future<bool> getAutoCheckUpdate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('auto_check_update') ?? false;
   }
 }

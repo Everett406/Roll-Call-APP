@@ -5,6 +5,7 @@ import '../providers/app_state.dart';
 import '../models/session.dart';
 import '../models/status_tag.dart';
 import '../utils/constants.dart';
+import '../services/update_service.dart';
 import 'session_screen.dart';
 import 'new_session_screen.dart';
 import 'statistics_screen.dart';
@@ -46,7 +47,91 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _pageController = PageController(initialPage: _currentIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appStateProvider).loadData();
+      _checkForUpdate();
     });
+  }
+
+  /// 启动时自动检查更新
+  Future<void> _checkForUpdate() async {
+    final autoCheck = await UpdateService.getAutoCheckUpdate();
+    if (!autoCheck) return;
+
+    final release = await UpdateService.checkUpdate();
+    if (release != null && mounted) {
+      _showUpdateDialog(release);
+    }
+  }
+
+  /// 显示更新提示对话框
+  void _showUpdateDialog(ReleaseInfo release) {
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.system_update, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text('发现新版本'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '最新版本: ${release.version}',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '更新说明:',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: SingleChildScrollView(
+                child: Text(
+                  release.body.isNotEmpty ? release.body : '暂无更新说明',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('稍后更新'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (release.downloadUrl != null) {
+                UpdateService.downloadAndInstall(release.downloadUrl!);
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(
+                    content: Text('正在后台下载，请查看通知栏'),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(content: Text('未找到下载链接')),
+                );
+              }
+            },
+            child: const Text('立即更新'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

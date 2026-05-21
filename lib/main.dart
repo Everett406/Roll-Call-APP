@@ -20,6 +20,15 @@ class RollCallApp extends ConsumerStatefulWidget {
 
 class _RollCallAppState extends ConsumerState<RollCallApp> {
   @override
+  void initState() {
+    super.initState();
+    // 加载持久化的主题设置
+    Future.microtask(() {
+      ref.read(themeProvider).loadSettings();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeState = ref.watch(themeProvider);
 

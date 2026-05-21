@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'dart:ui';
+import 'package:hive_flutter/hive_flutter.dart';
 
 /// 主题模式
 enum AppThemeMode {
   system,  // 跟随系统
   light,   // 亮色
   dark,    // 暗色
+}
+
+/// Icon 风格
+enum AppIconStyle {
+  defaultStyle,  // 默认 Material Icons
+  rounded,       // 圆角图标
+  outlined,      // 线条图标
+  sharp,         // 尖角图标
 }
 
 /// 主题颜色选项
@@ -36,10 +45,14 @@ class ThemeState extends ChangeNotifier {
   Color _seedColor = Colors.indigo;
   bool _dynamicColorEnabled = false;
   ColorScheme? _platformColorScheme;
+  AppIconStyle _iconStyle = AppIconStyle.defaultStyle;
+  bool _autoCheckUpdate = true;
 
   AppThemeMode get themeMode => _themeMode;
   Color get seedColor => _seedColor;
   bool get dynamicColorEnabled => _dynamicColorEnabled;
+  AppIconStyle get iconStyle => _iconStyle;
+  bool get autoCheckUpdate => _autoCheckUpdate;
 
   /// 设置平台动态颜色方案（在 main.dart 中调用）
   void setPlatformColorScheme(ColorScheme? scheme) {
@@ -49,16 +62,31 @@ class ThemeState extends ChangeNotifier {
 
   void setThemeMode(AppThemeMode mode) {
     _themeMode = mode;
+    _saveSettings();
     notifyListeners();
   }
 
   void setSeedColor(Color color) {
     _seedColor = color;
+    _saveSettings();
     notifyListeners();
   }
 
   void setDynamicColorEnabled(bool value) {
     _dynamicColorEnabled = value;
+    _saveSettings();
+    notifyListeners();
+  }
+
+  void setIconStyle(AppIconStyle style) {
+    _iconStyle = style;
+    _saveSettings();
+    notifyListeners();
+  }
+
+  void setAutoCheckUpdate(bool value) {
+    _autoCheckUpdate = value;
+    _saveSettings();
     notifyListeners();
   }
 
@@ -138,6 +166,49 @@ class ThemeState extends ChangeNotifier {
         },
       ),
     );
+  }
+
+  /// 从 Hive 加载持久化设置
+  Future<void> loadSettings() async {
+    try {
+      final box = await Hive.openBox('settings');
+      // 主题模式
+      final themeModeIndex = box.get('themeMode', defaultValue: 0) as int;
+      if (themeModeIndex >= 0 && themeModeIndex < AppThemeMode.values.length) {
+        _themeMode = AppThemeMode.values[themeModeIndex];
+      }
+      // 种子颜色
+      final seedColorValue = box.get('seedColor') as int?;
+      if (seedColorValue != null) {
+        _seedColor = Color(seedColorValue);
+      }
+      // 动态取色
+      _dynamicColorEnabled = box.get('dynamicColorEnabled', defaultValue: false) as bool;
+      // Icon 风格
+      final iconStyleIndex = box.get('iconStyle', defaultValue: 0) as int;
+      if (iconStyleIndex >= 0 && iconStyleIndex < AppIconStyle.values.length) {
+        _iconStyle = AppIconStyle.values[iconStyleIndex];
+      }
+      // 自动检查更新
+      _autoCheckUpdate = box.get('autoCheckUpdate', defaultValue: true) as bool;
+      notifyListeners();
+    } catch (e) {
+      // 加载失败时使用默认值
+    }
+  }
+
+  /// 保存设置到 Hive
+  Future<void> _saveSettings() async {
+    try {
+      final box = await Hive.openBox('settings');
+      await box.put('themeMode', _themeMode.index);
+      await box.put('seedColor', _seedColor.value);
+      await box.put('dynamicColorEnabled', _dynamicColorEnabled);
+      await box.put('iconStyle', _iconStyle.index);
+      await box.put('autoCheckUpdate', _autoCheckUpdate);
+    } catch (e) {
+      // 保存失败时静默处理
+    }
   }
 }
 
