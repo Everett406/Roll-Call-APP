@@ -10,6 +10,7 @@ enum NotificationType {
   birthday, // 生日提醒
   weeklyReport, // 出勤率周报
   attendanceDrop, // 出勤率下降提醒
+  newVersion, // 新版本通知
 }
 
 /// 通知记录
@@ -466,6 +467,55 @@ class NotificationService {
     }
 
     return count > 0 ? totalRate / count : 0.0;
+  }
+
+  /// 发送新版本通知
+  Future<void> sendNewVersionNotification(String version, String releaseNotes) async {
+    // 检查是否已通知过这个版本
+    final prefs = await SharedPreferences.getInstance();
+    final recordsJson = prefs.getStringList(_recordsKey) ?? [];
+    
+    for (final json in recordsJson) {
+      try {
+        final record = NotificationRecord.fromMap(
+          Map<String, dynamic>.from(jsonDecode(json)),
+        );
+        if (record.type == NotificationType.newVersion && 
+            record.extraData == version) {
+          return; // 已通知过这个版本
+        }
+      } catch (_) {}
+    }
+
+    final id = 'version_$version';
+
+    await _notifications.show(
+      id.hashCode,
+      '🎉 新版本 $version 已发布',
+      releaseNotes.isNotEmpty ? releaseNotes : '点击前往GitHub下载最新版本',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'weekly_report_channel',
+          '出勤率周报',
+          channelDescription: '每周出勤率统计报告',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
+
+    await _recordNotification(NotificationRecord(
+      id: id,
+      type: NotificationType.newVersion,
+      sentAt: DateTime.now(),
+      extraData: version,
+    ));
   }
 
   /// 清除所有通知记录（调试用）

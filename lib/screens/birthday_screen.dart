@@ -143,78 +143,100 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
     final items = <_BirthdayItem>[];
 
     for (final member in members) {
-      final birthday = member.birthday!;
-      
-      // 获取出生日期的农历
-      final birthLunar = Solar.fromYmd(birthday.year, birthday.month, birthday.day).getLunar();
-      final lunarMonth = birthLunar.getMonth();
-      final lunarDay = birthLunar.getDay();
-      final lunarDateStr = '${birthLunar.getMonthInChinese()}月${birthLunar.getDayInChinese()}';
-
-      DateTime birthdayThisYear;
-      
-      if (_isLunarMode) {
-        // 农历模式：找今年/明年的农历生日对应的公历日期
-        // 今年农历生日
-        var lunarThisYear = Lunar.fromYmd(now.year, lunarMonth, lunarDay);
-        var solarThisYear = lunarThisYear.getSolar();
-        var dateThisYear = DateTime(solarThisYear.getYear(), solarThisYear.getMonth(), solarThisYear.getDay());
+      try {
+        final birthday = member.birthday!;
         
-        // 如果今年农历生日已过，用明年
-        if (dateThisYear.isBefore(today)) {
-          lunarThisYear = Lunar.fromYmd(now.year + 1, lunarMonth, lunarDay);
-          solarThisYear = lunarThisYear.getSolar();
-          birthdayThisYear = DateTime(solarThisYear.getYear(), solarThisYear.getMonth(), solarThisYear.getDay());
-        } else {
-          birthdayThisYear = dateThisYear;
-        }
-      } else {
-        // 公历模式：直接用公历日期
-        birthdayThisYear = DateTime(now.year, birthday.month, birthday.day);
-        if (birthdayThisYear.isBefore(today)) {
-          birthdayThisYear = DateTime(now.year + 1, birthday.month, birthday.day);
-        }
-      }
+        // 获取出生日期的农历
+        final birthLunar = Solar.fromYmd(birthday.year, birthday.month, birthday.day).getLunar();
+        final lunarMonth = birthLunar.getMonth();
+        final lunarDay = birthLunar.getDay();
+        final lunarDateStr = '${birthLunar.getMonthInChinese()}月${birthLunar.getDayInChinese()}';
 
-      final daysUntil = birthdayThisYear.difference(today).inDays;
-      
-      // 只保留最近一年的
-      if (daysUntil <= 365) {
-        items.add(_BirthdayItem(
-          member: member,
-          birthdayThisYear: birthdayThisYear,
-          daysUntil: daysUntil,
-          isThisWeek: daysUntil <= 7,
-          lunarDate: lunarDateStr,
-          lunarMonth: lunarMonth,
-          lunarDay: lunarDay,
-        ));
+        DateTime birthdayThisYear;
+        int daysUntil;
+        
+        if (_isLunarMode) {
+          // 农历模式：找今年/明年的农历生日对应的公历日期
+          try {
+            // 今年农历生日
+            var lunarThisYear = Lunar.fromYmd(now.year, lunarMonth, lunarDay);
+            var solarThisYear = lunarThisYear.getSolar();
+            var dateThisYear = DateTime(solarThisYear.getYear(), solarThisYear.getMonth(), solarThisYear.getDay());
+            
+            // 如果今年农历生日已过，用明年
+            if (dateThisYear.isBefore(today)) {
+              lunarThisYear = Lunar.fromYmd(now.year + 1, lunarMonth, lunarDay);
+              solarThisYear = lunarThisYear.getSolar();
+              birthdayThisYear = DateTime(solarThisYear.getYear(), solarThisYear.getMonth(), solarThisYear.getDay());
+            } else {
+              birthdayThisYear = dateThisYear;
+            }
+            daysUntil = birthdayThisYear.difference(today).inDays;
+          } catch (e) {
+            // 农历转换失败，回退到公历模式
+            birthdayThisYear = DateTime(now.year, birthday.month, birthday.day);
+            if (birthdayThisYear.isBefore(today)) {
+              birthdayThisYear = DateTime(now.year + 1, birthday.month, birthday.day);
+            }
+            daysUntil = birthdayThisYear.difference(today).inDays;
+          }
+        } else {
+          // 公历模式：直接用公历日期
+          birthdayThisYear = DateTime(now.year, birthday.month, birthday.day);
+          if (birthdayThisYear.isBefore(today)) {
+            birthdayThisYear = DateTime(now.year + 1, birthday.month, birthday.day);
+          }
+          daysUntil = birthdayThisYear.difference(today).inDays;
+        }
+
+        // 只保留最近一年的
+        if (daysUntil <= 365) {
+          items.add(_BirthdayItem(
+            member: member,
+            birthdayThisYear: birthdayThisYear,
+            daysUntil: daysUntil,
+            isThisWeek: daysUntil <= 7,
+            lunarDate: lunarDateStr,
+            lunarMonth: lunarMonth,
+            lunarDay: lunarDay,
+          ));
+        }
+      } catch (e) {
+        // 跳过转换失败的成员
+        continue;
       }
     }
 
     // 排序
-    if (_isLunarMode) {
-      // 农历模式：按农历月日排序
-      items.sort((a, b) {
-        final monthCompare = a.lunarMonth.compareTo(b.lunarMonth);
-        if (monthCompare != 0) return monthCompare;
-        return a.lunarDay.compareTo(b.lunarDay);
-      });
-      // 把已过的农历月份放到后面
-      final currentLunar = Solar.fromYmd(now.year, now.month, now.day).getLunar();
-      final currentLunarMonth = currentLunar.getMonth();
-      items.sort((a, b) {
-        final aPassed = a.lunarMonth < currentLunarMonth || 
-            (a.lunarMonth == currentLunarMonth && a.daysUntil < 0);
-        final bPassed = b.lunarMonth < currentLunarMonth || 
-            (b.lunarMonth == currentLunarMonth && b.daysUntil < 0);
-        if (aPassed && !bPassed) return 1;
-        if (!aPassed && bPassed) return -1;
-        return a.daysUntil.compareTo(b.daysUntil);
-      });
-    } else {
-      // 公历模式：按距离天数排序
-      items.sort((a, b) => a.daysUntil.compareTo(b.daysUntil));
+    if (items.isNotEmpty) {
+      if (_isLunarMode) {
+        // 农历模式：按农历月日排序
+        items.sort((a, b) {
+          final monthCompare = a.lunarMonth.compareTo(b.lunarMonth);
+          if (monthCompare != 0) return monthCompare;
+          return a.lunarDay.compareTo(b.lunarDay);
+        });
+        // 把已过的农历月份放到后面
+        try {
+          final currentLunar = Solar.fromYmd(now.year, now.month, now.day).getLunar();
+          final currentLunarMonth = currentLunar.getMonth();
+          items.sort((a, b) {
+            final aPassed = a.lunarMonth < currentLunarMonth || 
+                (a.lunarMonth == currentLunarMonth && a.daysUntil < 0);
+            final bPassed = b.lunarMonth < currentLunarMonth || 
+                (b.lunarMonth == currentLunarMonth && b.daysUntil < 0);
+            if (aPassed && !bPassed) return 1;
+            if (!aPassed && bPassed) return -1;
+            return a.daysUntil.compareTo(b.daysUntil);
+          });
+        } catch (e) {
+          // 如果获取当前农历失败，按天数排序
+          items.sort((a, b) => a.daysUntil.compareTo(b.daysUntil));
+        }
+      } else {
+        // 公历模式：按距离天数排序
+        items.sort((a, b) => a.daysUntil.compareTo(b.daysUntil));
+      }
     }
 
     return items;

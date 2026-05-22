@@ -157,8 +157,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!themeState.autoCheckUpdate) return;
 
     final release = await UpdateService.checkUpdate();
-    if (release != null && mounted) {
-      _showUpdateDialog(release);
+    if (release != null) {
+      // 发送新版本通知（只通知一次）
+      await NotificationService().sendNewVersionNotification(
+        release.tagName,
+        release.body.substring(0, release.body.length > 100 ? 100 : release.body.length),
+      );
+      
+      if (mounted) {
+        _showUpdateDialog(release);
+      }
     }
   }
 
