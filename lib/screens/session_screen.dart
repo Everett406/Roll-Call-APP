@@ -179,6 +179,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         ),
       ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -236,6 +239,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             },
           ),
           ],
+          ),
         ),
       ),
     );
