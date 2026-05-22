@@ -17,7 +17,7 @@ void main() async {
     SystemUiMode.edgeToEdge,
   );
   // Transparent status bar and navigation bar
-  await SystemChrome.setSystemUIOverlayStyle(
+  SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       systemNavigationBarColor: Colors.transparent,

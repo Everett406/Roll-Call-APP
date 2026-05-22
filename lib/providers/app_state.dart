@@ -377,8 +377,9 @@ class AppState extends ChangeNotifier {
     }
 
     // Remove the undone log from the list so it's not found again
-    _logs.removeWhere((l) => l.id == targetLog.id);
-    await StorageService.deleteLog(targetLog.id);
+    final targetLogId = targetLog.id;
+    _logs.removeWhere((l) => l.id == targetLogId);
+    await StorageService.deleteLog(targetLogId);
 
     notifyListeners();
   }
