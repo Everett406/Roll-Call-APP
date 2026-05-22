@@ -374,6 +374,78 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
 
+                // ===== 通知设置 =====
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '通知设置',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  elevation: 0,
+                  color: theme.colorScheme.surfaceContainerLowest,
+                  child: Column(
+                    children: [
+                      // 通知开关
+                      SwitchListTile(
+                        secondary: const Icon(Icons.notifications_active_outlined),
+                        title: Row(
+                          children: [
+                            const Text('接收通知'),
+                            const SizedBox(width: 8),
+                            // 问号按钮
+                            GestureDetector(
+                              onTap: _showNotificationHelp,
+                              child: Icon(
+                                Icons.help_outline,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        subtitle: Text(
+                          _notificationsEnabled ? '已开启' : '已关闭',
+                        ),
+                        value: _notificationsEnabled,
+                        onChanged: (value) async {
+                          if (value) {
+                            // 请求权限
+                            final granted = await NotificationService().requestPermission();
+                            if (mounted) {
+                              setState(() {
+                                _notificationsEnabled = granted;
+                              });
+                              if (!granted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('请在系统设置中开启通知权限')),
+                                );
+                              }
+                            }
+                          } else {
+                            // 用户想关闭，跳转到系统设置
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('请在系统设置中关闭通知')),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+
                 // ===== 关于分组 =====
                 Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -446,78 +518,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         value: themeState.autoCheckUpdate,
                         onChanged: (value) {
                           themeState.setAutoCheckUpdate(value);
-                        },
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                  ),
-                ),
-
-                // ===== 通知设置 =====
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '通知设置',
-                      style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  elevation: 0,
-                  color: theme.colorScheme.surfaceContainerLowest,
-                  child: Column(
-                    children: [
-                      // 通知开关
-                      SwitchListTile(
-                        secondary: const Icon(Icons.notifications_active_outlined),
-                        title: Row(
-                          children: [
-                            const Text('接收通知'),
-                            const SizedBox(width: 8),
-                            // 问号按钮
-                            GestureDetector(
-                              onTap: _showNotificationHelp,
-                              child: Icon(
-                                Icons.help_outline,
-                                size: 18,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                        subtitle: Text(
-                          _notificationsEnabled ? '已开启' : '已关闭',
-                        ),
-                        value: _notificationsEnabled,
-                        onChanged: (value) async {
-                          if (value) {
-                            // 请求权限
-                            final granted = await NotificationService().requestPermission();
-                            if (mounted) {
-                              setState(() {
-                                _notificationsEnabled = granted;
-                              });
-                              if (!granted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('请在系统设置中开启通知权限')),
-                                );
-                              }
-                            }
-                          } else {
-                            // 用户想关闭，跳转到系统设置
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('请在系统设置中关闭通知')),
-                            );
-                          }
                         },
                       ),
                       const SizedBox(height: 4),
