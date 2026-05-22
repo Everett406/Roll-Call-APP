@@ -331,40 +331,54 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> undoLastAction(String sessionId) async {
+    // Get undoable logs in reverse chronological order
     final sessionLogs = _logs
         .where((l) => l.sessionId == sessionId && l.isUndoable)
         .toList();
 
     if (sessionLogs.isEmpty) return;
 
-    final lastLog = sessionLogs.first;
+    // Find the first log whose check-in hasn't been undone yet
+    OperationLog? targetLog;
+    for (final log in sessionLogs) {
+      final hasActiveCheckIn = _checkIns.any(
+        (c) =>
+            c.sessionId == sessionId &&
+            c.memberId == log.targetMemberId &&
+            c.statusId == log.newStatusId &&
+            !c.isUndone,
+      );
+      if (hasActiveCheckIn) {
+        targetLog = log;
+        break;
+      }
+    }
 
-    // Find and undo the check-in
-    final targetCheckIns = _checkIns.where(
-      (c) =>
-          c.sessionId == sessionId &&
-          c.memberId == lastLog.targetMemberId &&
-          c.statusId == lastLog.newStatusId &&
-          !c.isUndone,
-    );
+    if (targetLog == null) return;
 
-    for (final c in targetCheckIns) {
+    // Find and undo only the specific check-in (most recent one)
+    final targetCheckIns = _checkIns
+        .where(
+          (c) =>
+              c.sessionId == sessionId &&
+              c.memberId == targetLog!.targetMemberId &&
+              c.statusId == targetLog.newStatusId &&
+              !c.isUndone,
+        )
+        .toList();
+
+    // Undo only the most recent matching check-in
+    if (targetCheckIns.isNotEmpty) {
+      final c = targetCheckIns.first;
       final updated = c.copyWith(isUndone: true);
       final idx = _checkIns.indexOf(c);
       _checkIns[idx] = updated;
       await StorageService.putCheckIn(updated);
     }
 
-    // Mark log as undone by adding an undo log
-    final undoLog = OperationLog(
-      sessionId: sessionId,
-      type: 'undo',
-      targetMemberId: lastLog.targetMemberId,
-      prevStatusId: lastLog.newStatusId,
-      timestamp: DateTime.now(),
-    );
-    _logs.add(undoLog);
-    await StorageService.putLog(undoLog);
+    // Remove the undone log from the list so it's not found again
+    _logs.removeWhere((l) => l.id == targetLog.id);
+    await StorageService.deleteLog(targetLog.id);
 
     notifyListeners();
   }

@@ -136,6 +136,16 @@ class StorageService {
     await _sessionBox.delete(id);
   }
 
+  /// Delete a single check-in
+  static Future<void> deleteCheckIn(String id) async {
+    await _checkInBox.delete(id);
+  }
+
+  /// Delete a single log
+  static Future<void> deleteLog(String id) async {
+    await _logBox.delete(id);
+  }
+
   /// Delete all check-ins for a session
   static Future<int> deleteCheckInsForSession(String sessionId) async {
     final keysToDelete = <dynamic>[];

@@ -45,7 +45,36 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   /// 构建标准AppBar（非搜索模式）— 整块液态玻璃区域
   PreferredSizeWidget _buildNormalAppBar(Session session, AppState state) {
     final theme = Theme.of(context);
-    return LiquidGlassAppBar(
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      flexibleSpace: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withOpacity(0.25),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.0,
+                ),
+              ),
+              gradient: LinearGradient(
+                begin: const Alignment(-0.8, -1.0),
+                end: const Alignment(0.5, 0.3),
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.03),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.25, 0.6],
+              ),
+            ),
+          ),
+        ),
+      ),
       title: Hero(
         tag: 'sessionTitle_${session.id}',
         child: Material(
@@ -56,41 +85,44 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         ),
       ),
-      bottomHeight: 80,
-      bottom: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Filter chip bar
-          FilterChipBar(
-              sessionId: widget.sessionId,
-              selectedFilter: _selectedFilter,
-              onFilterChanged: (filter) {
-                setState(() {
-                  _selectedFilter = filter;
-                });
-              },
-            ),
-            // Info row
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '共 ${session.memberIds.length} 人，已标记 ${state.getSessionCheckedCount(widget.sessionId)} 人',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+      centerTitle: true,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Filter chip bar
+            FilterChipBar(
+                sessionId: widget.sessionId,
+                selectedFilter: _selectedFilter,
+                onFilterChanged: (filter) {
+                  setState(() {
+                    _selectedFilter = filter;
+                  });
+                },
+              ),
+              // Info row
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.people_outline,
+                      size: 18,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      '共 ${session.memberIds.length} 人，已标记 ${state.getSessionCheckedCount(widget.sessionId)} 人',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       actions: [
         // 归档按钮（仅 ongoing 状态显示）
@@ -215,7 +247,30 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   /// 构建搜索模式AppBar
   PreferredSizeWidget _buildSearchAppBar(Session session) {
     final theme = Theme.of(context);
-    return LiquidGlassAppBar(
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      flexibleSpace: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withOpacity(0.25),
+              gradient: LinearGradient(
+                begin: const Alignment(-0.8, -1.0),
+                end: const Alignment(0.5, 0.3),
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.03),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.25, 0.6],
+              ),
+            ),
+          ),
+        ),
+      ),
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(

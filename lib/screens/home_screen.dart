@@ -505,13 +505,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: LiquidGlassAppBar(
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      appBar: AppBar(
         title: Text(
           '点到为止',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onSurface,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withOpacity(0.25),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1.0,
+                  ),
+                ),
+                gradient: LinearGradient(
+                  begin: const Alignment(-0.8, -1.0),
+                  end: const Alignment(0.5, 0.3),
+                  colors: [
+                    Colors.white.withOpacity(0.15),
+                    Colors.white.withOpacity(0.03),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.25, 0.6],
+                ),
+              ),
+            ),
           ),
         ),
         actions: [
@@ -542,35 +574,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: LiquidGlassBottomNav(
-        child: NavigationBar(
-              backgroundColor: Colors.transparent,
-              selectedIndex: _currentIndex,
-              onDestinationSelected: _onNavItemTapped,
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.radio_button_checked_outlined),
-                  selectedIcon: Icon(Icons.radio_button_checked),
-                  label: '进行中',
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withOpacity(0.25),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.0,
                 ),
-                NavigationDestination(
-                  icon: Icon(Icons.archive_outlined),
-                  selectedIcon: Icon(Icons.archive),
-                  label: '历史',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.bar_chart_outlined),
-                  selectedIcon: Icon(Icons.bar_chart),
-                  label: '统计',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings),
-                  label: '设置',
-                ),
-              ],
+              ),
+              gradient: LinearGradient(
+                begin: const Alignment(-0.8, -1.0),
+                end: const Alignment(0.5, 0.5),
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.03),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.25, 0.6],
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: NavigationBar(
+                backgroundColor: Colors.transparent,
+                selectedIndex: _currentIndex,
+                onDestinationSelected: _onNavItemTapped,
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.radio_button_checked_outlined),
+                    selectedIcon: Icon(Icons.radio_button_checked),
+                    label: '进行中',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.archive_outlined),
+                    selectedIcon: Icon(Icons.archive),
+                    label: '历史',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.bar_chart_outlined),
+                    selectedIcon: Icon(Icons.bar_chart),
+                    label: '统计',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.settings_outlined),
+                    selectedIcon: Icon(Icons.settings),
+                    label: '设置',
+                  ),
+                ],
+              ),
             ),
           ),
+        ),
+      ),
       floatingActionButton: _currentIndex <= 1
           ? Hero(
               tag: 'createButton',
