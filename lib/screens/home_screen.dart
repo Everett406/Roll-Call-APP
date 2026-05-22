@@ -9,6 +9,7 @@ import '../models/session.dart';
 import '../models/status_tag.dart';
 import '../utils/constants.dart';
 import '../utils/expressive_theme.dart';
+import '../widgets/liquid_glass.dart';
 import '../services/update_service.dart';
 import 'session_screen.dart';
 import 'new_session_screen.dart';
@@ -504,33 +505,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: LiquidGlassAppBar(
         title: Text(
           '点到为止',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onSurface,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(0.25),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withOpacity(0.25),
-                    width: 0.8,
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
         actions: [
@@ -561,20 +542,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: ClipRect(
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withOpacity(0.25),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.white.withOpacity(0.25),
-                  width: 0.8,
-                ),
-              ),
-            ),
-            child: NavigationBar(
+      bottomNavigationBar: LiquidGlassBottomNav(
+        child: NavigationBar(
               backgroundColor: Colors.transparent,
               selectedIndex: _currentIndex,
               onDestinationSelected: _onNavItemTapped,
@@ -602,8 +571,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-        ),
-      ),
       floatingActionButton: _currentIndex <= 1
           ? Hero(
               tag: 'createButton',

@@ -2,10 +2,8 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 /// ============================================================
-/// Glassmorphism Popup Menu — UI itself blurs what's behind it
+/// Glassmorphism Popup Menu — True liquid glass with specular highlight
 /// ============================================================
-/// No full-screen blur. The menu panel itself uses BackdropFilter
-/// to blur content behind it. Very transparent for true glass feel.
 
 class GlassMenuItem {
   final String value;
@@ -81,7 +79,7 @@ class _GlassPopupRoute extends PopupRoute<String> {
   });
 
   @override
-  Color? get barrierColor => null; // No barrier — see through
+  Color? get barrierColor => null;
 
   @override
   bool get barrierDismissible => true;
@@ -137,14 +135,14 @@ class _GlassPopupContent extends StatelessWidget {
 
     return Stack(
       children: [
-        // Dismissible transparent overlay (no blur — just catch taps)
+        // Dismissible transparent overlay
         Positioned.fill(
           child: GestureDetector(
             onTap: () => Navigator.of(context).pop(),
             child: Container(color: Colors.transparent),
           ),
         ),
-        // Menu panel — glassmorphism: the panel itself blurs what's behind it
+        // Menu panel — liquid glass
         Positioned(
           left: left,
           top: top + 40,
@@ -157,59 +155,82 @@ class _GlassPopupContent extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
                   child: Container(
                     width: menuWidth,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(0.22),
+                      color: theme.colorScheme.surface.withOpacity(0.30),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.25),
-                        width: 0.8,
+                        color: Colors.white.withOpacity(0.40),
+                        width: 1.0,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.12),
+                          color: Colors.black.withOpacity(0.15),
                           blurRadius: 32,
                           spreadRadius: 4,
                         ),
                       ],
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: items.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final item = entry.value;
-                        final isLast = index == items.length - 1;
-                        return InkWell(
-                          onTap: () {
-                            item.onTap?.call();
-                            onSelected(item.value);
-                          },
-                          borderRadius: BorderRadius.vertical(
-                            top: index == 0 ? const Radius.circular(20) : Radius.zero,
-                            bottom: isLast ? const Radius.circular(20) : Radius.zero,
-                          ),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            decoration: !isLast
-                                ? BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: theme.colorScheme.outlineVariant.withOpacity(0.15),
-                                        width: 0.5,
-                                      ),
-                                    ),
-                                  )
-                                : null,
-                            child: DefaultTextStyle(
-                              style: theme.textTheme.bodyMedium!,
-                              child: item.child,
+                    child: Stack(
+                      children: [
+                        // Specular highlight gradient — diagonal white sheen
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: LinearGradient(
+                                begin: const Alignment(-0.8, -1.0),
+                                end: const Alignment(0.5, 0.5),
+                                colors: [
+                                  Colors.white.withOpacity(0.30),
+                                  Colors.white.withOpacity(0.06),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.3, 0.6],
+                              ),
                             ),
                           ),
-                        );
-                      }).toList(),
+                        ),
+                        // Menu items
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: items.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            final isLast = index == items.length - 1;
+                            return InkWell(
+                              onTap: () {
+                                item.onTap?.call();
+                                onSelected(item.value);
+                              },
+                              borderRadius: BorderRadius.vertical(
+                                top: index == 0 ? const Radius.circular(20) : Radius.zero,
+                                bottom: isLast ? const Radius.circular(20) : Radius.zero,
+                              ),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: !isLast
+                                    ? BoxDecoration(
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: theme.colorScheme.outlineVariant.withOpacity(0.15),
+                                            width: 0.5,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                                child: DefaultTextStyle(
+                                  style: theme.textTheme.bodyMedium!,
+                                  child: item.child,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ),
                   ),
                 ),

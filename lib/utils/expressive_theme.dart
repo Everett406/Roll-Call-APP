@@ -496,19 +496,42 @@ Future<T?> showExpressiveBottomSheet<T>({
     builder: (context) => ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.22),
+            color: theme.colorScheme.surface.withOpacity(0.30),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             border: Border(
               top: BorderSide(
-                color: Colors.white.withOpacity(0.35),
+                color: Colors.white.withOpacity(0.45),
                 width: 1.0,
               ),
             ),
           ),
-          child: builder(context),
+          child: Stack(
+            children: [
+              // Specular highlight gradient
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                    gradient: LinearGradient(
+                      begin: const Alignment(-0.8, -1.0),
+                      end: const Alignment(0.5, 0.5),
+                      colors: [
+                        Colors.white.withOpacity(0.30),
+                        Colors.white.withOpacity(0.06),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.3, 0.6],
+                    ),
+                  ),
+                ),
+              ),
+              // Content
+              builder(context),
+            ],
+          ),
         ),
       ),
     ),

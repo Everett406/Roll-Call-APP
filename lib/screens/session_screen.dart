@@ -18,6 +18,7 @@ import 'export_screen.dart';
 import 'share_image_screen.dart';
 import '../utils/expressive_theme.dart';
 import '../widgets/glass_popup_menu.dart';
+import '../widgets/liquid_glass.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -41,10 +42,10 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     super.dispose();
   }
 
-  /// 构建标准AppBar（非搜索模式）— 整块区域都是高透明玻璃效果
-  AppBar _buildNormalAppBar(Session session, AppState state) {
+  /// 构建标准AppBar（非搜索模式）— 整块液态玻璃区域
+  PreferredSizeWidget _buildNormalAppBar(Session session, AppState state) {
     final theme = Theme.of(context);
-    return AppBar(
+    return LiquidGlassAppBar(
       title: Hero(
         tag: 'sessionTitle_${session.id}',
         child: Material(
@@ -55,26 +56,12 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         ),
       ),
-      centerTitle: true,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      flexibleSpace: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.25),
-          ),
-        ),
-      ),
-      // 将FilterChip和InfoRow放入bottom，实现整块玻璃区域
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Filter chip bar
-            FilterChipBar(
+      bottomHeight: 80,
+      bottom: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Filter chip bar
+          FilterChipBar(
               sessionId: widget.sessionId,
               selectedFilter: _selectedFilter,
               onFilterChanged: (filter) {
@@ -105,7 +92,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             ),
           ],
         ),
-      ),
       actions: [
         // 归档按钮（仅 ongoing 状态显示）
         if (session.status == 'ongoing')
@@ -227,19 +213,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 
   /// 构建搜索模式AppBar
-  AppBar _buildSearchAppBar(Session session) {
+  PreferredSizeWidget _buildSearchAppBar(Session session) {
     final theme = Theme.of(context);
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      flexibleSpace: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.25),
-          ),
-        ),
-      ),
+    return LiquidGlassAppBar(
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
