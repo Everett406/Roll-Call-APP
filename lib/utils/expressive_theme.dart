@@ -295,9 +295,9 @@ class ExpressiveTheme {
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        scrolledUnderElevation: 8,
+        scrolledUnderElevation: 0,
         surfaceTintColor: colorScheme.surfaceTint,
-        backgroundColor: colorScheme.surface.withOpacity(0.85),
+        backgroundColor: colorScheme.surface.withOpacity(0.35),
         foregroundColor: colorScheme.onSurface,
         titleTextStyle: textTheme.headlineLarge?.copyWith(
           fontWeight: FontWeight.w700,
@@ -480,15 +480,23 @@ Future<T?> showExpressiveBottomSheet<T>({
     barrierColor: theme.brightness == Brightness.dark
         ? Colors.black.withOpacity(0.4)
         : Colors.black.withOpacity(0.2),
-    builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface.withOpacity(0.92),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+    builder: (context) => ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withOpacity(0.22),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withOpacity(0.2),
+                width: 0.8,
+              ),
+            ),
+          ),
+          child: builder(context),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: builder(context),
       ),
     ),
   );

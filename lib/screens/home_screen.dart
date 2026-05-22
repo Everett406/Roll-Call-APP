@@ -504,6 +504,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           '点到为止',
@@ -514,10 +515,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: theme.colorScheme.surface.withOpacity(0.8),
+        backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
         flexibleSpace: ClipRect(
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(color: Colors.transparent),
           ),
         ),

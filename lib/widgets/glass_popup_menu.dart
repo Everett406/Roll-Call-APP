@@ -2,11 +2,10 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 /// ============================================================
-/// True Glassmorphism Popup Menu
+/// Glassmorphism Popup Menu — UI itself blurs what's behind it
 /// ============================================================
-/// Unlike PopupMenuButton which draws on a solid black barrier,
-/// this uses a full-screen BackdropFilter to blur the content
-/// behind the menu, creating real glass-like transparency.
+/// No full-screen blur. The menu panel itself uses BackdropFilter
+/// to blur content behind it. Very transparent for true glass feel.
 
 class GlassMenuItem {
   final String value;
@@ -24,16 +23,12 @@ class GlassPopupMenu extends StatelessWidget {
   final List<GlassMenuItem> items;
   final void Function(String value)? onSelected;
   final Widget child;
-  final double blurSigma;
-  final double menuOpacity;
 
   const GlassPopupMenu({
     super.key,
     required this.items,
     this.onSelected,
     required this.child,
-    this.blurSigma = 20,
-    this.menuOpacity = 0.65,
   });
 
   void _show(BuildContext context) {
@@ -52,8 +47,6 @@ class GlassPopupMenu extends StatelessWidget {
     Navigator.of(context).push(
       _GlassPopupRoute(
         position: position,
-        blurSigma: blurSigma,
-        menuOpacity: menuOpacity,
         theme: theme,
         items: items,
         onSelected: (value) {
@@ -76,23 +69,19 @@ class GlassPopupMenu extends StatelessWidget {
 
 class _GlassPopupRoute extends PopupRoute<String> {
   final RelativeRect position;
-  final double blurSigma;
-  final double menuOpacity;
   final ThemeData theme;
   final List<GlassMenuItem> items;
   final void Function(String value) onSelected;
 
   _GlassPopupRoute({
     required this.position,
-    required this.blurSigma,
-    required this.menuOpacity,
     required this.theme,
     required this.items,
     required this.onSelected,
   });
 
   @override
-  Color? get barrierColor => Colors.black.withOpacity(0.05);
+  Color? get barrierColor => null; // No barrier — see through
 
   @override
   bool get barrierDismissible => true;
@@ -101,14 +90,12 @@ class _GlassPopupRoute extends PopupRoute<String> {
   String? get barrierLabel => null;
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 200);
+  Duration get transitionDuration => const Duration(milliseconds: 180);
 
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     return _GlassPopupContent(
       position: position,
-      blurSigma: blurSigma,
-      menuOpacity: menuOpacity,
       theme: theme,
       items: items,
       onSelected: onSelected,
@@ -119,8 +106,6 @@ class _GlassPopupRoute extends PopupRoute<String> {
 
 class _GlassPopupContent extends StatelessWidget {
   final RelativeRect position;
-  final double blurSigma;
-  final double menuOpacity;
   final ThemeData theme;
   final List<GlassMenuItem> items;
   final void Function(String value) onSelected;
@@ -128,8 +113,6 @@ class _GlassPopupContent extends StatelessWidget {
 
   const _GlassPopupContent({
     required this.position,
-    required this.blurSigma,
-    required this.menuOpacity,
     required this.theme,
     required this.items,
     required this.onSelected,
@@ -138,15 +121,13 @@ class _GlassPopupContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate menu position (top-right by default)
     final screenSize = MediaQuery.of(context).size;
-    final menuWidth = 200.0;
+    const menuWidth = 200.0;
     final menuHeight = items.length * 48.0 + 16;
 
     double left = position.left;
     double top = position.top;
 
-    // Align to right edge of button if near right screen edge
     if (left + menuWidth > screenSize.width - 16) {
       left = screenSize.width - menuWidth - 16;
     }
@@ -156,49 +137,41 @@ class _GlassPopupContent extends StatelessWidget {
 
     return Stack(
       children: [
-        // Full-screen frosted glass backdrop
+        // Dismissible transparent overlay (no blur — just catch taps)
         Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-            child: Container(
-              color: theme.brightness == Brightness.dark
-                  ? Colors.black.withOpacity(0.15)
-                  : Colors.white.withOpacity(0.05),
-            ),
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(color: Colors.transparent),
           ),
         ),
-        // Menu panel
+        // Menu panel — glassmorphism: the panel itself blurs what's behind it
         Positioned(
           left: left,
-          top: top + 40, // below the button
+          top: top + 40,
           child: ScaleTransition(
-            scale: Tween<double>(begin: 0.9, end: 1.0).animate(
+            scale: Tween<double>(begin: 0.92, end: 1.0).animate(
               CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
             ),
             child: FadeTransition(
-              opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-              ),
+              opacity: animation,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: blurSigma * 0.5, sigmaY: blurSigma * 0.5),
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                   child: Container(
                     width: menuWidth,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(menuOpacity),
+                      color: theme.colorScheme.surface.withOpacity(0.28),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.white.withOpacity(0.08)
-                            : Colors.white.withOpacity(0.35),
+                        color: Colors.white.withOpacity(0.25),
                         width: 0.8,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 24,
-                          spreadRadius: 2,
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 32,
+                          spreadRadius: 4,
                         ),
                       ],
                     ),
@@ -224,7 +197,7 @@ class _GlassPopupContent extends StatelessWidget {
                                 ? BoxDecoration(
                                     border: Border(
                                       bottom: BorderSide(
-                                        color: theme.colorScheme.outlineVariant.withOpacity(0.2),
+                                        color: theme.colorScheme.outlineVariant.withOpacity(0.15),
                                         width: 0.5,
                                       ),
                                     ),

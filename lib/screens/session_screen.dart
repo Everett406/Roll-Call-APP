@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:confetti/confetti.dart';
@@ -40,21 +42,26 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 
   /// 构建标准AppBar（非搜索模式）
-  AppBar _buildNormalAppBar(Session session, AppState state) {
+  PreferredSizeWidget _buildNormalAppBar(Session session, AppState state) {
     final theme = Theme.of(context);
-    return AppBar(
-      title: Hero(
-        tag: 'sessionTitle_${session.id}',
-        child: Material(
-          type: MaterialType.transparency,
-          child: Text(
-            session.title,
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: theme.colorScheme.surface.withOpacity(0.65),
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: AppBar(
+            title: Hero(
+              tag: 'sessionTitle_${session.id}',
+              child: Material(
+                type: MaterialType.transparency,
+                child: Text(
+                  session.title,
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            centerTitle: true,
+            backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
       actions: [
         // 归档按钮（仅 ongoing 状态显示）
         if (session.status == 'ongoing')
@@ -178,10 +185,16 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 
   /// 构建搜索模式AppBar
-  AppBar _buildSearchAppBar(Session session) {
+  PreferredSizeWidget _buildSearchAppBar(Session session) {
     final theme = Theme.of(context);
-    return AppBar(
-      leading: Container(
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: AppBar(
+            backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
+            leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHighest,
@@ -224,7 +237,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               });
             },
           ),
-      ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -360,6 +375,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     if (isShowingAll) {
       // Fixed list: all members in studentId order, no splitting
       return Scaffold(
+        extendBodyBehindAppBar: true,
         appBar: _isSearchExpanded
             ? _buildSearchAppBar(session)
             : _buildNormalAppBar(session, state),
@@ -437,6 +453,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     // ---- Filtered view: show only matching members ----
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: _isSearchExpanded
           ? _buildSearchAppBar(session)
           : _buildNormalAppBar(session, state),
