@@ -45,7 +45,7 @@ class _Holiday {
 class HolidayScreen extends ConsumerWidget {
   const HolidayScreen({super.key});
 
-  static const List<_Holiday> _holidays = [
+  static final List<_Holiday> _holidays = [
     _Holiday(
       name: '元旦',
       icon: '🎉',
