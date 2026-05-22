@@ -18,6 +18,7 @@ import 'settings_screen.dart';
 import 'random_picker_screen.dart';
 import 'attendance_calendar_screen.dart';
 import 'birthday_screen.dart';
+import '../widgets/glass_popup_menu.dart';
 
 /// 页面过渡动画辅助
 PageRouteBuilder<T> _zoomRoute<T>(Widget page) {
@@ -215,66 +216,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// 显示更多功能菜单
-  void _showMoreMenu(BuildContext context) {
-    final theme = Theme.of(context);
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
-    final RelativeRect position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
-      ),
-      Offset.zero & overlay.size,
-    );
-
-    showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        position.left - 100,
-        position.top + 40,
-        position.right,
-        position.bottom,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: theme.colorScheme.surface,
-      items: [
-        PopupMenuItem(
-          value: 'random',
-          child: Row(
-            children: [
-              Icon(Icons.casino_outlined, size: 20, color: theme.colorScheme.primary),
-              const SizedBox(width: 12),
-              const Text('随机点名'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'birthday',
-          child: Row(
-            children: [
-              Icon(Icons.cake_outlined, size: 20, color: theme.colorScheme.tertiary),
-              const SizedBox(width: 12),
-              const Text('生日提醒'),
-            ],
-          ),
-        ),
-      ],
-    ).then((value) {
-      if (value == 'random') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const RandomPickerScreen()),
-        );
-      } else if (value == 'birthday') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const BirthdayScreen()),
-        );
-      }
-    });
-  }
-
   /// 显示帮助面板
   void _showHelpPanel(BuildContext context) {
     Navigator.of(context).push(_HelpPanelRoute());
@@ -302,10 +243,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            tooltip: '更多功能',
-            onPressed: () => _showMoreMenu(context),
+          GlassPopupMenu(
+            items: [
+              GlassMenuItem(
+                value: 'random',
+                child: Row(
+                  children: [
+                    Icon(Icons.casino_outlined, size: 20, color: theme.colorScheme.primary),
+                    const SizedBox(width: 12),
+                    const Text('随机点名'),
+                  ],
+                ),
+              ),
+              GlassMenuItem(
+                value: 'birthday',
+                child: Row(
+                  children: [
+                    Icon(Icons.cake_outlined, size: 20, color: theme.colorScheme.tertiary),
+                    const SizedBox(width: 12),
+                    const Text('生日提醒'),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) {
+              if (value == 'random') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RandomPickerScreen()),
+                );
+              } else if (value == 'birthday') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BirthdayScreen()),
+                );
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: const Icon(Icons.more_vert),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.help_outline),
