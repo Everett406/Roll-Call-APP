@@ -14,6 +14,7 @@ class ImportScreen extends ConsumerStatefulWidget {
 class _ImportScreenState extends ConsumerState<ImportScreen> {
   final _textController = TextEditingController();
   List<_ParsedMember> _parsedMembers = [];
+  List<_ParsedMember> _updateMembers = []; // 需要更新生日的人员
   bool _hasParsed = false;
 
   @override
@@ -27,7 +28,8 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     final lines = text.split('\n');
     final existing = ref.read(appStateProvider).members;
 
-    final parsed = <_ParsedMember>[];
+    final newMembers = <_ParsedMember>[];
+    final updateMembers = <_ParsedMember>[];
     final seenKeys = <String>{};
 
     for (final line in lines) {
@@ -51,25 +53,40 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       if (seenKeys.contains(key)) continue;
       seenKeys.add(key);
 
-      // Check if member already exists (by name+studentId or name alone if no studentId)
-      bool alreadyExists = existing.any((m) {
-        if (studentId != null && m.studentId != null) {
-          return m.name == name && m.studentId == studentId;
-        } else if (studentId == null && m.studentId == null) {
-          return m.name == name;
-        } else if (studentId == null) {
-          return m.name == name;
+      // 查找是否已存在
+      final existingMember = existing.firstWhere(
+        (m) {
+          if (studentId != null && m.studentId != null) {
+            return m.name == name && m.studentId == studentId;
+          } else if (studentId == null && m.studentId == null) {
+            return m.name == name;
+          } else if (studentId == null) {
+            return m.name == name;
+          }
+          return false;
+        },
+        orElse: () => Member(id: '', name: ''),
+      );
+
+      if (existingMember.id.isNotEmpty) {
+        // 已存在，检查是否需要更新生日
+        if (birthday != null && existingMember.birthday == null) {
+          updateMembers.add(_ParsedMember(
+            name: name,
+            studentId: studentId,
+            birthday: birthday,
+            existingId: existingMember.id,
+          ));
         }
-        return false;
-      });
-
-      if (alreadyExists) continue;
-
-      parsed.add(_ParsedMember(name: name, studentId: studentId, birthday: birthday));
+      } else {
+        // 新成员
+        newMembers.add(_ParsedMember(name: name, studentId: studentId, birthday: birthday));
+      }
     }
 
     setState(() {
-      _parsedMembers = parsed;
+      _parsedMembers = newMembers;
+      _updateMembers = updateMembers;
       _hasParsed = true;
     });
   }
@@ -109,6 +126,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final totalChanges = _parsedMembers.length + _updateMembers.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -153,7 +171,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '每行一个，支持格式：\n• 姓名\n• 姓名 学号\n• 姓名 学号 生日',
+                  '每行一个，支持格式：\n• 姓名\n• 姓名 学号\n• 姓名 学号 生日（可为已有人员补充生日）',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -191,115 +209,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           // Preview area
           Expanded(
             child: _hasParsed
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Text(
-                              '预览结果',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '${_parsedMembers.length} 人',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_parsedMembers.isEmpty)
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              '没有可导入的新人员（可能已存在或内容为空）',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        Expanded(
-                          child: ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _parsedMembers.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 2),
-                            itemBuilder: (context, index) {
-                              final m = _parsedMembers[index];
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerLow,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      '${index + 1}.',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      m.name,
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    if (m.studentId != null) ...[
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        m.studentId!,
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                    if (m.birthday != null) ...[
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.tertiaryContainer.withOpacity(0.5),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          '${m.birthday!.month}/${m.birthday!.day}',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onTertiaryContainer,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                    ],
-                  )
+                ? _buildPreview(theme)
                 : Center(
                     child: Text(
                       '请在上方输入人员信息后点击"解析"',
@@ -311,7 +221,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _hasParsed && _parsedMembers.isNotEmpty
+      bottomNavigationBar: _hasParsed && totalChanges > 0
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -322,7 +232,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                     shape: ExpressiveShapes.pill,
                   ),
                   child: Text(
-                    '确认导入 ${_parsedMembers.length} 人',
+                    '确认导入 (${_parsedMembers.length}新 + ${_updateMembers.length}更新)',
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),
@@ -332,21 +242,187 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     );
   }
 
+  Widget _buildPreview(ThemeData theme) {
+    if (_parsedMembers.isEmpty && _updateMembers.isEmpty) {
+      return Center(
+        child: Text(
+          '没有可导入或更新的内容',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // 新增人员
+        if (_parsedMembers.isNotEmpty) ...[
+          _buildSectionTitle(theme, '新增人员', _parsedMembers.length, theme.colorScheme.primary),
+          const SizedBox(height: 8),
+          ..._parsedMembers.asMap().entries.map((e) => _buildMemberItem(theme, e.value, e.key + 1, false)),
+          const SizedBox(height: 16),
+        ],
+        // 更新生日
+        if (_updateMembers.isNotEmpty) ...[
+          _buildSectionTitle(theme, '补充生日', _updateMembers.length, theme.colorScheme.tertiary),
+          const SizedBox(height: 8),
+          ..._updateMembers.asMap().entries.map((e) => _buildMemberItem(theme, e.value, e.key + 1, true)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(ThemeData theme, String title, int count, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '$count 人',
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMemberItem(ThemeData theme, _ParsedMember m, int index, bool isUpdate) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isUpdate
+            ? theme.colorScheme.tertiaryContainer.withOpacity(0.3)
+            : theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(10),
+        border: isUpdate
+            ? Border.all(color: theme.colorScheme.tertiary.withOpacity(0.3))
+            : null,
+      ),
+      child: Row(
+        children: [
+          Text(
+            '$index.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            m.name,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (m.studentId != null) ...[
+            const SizedBox(width: 12),
+            Text(
+              m.studentId!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const Spacer(),
+          if (m.birthday != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.cake_outlined,
+                    size: 12,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${m.birthday!.month}/${m.birthday!.day}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (isUpdate) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.tertiary,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '更新',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onTertiary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Future<void> _doImport() async {
     final state = ref.read(appStateProvider);
-    final newMembers = _parsedMembers.map((m) {
-      return Member(
+    
+    // 新增人员
+    for (final m in _parsedMembers) {
+      await state.addMember(Member(
         name: m.name,
         studentId: m.studentId,
         birthday: m.birthday,
-      );
-    }).toList();
-
-    await state.addMembers(newMembers);
+      ));
+    }
+    
+    // 更新生日
+    for (final m in _updateMembers) {
+      if (m.existingId != null) {
+        final existing = state.members.firstWhere((e) => e.id == m.existingId);
+        await state.updateMember(existing.copyWith(birthday: m.birthday));
+      }
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('成功导入 ${newMembers.length} 人')),
+        SnackBar(content: Text('成功导入 ${_parsedMembers.length} 人，更新 ${_updateMembers.length} 人')),
       );
       Navigator.pop(context, true);
     }
@@ -357,6 +433,12 @@ class _ParsedMember {
   final String name;
   final String? studentId;
   final DateTime? birthday;
+  final String? existingId; // 如果是更新，记录已有ID
 
-  _ParsedMember({required this.name, this.studentId, this.birthday});
+  _ParsedMember({
+    required this.name,
+    this.studentId,
+    this.birthday,
+    this.existingId,
+  });
 }
