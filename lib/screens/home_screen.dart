@@ -564,7 +564,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        top: true,
+        top: false,
         bottom: false,
         child: PageView(
           controller: _pageController,
