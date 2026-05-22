@@ -63,7 +63,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
           child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.12),
+            color: theme.colorScheme.surface.withOpacity(0.06),
           ),
         ),
       ),
@@ -236,7 +236,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
           child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.12),
+            color: theme.colorScheme.surface.withOpacity(0.06),
           ),
         ),
       ),

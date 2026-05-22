@@ -486,7 +486,7 @@ Future<T?> showExpressiveBottomSheet<T>({
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.22),
+            color: theme.colorScheme.surface.withOpacity(0.10),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             border: Border(
               top: BorderSide(

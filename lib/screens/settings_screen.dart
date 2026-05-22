@@ -53,28 +53,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appState = ref.watch(appStateProvider);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            title: const Text(
+      body: ListView(
+        padding: const EdgeInsets.only(top: 16, bottom: 32),
+        children: [
+          // 设置标题 - 固定在正文顶部，不浮动
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Text(
               '设置',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
-            ),
-            pinned: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: Colors.transparent,
-            flexibleSpace: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-                child: Container(
-                  color: Theme.of(context).colorScheme.surface.withOpacity(0.12),
-                ),
+              style: theme.textTheme.headlineLarge?.copyWith(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Column(
+
+          Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 8),
@@ -447,10 +441,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 32),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 
   String _getThemeModeLabel(AppThemeMode mode) {
@@ -906,8 +899,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-      ),
-    );
+    ),
+  );
   }
 
   void _previewConfetti(BuildContext context, AppState appState) {

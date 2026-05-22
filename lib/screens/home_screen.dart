@@ -521,7 +521,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: BackdropFilter(
             filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
             child: Container(
-              color: theme.colorScheme.surface.withOpacity(0.12),
+              color: theme.colorScheme.surface.withOpacity(0.06),
             ),
           ),
         ),
