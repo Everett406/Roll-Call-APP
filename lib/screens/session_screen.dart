@@ -72,8 +72,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         // 更多菜单按钮 - 玻璃拟态弹出菜单
         GlassPopupMenu(
-          blurSigma: 24,
-          menuOpacity: 0.55,
           onSelected: (value) {
             switch (value) {
               case 'search':
