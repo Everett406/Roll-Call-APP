@@ -181,7 +181,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
       await state.addTagWithParams(name, color);
 
       // 刷新状态获取新标签
-      await state.loadData();
+      state.loadData();
 
       // 找到新创建的标签
       final newTag = state.tags.firstWhere(
