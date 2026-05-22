@@ -318,9 +318,6 @@ class ExpressiveTheme {
         elevation: 0,
         color: colorScheme.surface.withOpacity(0.8),
       ),
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: colorScheme.surface.withOpacity(0.95),
-      ),
       // ==========================================================
       // Divider
       // ==========================================================

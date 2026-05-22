@@ -280,12 +280,14 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                           ranking: ranking,
                           theme: theme,
                           type: 'absent',
+                          maxCount: state.rankingCount,
                         ),
                         // Attendance honor roll
                         _buildRankingList(
                           ranking: attendanceRanking,
                           theme: theme,
                           type: 'attendance',
+                          maxCount: state.rankingCount,
                         ),
                       ],
                     ),
@@ -462,6 +464,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
     required List<Map<String, dynamic>> ranking,
     required ThemeData theme,
     required String type,
+    required int maxCount,
   }) {
     if (ranking.isEmpty) {
       return Center(
@@ -474,7 +477,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
       );
     }
 
-    final showCount = math.min(ranking.length, state.rankingCount);
+    final showCount = math.min(ranking.length, maxCount);
     return ListView.builder(
       padding: const EdgeInsets.only(top: 8),
       itemCount: showCount,
