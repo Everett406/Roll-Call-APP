@@ -20,6 +20,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
   List<RelayParseResult> _modifiedResults = [];
   Map<String, String> _mappings = {};
   bool _hasParsed = false;
+  bool _inputExpanded = true;
 
   @override
   void initState() {
@@ -72,9 +73,11 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
       _parseResults = results;
       _modifiedResults = List.from(results);
       _hasParsed = true;
+      _inputExpanded = false; // 解析后自动收起输入框
     });
   }
 
+  /// 更新结果标签 - 只保存映射，不改变板块位置
   void _updateResultTag(int index, String? tagId) {
     if (tagId == null) return;
 
@@ -89,12 +92,104 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
     }
 
     setState(() {
+      // 只更新标签ID和名称，不改变 parseStatus（保持原板块）
       _modifiedResults[index] = result.copyWith(
         matchedTagId: tagId,
         matchedTagName: tag?.name,
-        parseStatus: ParseStatus.matched,
+        // 不修改 parseStatus，保持在原来的板块
       );
     });
+  }
+
+  /// 新建标签并选择
+  Future<void> _createAndSelectTag(int index) async {
+    final nameController = TextEditingController();
+    final state = ref.read(appStateProvider);
+
+    // 自动生成差异化颜色
+    final colorValue = state.generateDistinctColor();
+
+    final result = await showDialog<(String, int)?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('新建标签'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: '标签名称',
+                hintText: '例如：外勤、图书馆',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // 颜色预览
+            Row(
+              children: [
+                Text('颜色: ', style: Theme.of(context).textTheme.bodyMedium),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Color(colorValue),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '自动分配（可在标签管理中修改）',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (nameController.text.trim().isNotEmpty) {
+                Navigator.pop(
+                  context,
+                  (nameController.text.trim(), colorValue),
+                );
+              }
+            },
+            child: const Text('创建'),
+          ),
+        ],
+      ),
+    );
+
+    nameController.dispose();
+
+    if (result != null) {
+      final (name, color) = result;
+      // 创建标签
+      final newTag = await state.addTag(
+        name: name,
+        colorValue: color,
+      );
+
+      if (newTag != null && mounted) {
+        // 自动选择新标签
+        _updateResultTag(index, newTag.id);
+
+        // 重新解析以更新其他相同状态的条目
+        _parseText();
+      }
+    }
   }
 
   Future<void> _confirmAndMark() async {
@@ -108,7 +203,6 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
       // 只处理有成员ID和标签ID的条目
       if (result.memberId == null || result.matchedTagId == null) continue;
 
-      // 跳过已有冲突的条目（除非用户选择了覆盖）
       if (result.parseStatus == ParseStatus.alreadySet) {
         conflictResults.add(result);
       } else {
@@ -136,6 +230,9 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
           statusId: result.matchedTagId!,
           note: '微信接龙导入（覆盖）',
         );
+      } else if (shouldOverride == null) {
+        // 用户选择取消全部
+        break;
       }
     }
 
@@ -162,7 +259,14 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('跳过'),
+            child: const Text('保留'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('取消全部'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -210,26 +314,81 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
       ),
       body: Column(
         children: [
-          // 文本输入区
+          // 文本输入区（可折叠）
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _textController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: '粘贴微信接龙内容...\n\n示例：\n1. 张三 已到\n2. 李四 请假\n3. 王五 迟到',
-                border: OutlineInputBorder(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Column(
+              children: [
+                // 输入框标题栏（始终显示）
+                InkWell(
+                  onTap: () => setState(() => _inputExpanded = !_inputExpanded),
                   borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.paste,
+                          size: 18,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _hasParsed
+                                ? '接龙内容（点击${_inputExpanded ? "收起" : "展开"}编辑）'
+                                : '粘贴微信接龙内容...',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: _hasParsed
+                                  ? theme.colorScheme.onSurface
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          _inputExpanded
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
-              ),
+                // 输入框（可折叠）
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  child: _inputExpanded
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: TextField(
+                            controller: _textController,
+                            maxLines: 5,
+                            decoration: InputDecoration(
+                              hintText: '示例：\n1. 张三 已到\n2. 李四 请假\n3. 王五 迟到',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
             ),
           ),
 
           // 解析按钮
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(12),
             child: SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -239,8 +398,6 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
               ),
             ),
           ),
-
-          const SizedBox(height: 16),
 
           // 预览区
           if (_hasParsed)
@@ -276,7 +433,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
                           nameMissingResults.length,
                           alreadySetResults.length,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
 
                         // 已匹配板块
                         if (matchedResults.isNotEmpty)
@@ -366,7 +523,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
   ) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -384,24 +541,25 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Text(
             count.toString(),
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 11,
           ),
         ),
       ],
@@ -420,14 +578,14 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: iconColor),
-              const SizedBox(width: 8),
+              Icon(icon, size: 18, color: iconColor),
+              const SizedBox(width: 6),
               Text(
                 title,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -438,7 +596,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
           final index = _modifiedResults.indexOf(entry.value);
           return _buildResultItem(theme, entry.value, state, index);
         }),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
       ],
     );
   }
@@ -455,24 +613,48 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
               child: Row(
                 children: [
                   Container(
-                    width: 12,
-                    height: 12,
+                    width: 10,
+                    height: 10,
                     decoration: BoxDecoration(
                       color: Color(tag.colorValue),
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(tag.name),
+                  const SizedBox(width: 6),
+                  Text(tag.name, style: const TextStyle(fontSize: 13)),
                 ],
               ),
             ))
         .toList();
 
+    // 添加"新建标签"选项
+    tagOptions.add(
+      DropdownMenuItem(
+        value: '__new_tag__',
+        child: Row(
+          children: [
+            Icon(
+              Icons.add_circle_outline,
+              size: 14,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '新建标签',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -480,14 +662,14 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
               children: [
                 // 姓名
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     result.name ?? '未知',
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
                     ),
@@ -499,7 +681,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
                   Expanded(
                     child: Text(
                       result.status,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -507,7 +689,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             // 标签选择下拉框
             Row(
               children: [
@@ -515,10 +697,10 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
                   '标签: ',
                   style: theme.textTheme.bodySmall,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     decoration: BoxDecoration(
                       border: Border.all(color: theme.colorScheme.outline),
                       borderRadius: BorderRadius.circular(8),
@@ -526,11 +708,16 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: result.matchedTagId,
-                        hint: const Text('选择标签'),
+                        hint: const Text('选择标签', style: TextStyle(fontSize: 13)),
                         isExpanded: true,
+                        isDense: true,
                         items: tagOptions,
                         onChanged: (tagId) {
-                          _updateResultTag(index, tagId);
+                          if (tagId == '__new_tag__') {
+                            _createAndSelectTag(index);
+                          } else {
+                            _updateResultTag(index, tagId);
+                          }
                         },
                       ),
                     ),
@@ -542,12 +729,12 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
             if (result.parseStatus == ParseStatus.alreadySet &&
                 result.currentTagName != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 6),
                 child: Row(
                   children: [
                     Icon(
                       Icons.info_outline,
-                      size: 16,
+                      size: 14,
                       color: Colors.blue,
                     ),
                     const SizedBox(width: 4),
