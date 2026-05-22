@@ -455,7 +455,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 // ===== 通知设置 =====
                 const SizedBox(height: 24),
-                _buildSectionHeader(theme, '通知设置', Icons.notifications_outlined),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '通知设置',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
