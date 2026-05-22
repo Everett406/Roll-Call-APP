@@ -642,49 +642,13 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
     AppState state,
     int index,
   ) {
-    final tagOptions = state.tags
-        .map((tag) => DropdownMenuItem(
-              value: tag.id,
-              child: Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: Color(tag.colorValue),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(tag.name, style: const TextStyle(fontSize: 13)),
-                ],
-              ),
-            ))
-        .toList();
-
-    // 添加"新建标签"选项
-    tagOptions.add(
-      DropdownMenuItem(
-        value: '__new_tag__',
-        child: Row(
-          children: [
-            Icon(
-              Icons.add_circle_outline,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '新建标签',
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    // 获取当前选中的标签
+    final selectedTag = result.matchedTagId != null
+        ? state.tags.firstWhere(
+            (t) => t.id == result.matchedTagId,
+            orElse: () => StatusTag(id: '', name: '', colorValue: 0),
+          )
+        : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
@@ -728,40 +692,59 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
               ],
             ),
             const SizedBox(height: 6),
-            // 标签选择下拉框
-            Row(
-              children: [
-                Text(
-                  '标签: ',
-                  style: theme.textTheme.bodySmall,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: theme.colorScheme.outline),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: result.matchedTagId,
-                        hint: const Text('选择标签', style: TextStyle(fontSize: 13)),
-                        isExpanded: true,
-                        isDense: true,
-                        items: tagOptions,
-                        onChanged: (tagId) {
-                          if (tagId == '__new_tag__') {
-                            _createAndSelectTag(index);
-                          } else {
-                            _updateResultTag(index, tagId);
-                          }
-                        },
-                      ),
-                    ),
+            // 标签选择按钮（点击弹出底部面板）
+            InkWell(
+              onTap: () => _showTagPicker(theme, state, result, index),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: selectedTag != null
+                      ? Color(selectedTag.colorValue).withOpacity(0.12)
+                      : theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: selectedTag != null
+                        ? Color(selectedTag.colorValue).withOpacity(0.4)
+                        : theme.colorScheme.outlineVariant,
                   ),
                 ),
-              ],
+                child: Row(
+                  children: [
+                    if (selectedTag != null) ...[
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Color(selectedTag.colorValue),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        selectedTag.name,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ] else
+                      Text(
+                        '选择标签',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                    const Spacer(),
+                    Icon(
+                      Icons.swap_horiz,
+                      size: 14,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
             ),
             // 当前状态提示（冲突时）
             if (result.parseStatus == ParseStatus.alreadySet &&
@@ -785,6 +768,220 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
                   ],
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 显示底部标签选择面板
+  void _showTagPicker(
+    ThemeData theme,
+    AppState state,
+    RelayParseResult result,
+    int index,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _TagPickerSheet(
+        tags: state.tags,
+        selectedTagId: result.matchedTagId,
+        onTagSelected: (tagId) {
+          Navigator.pop(context);
+          if (tagId == '__new_tag__') {
+            _createAndSelectTag(index);
+          } else {
+            _updateResultTag(index, tagId);
+          }
+        },
+      ),
+    );
+  }
+}
+
+/// 底部标签选择面板
+class _TagPickerSheet extends StatelessWidget {
+  final List<StatusTag> tags;
+  final String? selectedTagId;
+  final ValueChanged<String> onTagSelected;
+
+  const _TagPickerSheet({
+    required this.tags,
+    this.selectedTagId,
+    required this.onTagSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 拖动条
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // 标题
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Text(
+                    '选择标签',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${tags.length}个标签',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 标签网格
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ...tags.map((tag) {
+                  final isSelected = tag.id == selectedTagId;
+                  return _TagChip(
+                    tag: tag,
+                    isSelected: isSelected,
+                    onTap: () => onTagSelected(tag.id),
+                  );
+                }),
+                // 新建标签按钮
+                _TagChip(
+                  isNew: true,
+                  isSelected: false,
+                  onTap: () => onTagSelected('__new_tag__'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 标签芯片
+class _TagChip extends StatelessWidget {
+  final StatusTag? tag;
+  final bool isNew;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TagChip({
+    this.tag,
+    this.isNew = false,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (isNew) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.colorScheme.primary.withOpacity(0.4),
+              style: BorderStyle.solid,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.add,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '新建',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final color = Color(tag!.colorValue);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.2) : color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? color : color.withOpacity(0.3),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              tag.name,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isSelected ? color : theme.colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.check,
+                size: 14,
+                color: color,
+              ),
+            ],
           ],
         ),
       ),
