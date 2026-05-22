@@ -18,6 +18,7 @@ import 'settings_screen.dart';
 import 'random_picker_screen.dart';
 import 'attendance_calendar_screen.dart';
 import 'birthday_screen.dart';
+import 'holiday_screen.dart';
 import '../widgets/glass_popup_menu.dart';
 
 /// 页面过渡动画辅助
@@ -265,6 +266,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                 ),
               ),
+              GlassMenuItem(
+                value: 'holiday',
+                child: Row(
+                  children: [
+                    Icon(Icons.beach_access, size: 20, color: theme.colorScheme.secondary),
+                    const SizedBox(width: 12),
+                    const Text('法定节假日'),
+                  ],
+                ),
+              ),
             ],
             onSelected: (value) {
               if (value == 'random') {
@@ -276,6 +287,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const BirthdayScreen()),
+                );
+              } else if (value == 'holiday') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HolidayScreen()),
                 );
               }
             },
