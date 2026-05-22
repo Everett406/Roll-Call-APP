@@ -432,14 +432,15 @@ Future<T?> showExpressiveDialog<T>({
   required WidgetBuilder builder,
   bool barrierDismissible = true,
   bool useRootNavigator = true,
+  Color? barrierColor,
 }) {
   final theme = Theme.of(context);
   return showDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
-    barrierColor: theme.brightness == Brightness.dark
+    barrierColor: barrierColor ?? (theme.brightness == Brightness.dark
         ? Colors.black.withOpacity(0.45)
-        : Colors.black.withOpacity(0.25),
+        : Colors.black.withOpacity(0.25)),
     useRootNavigator: useRootNavigator,
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
