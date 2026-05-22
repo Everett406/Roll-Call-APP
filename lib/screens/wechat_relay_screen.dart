@@ -939,7 +939,8 @@ class _TagChip extends StatelessWidget {
       );
     }
 
-    final color = Color(tag!.colorValue);
+    final currentTag = tag!;
+    final color = Color(currentTag.colorValue);
 
     return InkWell(
       onTap: onTap,
@@ -967,7 +968,7 @@ class _TagChip extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              tag.name,
+              currentTag.name,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isSelected ? color : theme.colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
