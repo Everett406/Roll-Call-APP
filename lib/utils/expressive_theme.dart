@@ -297,7 +297,7 @@ class ExpressiveTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: colorScheme.surfaceTint,
-        backgroundColor: colorScheme.surface.withOpacity(0.35),
+        backgroundColor: Colors.transparent,
         foregroundColor: colorScheme.onSurface,
         titleTextStyle: textTheme.headlineLarge?.copyWith(
           fontWeight: FontWeight.w700,

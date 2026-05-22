@@ -8,6 +8,7 @@ import '../providers/app_state.dart';
 import '../utils/app_info.dart';
 import '../utils/expressive_theme.dart';
 import '../services/update_service.dart';
+import '../services/backup_service.dart';
 import 'member_manager_screen.dart';
 import 'group_manager_screen.dart';
 import 'tag_manager_screen.dart';
@@ -322,11 +323,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                       ),
                       ListTile(
-                        leading: const Icon(Icons.import_export),
-                        title: const Text('导出数据'),
-                        subtitle: const Text('导出为JSON文件'),
+                        leading: const Icon(Icons.upload_outlined),
+                        title: const Text('导出备份'),
+                        subtitle: const Text('导出为JSON文件，可分享保存'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _exportData(),
+                      ),
+                      const Divider(height: 1, indent: 52),
+                      ListTile(
+                        leading: const Icon(Icons.download_outlined),
+                        title: const Text('导入备份'),
+                        subtitle: const Text('从JSON文件恢复数据'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _importData(),
                       ),
                       const Divider(height: 1, indent: 52),
                       ListTile(
@@ -560,10 +569,68 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _exportData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('导出功能开发中')),
+  Future<void> _exportData() async {
+    final path = await BackupService.exportToJson();
+    if (path != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('备份文件已生成，请选择保存位置')),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('导出失败')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importData() async {
+    // Show merge/overwrite choice
+    final mode = await showExpressiveDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('导入备份'),
+        content: const Text('选择导入方式：'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'cancel'),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'merge'),
+            child: const Text('合并'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, 'overwrite'),
+            child: const Text('覆盖'),
+          ),
+        ],
+      ),
     );
+
+    if (mode == null || mode == 'cancel') return;
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请选择备份文件...')),
+      );
+    }
+
+    final (success, message, _) = await BackupService.importFromJson(
+      merge: mode == 'merge',
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      if (success) {
+        // Reload all data
+        ref.read(appStateProvider).loadData();
+      }
+    }
   }
 
   Future<void> _confirmClearData() async {

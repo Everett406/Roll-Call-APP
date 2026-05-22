@@ -514,11 +514,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(color: Colors.transparent),
+            filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Container(
+              color: theme.colorScheme.surface.withOpacity(0.12),
+            ),
           ),
         ),
         actions: [

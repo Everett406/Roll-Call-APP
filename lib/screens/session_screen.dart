@@ -41,7 +41,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     super.dispose();
   }
 
-  /// 构建标准AppBar（非搜索模式）
+  /// 构建标准AppBar（非搜索模式）— 整块区域都是高透明玻璃效果
   AppBar _buildNormalAppBar(Session session, AppState state) {
     final theme = Theme.of(context);
     return AppBar(
@@ -56,11 +56,54 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         ),
       ),
       centerTitle: true,
-      backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
       flexibleSpace: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(color: Colors.transparent),
+          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Container(
+            color: theme.colorScheme.surface.withOpacity(0.12),
+          ),
+        ),
+      ),
+      // 将FilterChip和InfoRow放入bottom，实现整块玻璃区域
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Filter chip bar
+            FilterChipBar(
+              sessionId: widget.sessionId,
+              selectedFilter: _selectedFilter,
+              onFilterChanged: (filter) {
+                setState(() {
+                  _selectedFilter = filter;
+                });
+              },
+            ),
+            // Info row
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '共 ${session.memberIds.length} 人，已标记 ${state.getSessionCheckedCount(widget.sessionId)} 人',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
       actions: [
@@ -187,11 +230,14 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   AppBar _buildSearchAppBar(Session session) {
     final theme = Theme.of(context);
     return AppBar(
-      backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       flexibleSpace: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(color: Colors.transparent),
+          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Container(
+            color: theme.colorScheme.surface.withOpacity(0.12),
+          ),
         ),
       ),
       leading: Container(
@@ -373,42 +419,14 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     if (isShowingAll) {
       // Fixed list: all members in studentId order, no splitting
       return Scaffold(
+        extendBodyBehindAppBar: true,
         appBar: _isSearchExpanded
             ? _buildSearchAppBar(session)
             : _buildNormalAppBar(session, state),
         body: Column(
           children: [
-            // Filter chip bar
-            FilterChipBar(
-              sessionId: widget.sessionId,
-              selectedFilter: _selectedFilter,
-              onFilterChanged: (filter) {
-                setState(() {
-                  _selectedFilter = filter;
-                });
-              },
-            ),
-            // Info row
-            if (!_isSearchExpanded)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '共 ${session.memberIds.length} 人，已标记 ${state.getSessionCheckedCount(widget.sessionId)} 人',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            // Spacer for AppBar + bottom area (FilterChip & InfoRow now in AppBar bottom)
+            SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight + 80),
             // Member list - fixed order when showing all
             Expanded(
               child: members.isEmpty
@@ -450,20 +468,14 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     // ---- Filtered view: show only matching members ----
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: _isSearchExpanded
           ? _buildSearchAppBar(session)
           : _buildNormalAppBar(session, state),
       body: Column(
         children: [
-          FilterChipBar(
-            sessionId: widget.sessionId,
-            selectedFilter: _selectedFilter,
-            onFilterChanged: (filter) {
-              setState(() {
-                _selectedFilter = filter;
-              });
-            },
-          ),
+          // Spacer for AppBar + bottom area (FilterChip now in AppBar bottom)
+          SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight + 80),
           Expanded(
             child: members.isEmpty
                 ? _buildEmptyState(theme, _isSearchExpanded, _selectedFilter)
