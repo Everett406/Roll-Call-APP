@@ -15,7 +15,7 @@
       <feDropShadow dx="4" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.35" />
     </filter>
   </defs>
-  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#bgGradient)" />
+  <rect x="16" y="16" width="480" height="480" fill="url(#bgGradient)" />
   <rect x="136" y="96" width="240" height="320" rx="28" fill="#D0BCFF" opacity="0.3" transform="rotate(-15 256 256)" />
   <rect x="136" y="96" width="240" height="320" rx="28" fill="#EADDFF" opacity="0.6" transform="rotate(-7 256 256)" />
   <rect x="136" y="96" width="240" height="320" rx="28" fill="#FEF7FF" filter="url(#softShadow)" />
