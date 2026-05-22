@@ -53,22 +53,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appState = ref.watch(appStateProvider);
 
     return Scaffold(
-      body: ListView(
-        padding: const EdgeInsets.only(top: 16, bottom: 32),
-        children: [
-          // 设置标题 - 固定在正文顶部，不浮动
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Text(
-              '设置',
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text(
+          '设置',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withOpacity(0.25),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1.0,
+                  ),
+                ),
+                gradient: LinearGradient(
+                  begin: const Alignment(-0.8, -1.0),
+                  end: const Alignment(0.5, 0.3),
+                  colors: [
+                    Colors.white.withOpacity(0.15),
+                    Colors.white.withOpacity(0.03),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.25, 0.6],
+                ),
               ),
             ),
           ),
-
-          Column(
+        ),
+      ),
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 32),
+          children: [
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 8),
@@ -440,10 +468,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 32),
               ],
-            ),
-          ],
+            ],
+          ),
+          ),
         ),
-      );
+    );
   }
 
   String _getThemeModeLabel(AppThemeMode mode) {
@@ -899,11 +928,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-    ),
-  );
-  }
+      ),
+    );
+}
 
-  void _previewConfetti(BuildContext context, AppState appState) {
+void _previewConfetti(BuildContext context, AppState appState) {
     final controller = ConfettiController(duration: const Duration(seconds: 2));
     controller.play();
 

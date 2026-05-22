@@ -83,22 +83,56 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
       });
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text(
+          '统计概览',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withOpacity(0.25),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1.0,
+                  ),
+                ),
+                gradient: LinearGradient(
+                  begin: const Alignment(-0.8, -1.0),
+                  end: const Alignment(0.5, 0.3),
+                  colors: [
+                    Colors.white.withOpacity(0.15),
+                    Colors.white.withOpacity(0.03),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.25, 0.6],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: CustomScrollView(
         slivers: [
-          // ===== Header =====
+          // ===== Top spacer for glass AppBar =====
+          SliverToBoxAdapter(
+            child: SizedBox(height: MediaQuery.of(context).viewPadding.top + kToolbarHeight + 8),
+          ),
+          // ===== Period selector =====
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '统计概览',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
                   const SizedBox(height: 8),
                   // Period selector chips
                   Row(

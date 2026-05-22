@@ -431,7 +431,19 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     if (session == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('点名')),
+        appBar: AppBar(
+          title: const Text('点名'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              child: Container(
+                color: theme.colorScheme.surface.withOpacity(0.25),
+              ),
+            ),
+          ),
+        ),
         body: const Center(child: Text('点名不存在')),
       );
     }
@@ -457,7 +469,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         body: Column(
           children: [
             // Spacer for AppBar + bottom area (FilterChip & InfoRow now in AppBar bottom)
-            SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight + 80),
+            SizedBox(height: MediaQuery.of(context).viewPadding.top + kToolbarHeight + 80),
             // Member list - fixed order when showing all
             Expanded(
               child: members.isEmpty

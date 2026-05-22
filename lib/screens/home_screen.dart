@@ -563,16 +563,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        physics: const BouncingScrollPhysics(),
-        children: [
-          _buildOngoingList(state, theme),
-          _buildArchivedList(state, theme),
-          const StatisticsScreen(),
-          const SettingsScreen(),
-        ],
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: _onPageChanged,
+          physics: const BouncingScrollPhysics(),
+          children: [
+            _buildOngoingList(state, theme),
+            _buildArchivedList(state, theme),
+            const StatisticsScreen(),
+            const SettingsScreen(),
+          ],
+        ),
       ),
       bottomNavigationBar: ClipRect(
         child: BackdropFilter(
