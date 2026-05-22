@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/member.dart';
@@ -77,7 +78,7 @@ class NotificationService {
 
   /// 创建通知渠道
   Future<void> _createNotificationChannels() async {
-    const androidPlugin = AndroidFlutterLocalNotificationsPlugin();
+    final androidPlugin = AndroidFlutterLocalNotificationsPlugin();
     
     await androidPlugin.createNotificationChannel(
       const AndroidNotificationChannel(
@@ -410,7 +411,7 @@ class NotificationService {
   ) {
     // 获取最近3次完成的点名
     final completedSessions = sessions
-      .where((s) => s.isCompleted)
+      .where((s) => s.status == 'archived')
       .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
