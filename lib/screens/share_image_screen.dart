@@ -10,8 +10,29 @@ import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../utils/expressive_theme.dart';
 
-/// Generate a beautiful shareable image of attendance results.
-/// Uses RepaintBoundary to capture widget as image, then share via system share sheet.
+// ============================================================
+// Share Theme Definitions
+// ============================================================
+
+enum ShareTheme {
+  cleanWhite('简约白', Icons.clean_hands_outlined, Colors.white, Color(0xFF1A1A1A), Color(0xFFF5F5F5)),
+  darkMode('深色模式', Icons.dark_mode_outlined, Color(0xFF1E1E1E), Colors.white, Color(0xFF2A2A2A)),
+  freshGreen('活力绿', Icons.eco_outlined, Color(0xFFF0F7F0), Color(0xFF1B5E20), Color(0xFFE8F5E9)),
+  warmOrange('暖橙色', Icons.wb_sunny_outlined, Color(0xFFFFF5E6), Color(0xFFE65100), Color(0xFFFFE0B2));
+
+  final String label;
+  final IconData icon;
+  final Color backgroundColor;
+  final Color textColor;
+  final Color accentBgColor;
+
+  const ShareTheme(this.label, this.icon, this.backgroundColor, this.textColor, this.accentBgColor);
+}
+
+// ============================================================
+// Share Image Screen
+// ============================================================
+
 class ShareImageScreen extends ConsumerStatefulWidget {
   final String sessionId;
 
@@ -24,6 +45,18 @@ class ShareImageScreen extends ConsumerStatefulWidget {
 class _ShareImageScreenState extends ConsumerState<ShareImageScreen> {
   final GlobalKey _captureKey = GlobalKey();
   bool _isCapturing = false;
+
+  ShareTheme _selectedTheme = ShareTheme.cleanWhite;
+
+  // Display toggles
+  bool _showTotal = true;
+  bool _showArrived = true;
+  bool _showRate = true;
+  bool _showTime = true;
+  bool _showStatusBreakdown = true;
+  bool _showMemberList = true;
+  bool _showNotes = true;
+  bool _showAppName = true;
 
   Future<void> _captureAndShare() async {
     setState(() => _isCapturing = true);
@@ -70,28 +103,30 @@ class _ShareImageScreenState extends ConsumerState<ShareImageScreen> {
     final rate = total > 0 ? (arrived / total * 100).toStringAsFixed(1) : '0';
 
     // Group by status
-    final statusGroups = <String, List<String>>{};
+    final statusGroups = <String, List<Map<String, dynamic>>>{};
     for (final ci in checkIns) {
-      if (ci.statusId == null) continue;
-      final tag = state.getTagById(ci.statusId!);
+      final tag = ci.statusId != null ? state.getTagById(ci.statusId!) : null;
       final name = tag?.name ?? '未知';
+      final color = tag != null ? Color(tag.colorValue) : Colors.grey;
       statusGroups.putIfAbsent(name, () => []);
       final member = state.getMemberById(ci.memberId);
-      statusGroups[name]!.add(member?.name ?? '未知');
+      statusGroups[name]!.add({
+        'name': member?.name ?? '未知',
+        'note': ci.note,
+        'color': color,
+      });
     }
 
     // Unchecked members
     final checkedIds = checkIns.map((c) => c.memberId).toSet();
-    final unchecked = session.memberIds
+    final uncheckedMembers = session.memberIds
         .where((id) => !checkedIds.contains(id))
         .map((id) {
-          final idx = session.memberIds.indexOf(id);
-          return idx >= 0 && idx < session.memberNames.length
-              ? session.memberNames[idx]
-              : state.getMemberById(id)?.name ?? '未知';
+          final member = state.getMemberById(id);
+          return {'name': member?.name ?? '未知', 'note': null, 'color': Colors.grey};
         }).toList();
-    if (unchecked.isNotEmpty) {
-      statusGroups['未标记'] = unchecked;
+    if (uncheckedMembers.isNotEmpty) {
+      statusGroups['未标记'] = uncheckedMembers;
     }
 
     return Scaffold(
@@ -99,187 +134,360 @@ class _ShareImageScreenState extends ConsumerState<ShareImageScreen> {
         title: const Text('分享图片'),
         centerTitle: true,
         elevation: 0,
-        actions: [
-          if (_isCapturing)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          else
-            TextButton.icon(
-              onPressed: _captureAndShare,
-              icon: const Icon(Icons.share),
-              label: const Text('分享'),
-            ),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Preview label
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
+      body: Column(
+        children: [
+          // ===== Theme Selector =====
+          Container(
+            height: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: ShareTheme.values.length,
+              itemBuilder: (context, index) {
+                final t = ShareTheme.values[index];
+                final isSelected = _selectedTheme == t;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    selected: isSelected,
+                    onSelected: (_) => setState(() => _selectedTheme = t),
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(t.icon, size: 16),
+                        const SizedBox(width: 4),
+                        Text(t.label),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // ===== Customization Options =====
+          ExpansionTile(
+            title: const Text('自定义显示内容'),
+            leading: const Icon(Icons.tune_outlined),
+            childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              _buildToggle('显示应到人数', _showTotal, (v) => setState(() => _showTotal = v)),
+              _buildToggle('显示实到人数', _showArrived, (v) => setState(() => _showArrived = v)),
+              _buildToggle('显示出勤率', _showRate, (v) => setState(() => _showRate = v)),
+              _buildToggle('显示时间', _showTime, (v) => setState(() => _showTime = v)),
+              _buildToggle('显示状态分布', _showStatusBreakdown, (v) => setState(() => _showStatusBreakdown = v)),
+              _buildToggle('显示成员列表', _showMemberList, (v) => setState(() => _showMemberList = v)),
+              _buildToggle('显示备注', _showNotes, (v) => setState(() => _showNotes = v)),
+              _buildToggle('显示应用标识', _showAppName, (v) => setState(() => _showAppName = v)),
+            ],
+          ),
+
+          // ===== Preview =====
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  Icon(Icons.preview_outlined,
-                      size: 16, color: theme.colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 6),
-                  Text(
-                    '预览（实际导出为图片）',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  // Preview label
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.preview_outlined,
+                            size: 16, color: theme.colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 6),
+                        Text(
+                          '预览（实际导出为图片）',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // The capturable card
+                  Center(
+                    child: RepaintBoundary(
+                      key: _captureKey,
+                      child: _buildShareCard(
+                        session: session,
+                        total: total,
+                        arrived: arrived,
+                        rate: rate,
+                        statusGroups: statusGroups,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: FilledButton.icon(
+            onPressed: _isCapturing ? null : _captureAndShare,
+            icon: _isCapturing
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.share),
+            label: Text(_isCapturing ? '生成中...' : '分享图片'),
+          ),
+        ),
+      ),
+    );
+  }
 
-            // The capturable card
-            RepaintBoundary(
-              key: _captureKey,
-              child: Card(
-                margin: EdgeInsets.zero,
-                elevation: 0,
-                color: theme.colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: theme.colorScheme.outlineVariant,
-                    width: 0.5,
+  Widget _buildToggle(String label, bool value, ValueChanged<bool> onChanged) {
+    return SwitchListTile(
+      title: Text(label, style: const TextStyle(fontSize: 14)),
+      value: value,
+      onChanged: onChanged,
+      dense: true,
+    );
+  }
+
+  Widget _buildShareCard({
+    required dynamic session,
+    required int total,
+    required int arrived,
+    required String rate,
+    required Map<String, List<Map<String, dynamic>>> statusGroups,
+  }) {
+    final t = _selectedTheme;
+
+    return Container(
+      width: 380,
+      decoration: BoxDecoration(
+        color: t.backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        border: t == ShareTheme.darkMode
+            ? Border.all(color: Colors.white.withOpacity(0.1))
+            : Border.all(color: Colors.black.withOpacity(0.06)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ===== Header with accent bar =====
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+              decoration: BoxDecoration(
+                color: t.accentBgColor,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title tag
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: t == ShareTheme.darkMode
+                          ? Colors.white.withOpacity(0.1)
+                          : t.textColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      session.title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: t.textColor,
+                      ),
+                    ),
                   ),
-                ),
-                child: Container(
-                  width: 360,
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 12),
+                  // Time
+                  if (_showTime)
+                    Text(
+                      DateFormat('yyyy年M月d日 HH:mm').format(session.createdAt),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: t.textColor.withOpacity(0.6),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // ===== Stats Grid =====
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Stats row
+                  Row(
                     children: [
-                      // Header decoration
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          session.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: theme.colorScheme.onPrimaryContainer,
+                      if (_showTotal)
+                        Expanded(child: _buildShareStat('应到', '$total', t.textColor.withOpacity(0.6), t)),
+                      if (_showTotal && _showArrived) const SizedBox(width: 10),
+                      if (_showArrived)
+                        Expanded(child: _buildShareStat('实到', '$arrived', _arrivedColor(t), t)),
+                      if (_showArrived && _showRate) const SizedBox(width: 10),
+                      if (_showRate)
+                        Expanded(child: _buildShareStat('出勤率', '$rate%', _rateColor(arrived, total, t), t)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Progress bar
+                  if (_showRate)
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: t.accentBgColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: total > 0 ? arrived / total : 0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: _rateColor(arrived, total, t),
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                    ),
 
-                      // Date
-                      Text(
-                        DateFormat('yyyy年M月d日 HH:mm').format(session.createdAt),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurfaceVariant,
+                  // Status breakdown
+                  if (_showStatusBreakdown && statusGroups.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Divider(color: t.textColor.withOpacity(0.08), height: 1),
+                    const SizedBox(height: 16),
+                    ...statusGroups.entries.map((entry) {
+                      final count = entry.value.length;
+                      final percentage = total > 0 ? (count / total * 100).toStringAsFixed(1) : '0';
+                      final color = entry.value.isNotEmpty ? entry.value.first['color'] as Color : Colors.grey;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                entry.key,
+                                style: TextStyle(fontSize: 13, color: t.textColor.withOpacity(0.75)),
+                              ),
+                            ),
+                            Text(
+                              '$count人',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: t.textColor),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '$percentage%',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 20),
+                      );
+                    }),
+                  ],
 
-                      // Stats row
-                      Row(
-                        children: [
-                          _buildStatBox(
-                            '应到',
-                            '$total',
-                            theme.colorScheme.onSurface,
-                            theme,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildStatBox(
-                            '实到',
-                            '$arrived',
-                            theme.colorScheme.primary,
-                            theme,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildStatBox(
-                            '出勤率',
-                            '$rate%',
-                            arrived >= total * 0.9
-                                ? const Color(0xFF4CAF50)
-                                : arrived >= total * 0.7
-                                    ? const Color(0xFFFF9800)
-                                    : const Color(0xFFE53935),
-                            theme,
-                          ),
-                        ],
+                  // Member list
+                  if (_showMemberList && statusGroups.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Divider(color: t.textColor.withOpacity(0.08), height: 1),
+                    const SizedBox(height: 16),
+                    Text(
+                      '成员签到详情',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: t.textColor.withOpacity(0.5),
                       ),
-                      const SizedBox(height: 20),
-
-                      // Divider
-                      Divider(
-                        color: theme.colorScheme.outlineVariant,
-                        height: 1,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Status groups
-                      ...statusGroups.entries.map((entry) {
+                    ),
+                    const SizedBox(height: 10),
+                    ...statusGroups.entries.expand((entry) {
+                      final statusName = entry.key;
+                      final color = entry.value.isNotEmpty ? entry.value.first['color'] as Color : Colors.grey;
+                      return entry.value.asMap().entries.map((e) {
+                        final member = e.value;
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
                             children: [
-                              Text(
-                                '${entry.key}（${entry.value.length}）',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onSurfaceVariant,
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  member['name'] as String,
+                                  style: TextStyle(fontSize: 13, color: t.textColor.withOpacity(0.85)),
                                 ),
                               ),
-                              const SizedBox(height: 4),
                               Text(
-                                entry.value.join('\u3001'),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.colorScheme.onSurface,
-                                  height: 1.5,
-                                ),
+                                statusName,
+                                style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500),
                               ),
+                              if (_showNotes && member['note'] != null && (member['note'] as String).isNotEmpty) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: t.accentBgColor,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    member['note'] as String,
+                                    style: TextStyle(fontSize: 10, color: t.textColor.withOpacity(0.5)),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         );
-                      }),
+                      });
+                    }).take(50), // Limit to 50 members to avoid overflow
+                  ],
 
-                      const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                      // Footer
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.fact_check,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant,
+                  // Footer
+                  if (_showAppName)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.fact_check,
+                          size: 12,
+                          color: t.textColor.withOpacity(0.35),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '点到为止',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: t.textColor.withOpacity(0.35),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '点到为止',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                        ),
+                      ],
+                    ),
+                ],
               ),
             ),
           ],
@@ -288,35 +496,40 @@ class _ShareImageScreenState extends ConsumerState<ShareImageScreen> {
     );
   }
 
-  Widget _buildStatBox(String label, String value, Color color, ThemeData theme) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildShareStat(String label, String value, Color color, ShareTheme t) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: t.accentBgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: t.textColor.withOpacity(0.5)),
+          ),
+        ],
       ),
     );
+  }
+
+  Color _rateColor(int arrived, int total, ShareTheme t) {
+    if (total == 0) return t.textColor.withOpacity(0.3);
+    final rate = arrived / total;
+    if (rate >= 0.9) return const Color(0xFF4CAF50);
+    if (rate >= 0.7) return const Color(0xFFFF9800);
+    return const Color(0xFFE53935);
+  }
+
+  Color _arrivedColor(ShareTheme t) {
+    if (t == ShareTheme.freshGreen) return const Color(0xFF2E7D32);
+    if (t == ShareTheme.warmOrange) return const Color(0xFFEF6C00);
+    return const Color(0xFF4CAF50);
   }
 }

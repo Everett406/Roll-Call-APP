@@ -305,12 +305,22 @@ class ExpressiveTheme {
         ),
       ),
       // ==========================================================
+      // Popup Menu - frosted glass background
+      // ==========================================================
+      popupMenuTheme: PopupMenuThemeData(
+        color: colorScheme.surface.withOpacity(0.72),
+        shape: useExpressiveShapes
+            ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
+            : null,
+        elevation: 0,
+      ),
+      // ==========================================================
       // Navigation Bar - frosted glass effect
       // ==========================================================
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         elevation: 0,
-        backgroundColor: colorScheme.surface.withOpacity(0.7),
+        backgroundColor: colorScheme.surface.withOpacity(0.55),
         indicatorShape: useExpressiveShapes
             ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
             : null,
@@ -318,7 +328,7 @@ class ExpressiveTheme {
       ),
       bottomAppBarTheme: BottomAppBarTheme(
         elevation: 0,
-        color: colorScheme.surface.withOpacity(0.7),
+        color: colorScheme.surface.withOpacity(0.55),
       ),
       // ==========================================================
       // Divider

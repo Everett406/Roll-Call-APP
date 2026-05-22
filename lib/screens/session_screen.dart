@@ -53,6 +53,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         ),
       ),
       centerTitle: true,
+      backgroundColor: theme.colorScheme.surface.withOpacity(0.65),
       actions: [
         // 归档按钮（仅 ongoing 状态显示）
         if (session.status == 'ongoing')
@@ -64,6 +65,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         // 更多菜单按钮
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert),
+          color: theme.colorScheme.surface.withOpacity(0.75),
           shape: ExpressiveShapes.cardSmall,
           onSelected: (value) {
             switch (value) {

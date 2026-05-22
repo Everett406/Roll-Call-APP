@@ -551,9 +551,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       bottomNavigationBar: ClipRect(
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.8),
+            color: theme.colorScheme.surface.withOpacity(0.45),
             child: NavigationBar(
               selectedIndex: _currentIndex,
               onDestinationSelected: _onNavItemTapped,
@@ -586,24 +586,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       floatingActionButton: _currentIndex <= 1
           ? Hero(
               tag: 'createButton',
-              child: Material(
-                type: MaterialType.transparency,
-                child: FloatingActionButton.extended(
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      _zoomRoute(const NewSessionScreen()),
-                    );
-                    if (result == true) {
-                      ref.read(appStateProvider).loadData();
-                    }
-                  },
-                  shape: ExpressiveShapes.fab,
-                  elevation: 2,
-                  icon: const Icon(Icons.add),
-                  label: const Text(
-                    '新建点名',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: FloatingActionButton.extended(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        _zoomRoute(const NewSessionScreen()),
+                      );
+                      if (result == true) {
+                        ref.read(appStateProvider).loadData();
+                      }
+                    },
+                    shape: ExpressiveShapes.fab,
+                    elevation: 0,
+                    backgroundColor: theme.colorScheme.primaryContainer.withOpacity(0.65),
+                    foregroundColor: theme.colorScheme.onPrimaryContainer,
+                    icon: const Icon(Icons.add),
+                    label: const Text(
+                      '新建点名',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
               ),
