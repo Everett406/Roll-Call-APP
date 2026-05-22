@@ -17,6 +17,7 @@ import 'statistics_screen.dart';
 import 'settings_screen.dart';
 import 'random_picker_screen.dart';
 import 'attendance_calendar_screen.dart';
+import 'birthday_screen.dart';
 
 /// 页面过渡动画辅助
 PageRouteBuilder<T> _zoomRoute<T>(Widget page) {
@@ -268,6 +269,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const StatisticsScreen(),
             _buildOngoingList(state, theme),
             _buildArchivedList(state, theme),
+            const BirthdayScreen(),
             const SettingsScreen(),
           ],
         ),
@@ -316,6 +318,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     icon: Icon(Icons.archive_outlined),
                     selectedIcon: Icon(Icons.archive),
                     label: '历史',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.cake_outlined),
+                    selectedIcon: Icon(Icons.cake),
+                    label: '生日',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.settings_outlined),
