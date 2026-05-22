@@ -58,7 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // 摇一摇相关
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
   DateTime? _lastShakeTime;
-  static const double _shakeThreshold = 12.0;
+  static const double _shakeThreshold = 25.0; // 提高阈值，降低灵敏度
 
   @override
   void initState() {
@@ -98,7 +98,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// 摇一摇触发
   void _onShake() {
     if (!mounted) return;
+    // 只在首页（统计页）启用摇一摇
+    if (_currentIndex != 0) return;
+    
     final quotes = [
+      // 励志类
       '今天也要加油哦！💪',
       '你是最棒的！🌟',
       '生活不止眼前的苟且，还有诗和远方 🎵',
@@ -109,6 +113,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       '努力的人运气不会太差 🍀',
       '保持热爱，奔赴山海 🏔️',
       '愿你历尽千帆，归来仍是少年 🎓',
+      // 幽默类
+      '摇一摇，烦恼全跑掉 🌪️',
+      '别摇了，再摇就晕了 😵',
+      '听说摇一摇可以召唤神龙 🐉',
+      '恭喜你获得一次免费摇一摇机会 🎰',
+      '摇一摇，好运来 🎊',
+      '你在摇什么？我在摇好运 🎲',
+      '摇一摇，烦恼拜拜 👋',
+      '今日运势：宜点名，忌迟到 🔮',
+      // 温暖类
+      '每一个你，都是独一无二的存在 💎',
+      '你的努力，时间都看得见 ⏰',
+      '慢慢来，比较快 🐢',
+      '做自己，就是最好的样子 🦋',
+      '世界那么大，幸好有你 🌍',
+      '今天的你，也很棒！👏',
+      '被点名是一种缘分，珍惜吧 💫',
+      // 点名相关
+      '点名不是目的，相遇才是意义 🎯',
+      '每一次点名，都是一次小确幸 ☘️',
+      '点到为止，缘分不止 💕',
+      '今天的点名，明天的回忆 📸',
+      '点名时刻，美好时光 ⏳',
     ];
     final quote = quotes[Random().nextInt(quotes.length)];
 

@@ -728,111 +728,61 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
     );
   }
 
-  /// 今日提醒（生日+节假日）
+  /// 今日提醒（只显示生日）
   Widget _buildTodayReminders(AppState state, ThemeData theme) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final reminders = <Widget>[];
 
-    // 1. 检查今天是否有人过生日
-    final birthdayMembers = state.members.where((m) {
-      if (m.birthday == null) return false;
-      return m.birthday!.month == now.month && m.birthday!.day == now.day;
-    }).toList();
-
-    for (final member in birthdayMembers) {
-      reminders.add(
-        Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.colorScheme.primaryContainer.withOpacity(0.6),
-                theme.colorScheme.tertiaryContainer.withOpacity(0.4),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.2),
-            ),
-          ),
-          child: Row(
-            children: [
-              const Text('🎂', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '今天是 ${member.name} 的生日!',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '祝 ${member.name} 生日快乐 🎉',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // 2. 检查即将到来的节假日（7天内）
-    // 2026年法定节假日数据
-    final holidays = [
-      {'name': '元旦', 'start': DateTime(2026, 1, 1), 'end': DateTime(2026, 1, 3), 'icon': '🎉'},
-      {'name': '春节', 'start': DateTime(2026, 2, 15), 'end': DateTime(2026, 2, 23), 'icon': '🧧'},
-      {'name': '清明节', 'start': DateTime(2026, 4, 4), 'end': DateTime(2026, 4, 6), 'icon': '🌿'},
-      {'name': '劳动节', 'start': DateTime(2026, 5, 1), 'end': DateTime(2026, 5, 5), 'icon': '💪'},
-      {'name': '端午节', 'start': DateTime(2026, 6, 19), 'end': DateTime(2026, 6, 21), 'icon': '🐉'},
-      {'name': '中秋节', 'start': DateTime(2026, 9, 25), 'end': DateTime(2026, 9, 27), 'icon': '🌕'},
-      {'name': '国庆节', 'start': DateTime(2026, 10, 1), 'end': DateTime(2026, 10, 7), 'icon': '🇨🇳'},
-    ];
-
-    for (final holiday in holidays) {
-      final start = holiday['start'] as DateTime;
-      final end = holiday['end'] as DateTime;
-      final daysUntil = start.difference(today).inDays;
-
-      if (daysUntil > 0 && daysUntil <= 7) {
+    // 检查今天和明天过生日的人
+    for (final member in state.members) {
+      if (member.birthday == null) continue;
+      
+      // 今年的生日
+      var birthdayThisYear = DateTime(now.year, member.birthday!.month, member.birthday!.day);
+      if (birthdayThisYear.isBefore(today)) {
+        birthdayThisYear = DateTime(now.year + 1, member.birthday!.month, member.birthday!.day);
+      }
+      
+      final daysUntil = birthdayThisYear.difference(today).inDays;
+      
+      // 只显示今天和明天的生日
+      if (daysUntil == 0 || daysUntil == 1) {
+        final isToday = daysUntil == 0;
         reminders.add(
           Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer.withOpacity(0.4),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.colorScheme.primaryContainer.withOpacity(0.6),
+                  theme.colorScheme.tertiaryContainer.withOpacity(0.4),
+                ],
+              ),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: theme.colorScheme.secondary.withOpacity(0.2),
+                color: theme.colorScheme.primary.withOpacity(0.2),
               ),
             ),
             child: Row(
               children: [
-                Text(holiday['icon'] as String, style: const TextStyle(fontSize: 24)),
+                const Text('🎂', style: TextStyle(fontSize: 24)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${holiday['name']}假期即将到来',
+                        isToday ? '今天是 ${member.name} 的生日!' : '明天是 ${member.name} 的生日',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        '${start.month}/${start.day}-${end.month}/${end.day} · 共${end.difference(start).inDays + 1}天 · 还有${daysUntil}天',
+                        isToday ? '祝 ${member.name} 生日快乐 🎉' : '记得准备祝福哦 🎁',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -840,48 +790,21 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        );
-      } else if (daysUntil <= 0 && today.isBefore(end.add(const Duration(days: 1)))) {
-        // 正在放假
-        final currentDay = today.difference(start).inDays + 1;
-        final totalDays = end.difference(start).inDays + 1;
-        reminders.add(
-          Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(holiday['icon'] as String, style: const TextStyle(fontSize: 24)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${holiday['name']}假期中',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
+                TextButton(
+                  onPressed: () {
+                    // 关闭这个提醒
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('知道了'),
+                        duration: Duration(seconds: 1),
                       ),
-                      Text(
-                        '第$currentDay/$totalDays天 · ${start.month}/${start.day}-${end.month}/${end.day}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    minimumSize: const Size(0, 0),
                   ),
+                  child: const Text('知道了'),
                 ),
               ],
             ),
@@ -894,7 +817,30 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Column(children: reminders),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.cake_outlined,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '生日提醒',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...reminders,
+        ],
+      ),
     );
   }
 }
