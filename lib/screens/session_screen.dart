@@ -16,6 +16,7 @@ import '../widgets/confetti_overlay.dart';
 import 'member_history_screen.dart';
 import 'export_screen.dart';
 import 'share_image_screen.dart';
+import 'wechat_relay_screen.dart';
 import '../utils/expressive_theme.dart';
 import '../widgets/glass_popup_menu.dart';
 import '../widgets/liquid_glass.dart';
@@ -168,6 +169,14 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   _isGridView = !_isGridView;
                 });
                 break;
+              case 'wechatRelay':
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WechatRelayScreen(sessionId: widget.sessionId),
+                  ),
+                );
+                break;
             }
           },
           items: [
@@ -231,6 +240,16 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   Icon(_isGridView ? Icons.view_list : Icons.grid_view, size: 20),
                   const SizedBox(width: 12),
                   Text(_isGridView ? '列表视图' : '网格视图'),
+                ],
+              ),
+            ),
+            GlassMenuItem(
+              value: 'wechatRelay',
+              child: const Row(
+                children: [
+                  Icon(Icons.chat_outlined, size: 20),
+                  SizedBox(width: 12),
+                  Text('微信接龙'),
                 ],
               ),
             ),

@@ -330,6 +330,19 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 批量标记成员状态
+  Future<void> batchUpdateStatus(Map<String, String> updates, String sessionId, {String? note}) async {
+    // updates: memberId -> tagId
+    for (var entry in updates.entries) {
+      await checkIn(
+        sessionId: sessionId,
+        memberId: entry.key,
+        statusId: entry.value,
+        note: note ?? '批量标记',
+      );
+    }
+  }
+
   Future<void> undoLastAction(String sessionId) async {
     // Get undoable logs in reverse chronological order
     final sessionLogs = _logs
