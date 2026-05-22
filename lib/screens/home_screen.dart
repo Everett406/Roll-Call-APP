@@ -14,6 +14,7 @@ import '../utils/constants.dart';
 import '../utils/expressive_theme.dart';
 import '../widgets/liquid_glass.dart';
 import '../services/update_service.dart';
+import '../services/notification_service.dart';
 import 'session_screen.dart';
 import 'new_session_screen.dart';
 import 'statistics_screen.dart';
@@ -64,10 +65,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _currentIndex);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(appStateProvider).loadData();
       _checkForUpdate();
       _checkSessionTimeouts();
+      // 检查并发送生日通知
+      await _checkBirthdayNotification();
+      // 检查出勤率异常
+      await _checkAttendanceAlert();
     });
     _startShakeDetection();
   }
@@ -154,6 +159,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final release = await UpdateService.checkUpdate();
     if (release != null && mounted) {
       _showUpdateDialog(release);
+    }
+  }
+
+  /// 检查并发送生日通知
+  Future<void> _checkBirthdayNotification() async {
+    final state = ref.read(appStateProvider);
+    if (state.members.isEmpty) return;
+    
+    await NotificationService().checkAndSendBirthdayNotification(state.members);
+  }
+
+  /// 检查出勤率异常
+  Future<void> _checkAttendanceAlert() async {
+    final state = ref.read(appStateProvider);
+    if (state.sessions.isEmpty || state.checkIns.isEmpty) return;
+    
+    final dropInfo = NotificationService().detectAttendanceDrop(
+      state.sessions,
+      state.checkIns,
+    );
+    
+    if (dropInfo != null) {
+      await NotificationService().sendAttendanceDropAlert(
+        currentRate: dropInfo['currentRate'] as double,
+        previousRate: dropInfo['previousRate'] as double,
+        dropPercent: dropInfo['dropPercent'] as double,
+      );
     }
   }
 

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'services/storage_service.dart';
+import 'services/notification_service.dart';
+import 'services/background_service.dart';
 import 'screens/home_screen.dart';
 import 'providers/theme_provider.dart';
 
@@ -28,6 +30,14 @@ void main() async {
   );
 
   await StorageService.init();
+  
+  // 初始化通知服务
+  await NotificationService().initialize();
+  
+  // 初始化后台服务
+  await BackgroundService().initialize();
+  await BackgroundService().registerTasks();
+  
   runApp(const ProviderScope(child: RollCallApp()));
 }
 
