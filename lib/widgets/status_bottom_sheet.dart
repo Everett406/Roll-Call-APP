@@ -20,12 +20,9 @@ class StatusBottomSheet extends StatefulWidget {
     required Function(StatusTag tag, String? note) onStatusSelected,
     VoidCallback? onAddTagPressed,
   }) {
-    return showModalBottomSheet(
+    return showExpressiveBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (_) => StatusBottomSheet(
         tags: tags,
         onStatusSelected: onStatusSelected,
@@ -186,7 +183,7 @@ class AddTagDialog extends StatefulWidget {
     required Function(String name, int colorValue) onConfirm,
     int? defaultColor,
   }) {
-    return showDialog(
+    return showExpressiveDialog(
       context: context,
       builder: (_) => AddTagDialog(onConfirm: onConfirm, defaultColor: defaultColor),
     );

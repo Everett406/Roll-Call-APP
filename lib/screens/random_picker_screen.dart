@@ -326,12 +326,9 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
 
   void _showHistorySheet(BuildContext context, AppState state) {
     final theme = Theme.of(context);
-    showModalBottomSheet(
+    showExpressiveBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (context) {
         return DraggableScrollableSheet(
           initialChildSize: 0.6,
@@ -441,7 +438,7 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
   }
 
   Future<void> _confirmClearHistory(AppState state) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('清空历史'),

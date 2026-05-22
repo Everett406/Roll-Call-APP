@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../utils/expressive_theme.dart';
 import '../models/member.dart';
-import '../utils/expressive_theme.dart';
 import 'import_screen.dart';
 import 'member_history_screen.dart';
 
@@ -218,7 +217,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                       child: const Icon(Icons.delete, color: Colors.white),
                     ),
                     confirmDismiss: (direction) async {
-                      final confirmed = await showDialog<bool>(
+                      final confirmed = await showExpressiveDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
                           title: const Text('删除人员'),
@@ -357,7 +356,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
   }
 
   Future<void> _deleteSelectedMembers(AppState state) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('删除 ${_selectedMemberIds.length} 人'),
@@ -393,7 +392,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
     final nameController = TextEditingController();
     final idController = TextEditingController();
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('添加人员'),
@@ -452,7 +451,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
     final nameController = TextEditingController(text: member.name);
     final idController = TextEditingController(text: member.studentId ?? '');
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('编辑人员'),

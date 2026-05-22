@@ -6,6 +6,7 @@ import 'package:confetti/confetti.dart';
 import '../providers/theme_provider.dart';
 import '../providers/app_state.dart';
 import '../utils/app_info.dart';
+import '../utils/expressive_theme.dart';
 import '../services/update_service.dart';
 import 'member_manager_screen.dart';
 import 'group_manager_screen.dart';
@@ -463,7 +464,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showThemeModeDialog() {
     final themeState = ref.read(themeProvider);
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择主题模式'),
@@ -490,7 +491,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showColorPickerDialog() {
     final themeState = ref.read(themeProvider);
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择主题颜色'),
@@ -566,7 +567,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _confirmClearData() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('清除所有数据'),
@@ -643,7 +644,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showUpdateDialog(ReleaseInfo releaseInfo) {
     final theme = Theme.of(context);
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
@@ -847,7 +848,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             : 5.49779; // corner - bottom-right
     final particleCount = (30 + appState.confettiIntensity * 70).round();
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.transparent,

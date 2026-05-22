@@ -24,8 +24,8 @@ class ConfettiOverlay extends StatelessWidget {
     final mode = appState?.confettiMode ?? 0;
     final intensity = appState?.confettiIntensity ?? 0.7;
 
-    // Scale particle count by intensity: low=40, default=80, high=120
-    final particleCount = (40 + intensity * 80).round();
+    // Scale particle count by intensity: low=15, default=32, high=50
+    final particleCount = (15 + intensity * 35).round();
 
     switch (mode) {
       case 1: // Rain

@@ -1,4 +1,7 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
+import '../utils/expressive_theme.dart';
 
 /// ============================================================
 /// Material 3 Expressive Theme Configuration
@@ -293,9 +296,9 @@ class ExpressiveTheme {
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        scrolledUnderElevation: 4,
+        scrolledUnderElevation: 8,
         surfaceTintColor: colorScheme.surfaceTint,
-        backgroundColor: colorScheme.surface.withOpacity(0.95),
+        backgroundColor: colorScheme.surface.withOpacity(0.85),
         foregroundColor: colorScheme.onSurface,
         titleTextStyle: textTheme.headlineLarge?.copyWith(
           fontWeight: FontWeight.w700,
@@ -308,7 +311,7 @@ class ExpressiveTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         elevation: 0,
-        backgroundColor: colorScheme.surface.withOpacity(0.8),
+        backgroundColor: colorScheme.surface.withOpacity(0.7),
         indicatorShape: useExpressiveShapes
             ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
             : null,
@@ -316,7 +319,7 @@ class ExpressiveTheme {
       ),
       bottomAppBarTheme: BottomAppBarTheme(
         elevation: 0,
-        color: colorScheme.surface.withOpacity(0.8),
+        color: colorScheme.surface.withOpacity(0.7),
       ),
       // ==========================================================
       // Divider
@@ -417,6 +420,68 @@ class ExpressiveAnimations {
       child: child,
     );
   }
+}
+
+/// ============================================================
+/// Frosted Glass Dialog Helpers
+/// ============================================================
+
+/// Show a dialog with frosted glass background blur.
+/// Replaces [showDialog] to add automatic BackdropFilter.
+Future<T?> showExpressiveDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+  bool useRootNavigator = true,
+}) {
+  final theme = Theme.of(context);
+  return showDialog<T>(
+    context: context,
+    barrierDismissible: barrierDismissible,
+    barrierColor: theme.brightness == Brightness.dark
+        ? Colors.black.withOpacity(0.45)
+        : Colors.black.withOpacity(0.25),
+    useRootNavigator: useRootNavigator,
+    builder: (context) => BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+      child: builder(context),
+    ),
+  );
+}
+
+/// Show a bottom sheet with frosted glass background blur.
+/// Replaces [showModalBottomSheet] to add automatic BackdropFilter.
+Future<T?> showExpressiveBottomSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool isScrollControlled = false,
+  bool useSafeArea = true,
+  bool useRootNavigator = false,
+  Color? backgroundColor,
+  ShapeBorder? shape,
+}) {
+  final theme = Theme.of(context);
+  return showModalBottomSheet<T>(
+    context: context,
+    isScrollControlled: isScrollControlled,
+    useSafeArea: useSafeArea,
+    useRootNavigator: useRootNavigator,
+    backgroundColor: Colors.transparent,
+    barrierColor: theme.brightness == Brightness.dark
+        ? Colors.black.withOpacity(0.4)
+        : Colors.black.withOpacity(0.2),
+    builder: (context) => BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface.withOpacity(0.92),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: builder(context),
+      ),
+    ),
+  );
 }
 
 /// ============================================================

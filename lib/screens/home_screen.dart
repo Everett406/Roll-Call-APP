@@ -89,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final minutes = elapsed.inMinutes % 60;
 
         if (!mounted) return;
-        final action = await showDialog<String>(
+        final action = await showExpressiveDialog<String>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('点名超时提醒'),
@@ -125,7 +125,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showUpdateDialog(ReleaseInfo release) {
     final theme = Theme.of(context);
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
@@ -217,19 +217,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showHelpPanel(BuildContext context) {
     final theme = Theme.of(context);
 
-    showModalBottomSheet(
+    showExpressiveBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ClipRect(
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            height: MediaQuery.of(context).size.height * 0.7,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withOpacity(0.85),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
         child: Column(
           children: [
             // 拖动条
@@ -375,9 +367,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-      ),
-    ),
-  );
+    );
   }
 
   Widget _buildHelpSection(
@@ -908,7 +898,7 @@ class _SessionCard extends ConsumerWidget {
   /// 显示删除确认对话框，返回是否确认删除
   Future<bool> _showDeleteConfirmDialog(BuildContext context, AppState state) async {
     // First confirmation dialog
-    final firstConfirm = await showDialog<bool>(
+    final firstConfirm = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除点名'),
@@ -932,7 +922,7 @@ class _SessionCard extends ConsumerWidget {
     if (firstConfirm != true || !context.mounted) return false;
 
     // Second confirmation dialog
-    final secondConfirm = await showDialog<bool>(
+    final secondConfirm = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('二次确认'),

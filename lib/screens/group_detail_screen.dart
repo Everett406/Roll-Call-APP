@@ -4,6 +4,7 @@ import '../providers/app_state.dart';
 import '../models/group.dart';
 import '../models/member.dart';
 import '../utils/constants.dart';
+import '../utils/expressive_theme.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {
   final Group group;
@@ -226,7 +227,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         TextEditingController(text: _group.name);
     int selectedColorIndex = _group.colorIndex;
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -313,7 +314,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   Future<void> _confirmDelete(BuildContext context) async {
     final state = ref.read(appStateProvider);
 
-    final confirm = await showDialog<bool>(
+    final confirm = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除分组'),
@@ -357,7 +358,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
       return;
     }
 
-    showModalBottomSheet(
+    showExpressiveBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -433,7 +434,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   Future<void> _removeMember(Member member) async {
     final state = ref.read(appStateProvider);
 
-    final confirm = await showDialog<bool>(
+    final confirm = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('移除成员'),

@@ -271,7 +271,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
-                    height: ranking.isEmpty ? 80 : math.min(ranking.length * 64.0 + 16, 340),
+                    height: ranking.isEmpty ? 80 : math.min(math.min(ranking.length, state.rankingCount) * 64.0 + 16, state.rankingCount * 64.0 + 16),
                     child: TabBarView(
                       controller: _tabController,
                       children: [
@@ -481,7 +481,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
     return ListView.builder(
       padding: const EdgeInsets.only(top: 8),
       itemCount: showCount,
-      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
       itemBuilder: (context, index) {
         final stat = ranking[index];
         final member = stat['member'];

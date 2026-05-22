@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_state.dart';
 import '../utils/expressive_theme.dart';
 import '../models/status_tag.dart';
-import '../utils/expressive_theme.dart';
 
 class TagManagerScreen extends ConsumerStatefulWidget {
   const TagManagerScreen({super.key});
@@ -266,7 +265,7 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
   }
 
   void _deleteTag(BuildContext context, AppState state, StatusTag tag) {
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除标签'),
@@ -295,7 +294,7 @@ class _TagManagerScreenState extends ConsumerState<TagManagerScreen> {
     final nameController = TextEditingController(text: tag.name);
     int selectedColorValue = tag.colorValue;
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(

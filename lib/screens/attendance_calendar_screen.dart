@@ -270,11 +270,8 @@ class _AttendanceCalendarScreenState extends ConsumerState<AttendanceCalendarScr
     List<Session> sessions,
     AppState state,
   ) {
-    showModalBottomSheet(
+    showExpressiveBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (ctx) {
         return Padding(
           padding: const EdgeInsets.all(20),

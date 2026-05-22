@@ -158,12 +158,9 @@ class _OperationLogPanelState extends ConsumerState<OperationLogPanel>
   ) {
     final theme = Theme.of(context);
 
-    showModalBottomSheet(
+    showExpressiveBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (context) {
         return DraggableScrollableSheet(
           initialChildSize: 0.5,
@@ -293,7 +290,7 @@ class _OperationLogPanelState extends ConsumerState<OperationLogPanel>
     OperationLog targetLog,
     int stepsBack,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.history, size: 32),

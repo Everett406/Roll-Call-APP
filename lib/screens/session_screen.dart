@@ -235,7 +235,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       ('青色', Colors.teal),
     ];
 
-    showDialog(
+    showExpressiveDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -680,7 +680,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   Future<void> _archiveSession(AppState state) async {
     final isComplete = state.isSessionComplete(widget.sessionId);
     if (!isComplete) {
-      final forceArchive = await showDialog<bool>(
+      final forceArchive = await showExpressiveDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('点名未完成'),
@@ -702,7 +702,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       );
       if (forceArchive != true) return;
     } else {
-      final confirmed = await showDialog<bool>(
+      final confirmed = await showExpressiveDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('结束并归档'),
@@ -756,7 +756,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showExpressiveDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         icon: Icon(Icons.done_all, color: AppColors.success, size: 32),
