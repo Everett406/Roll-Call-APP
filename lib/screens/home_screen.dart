@@ -237,35 +237,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: theme.colorScheme.surface.withOpacity(0.85),
         elevation: 0,
         scrolledUnderElevation: 0,
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(0.25),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1.0,
-                  ),
-                ),
-                gradient: LinearGradient(
-                  begin: const Alignment(-0.8, -1.0),
-                  end: const Alignment(0.5, 0.3),
-                  colors: [
-                    Colors.white.withOpacity(0.15),
-                    Colors.white.withOpacity(0.03),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.25, 0.6],
-                ),
-              ),
-            ),
-          ),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.casino_outlined),
