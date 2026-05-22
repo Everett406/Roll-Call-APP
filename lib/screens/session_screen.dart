@@ -42,26 +42,27 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 
   /// 构建标准AppBar（非搜索模式）
-  PreferredSizeWidget _buildNormalAppBar(Session session, AppState state) {
+  AppBar _buildNormalAppBar(Session session, AppState state) {
     final theme = Theme.of(context);
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight),
-      child: ClipRect(
+    return AppBar(
+      title: Hero(
+        tag: 'sessionTitle_${session.id}',
+        child: Material(
+          type: MaterialType.transparency,
+          child: Text(
+            session.title,
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+      centerTitle: true,
+      backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
+      flexibleSpace: ClipRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: AppBar(
-            title: Hero(
-              tag: 'sessionTitle_${session.id}',
-              child: Material(
-                type: MaterialType.transparency,
-                child: Text(
-                  session.title,
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            centerTitle: true,
-            backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
+          child: Container(color: Colors.transparent),
+        ),
+      ),
       actions: [
         // 归档按钮（仅 ongoing 状态显示）
         if (session.status == 'ongoing')
@@ -179,23 +180,21 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         ),
       ],
-          ),
-        ),
-      ),
     );
   }
 
   /// 构建搜索模式AppBar
-  PreferredSizeWidget _buildSearchAppBar(Session session) {
+  AppBar _buildSearchAppBar(Session session) {
     final theme = Theme.of(context);
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight),
-      child: ClipRect(
+    return AppBar(
+      backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
+      flexibleSpace: ClipRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: AppBar(
-            backgroundColor: theme.colorScheme.surface.withOpacity(0.25),
-            leading: Container(
+          child: Container(color: Colors.transparent),
+        ),
+      ),
+      leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHighest,
@@ -238,10 +237,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               });
             },
           ),
-          ],
-          ),
-        ),
-      ),
+      ],
     );
   }
 
@@ -377,7 +373,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     if (isShowingAll) {
       // Fixed list: all members in studentId order, no splitting
       return Scaffold(
-        extendBodyBehindAppBar: true,
         appBar: _isSearchExpanded
             ? _buildSearchAppBar(session)
             : _buildNormalAppBar(session, state),
@@ -455,7 +450,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     // ---- Filtered view: show only matching members ----
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: _isSearchExpanded
           ? _buildSearchAppBar(session)
           : _buildNormalAppBar(session, state),
