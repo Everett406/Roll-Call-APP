@@ -320,7 +320,7 @@ class ExpressiveTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         elevation: 0,
-        backgroundColor: colorScheme.surface.withOpacity(0.55),
+        backgroundColor: Colors.transparent,
         indicatorShape: useExpressiveShapes
             ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
             : null,
@@ -328,7 +328,7 @@ class ExpressiveTheme {
       ),
       bottomAppBarTheme: BottomAppBarTheme(
         elevation: 0,
-        color: colorScheme.surface.withOpacity(0.55),
+        color: Colors.transparent,
       ),
       // ==========================================================
       // Divider

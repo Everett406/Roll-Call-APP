@@ -551,10 +551,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       bottomNavigationBar: ClipRect(
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
           child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.45),
+            color: theme.colorScheme.surface.withOpacity(0.15),
             child: NavigationBar(
+              backgroundColor: Colors.transparent,
               selectedIndex: _currentIndex,
               onDestinationSelected: _onNavItemTapped,
               destinations: const [

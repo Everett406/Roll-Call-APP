@@ -15,6 +15,7 @@ import 'member_history_screen.dart';
 import 'export_screen.dart';
 import 'share_image_screen.dart';
 import '../utils/expressive_theme.dart';
+import '../widgets/glass_popup_menu.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -62,11 +63,10 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             tooltip: '结束并归档',
             onPressed: () => _archiveSession(state),
           ),
-        // 更多菜单按钮
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          color: theme.colorScheme.surface.withOpacity(0.75),
-          shape: ExpressiveShapes.cardSmall,
+        // 更多菜单按钮 - 玻璃拟态弹出菜单
+        GlassPopupMenu(
+          blurSigma: 24,
+          menuOpacity: 0.55,
           onSelected: (value) {
             switch (value) {
               case 'search':
@@ -103,23 +103,23 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                 break;
             }
           },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
+          items: [
+            GlassMenuItem(
               value: 'search',
-              child: Row(
+              child: const Row(
                 children: [
-                  Icon(Icons.search),
-                  SizedBox(width: 8),
+                  Icon(Icons.search, size: 20),
+                  SizedBox(width: 12),
                   Text('搜索'),
                 ],
               ),
             ),
-            PopupMenuItem(
+            GlassMenuItem(
               value: 'markAll',
               child: Row(
                 children: [
-                  Icon(Icons.done_all, color: AppColors.success),
-                  const SizedBox(width: 8),
+                  Icon(Icons.done_all, size: 20, color: AppColors.success),
+                  const SizedBox(width: 12),
                   Text(
                     '全部标记已到',
                     style: TextStyle(color: AppColors.success),
@@ -127,47 +127,51 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                 ],
               ),
             ),
-            const PopupMenuItem(
+            GlassMenuItem(
               value: 'export',
-              child: Row(
+              child: const Row(
                 children: [
-                  Icon(Icons.file_copy_outlined),
-                  SizedBox(width: 8),
+                  Icon(Icons.file_copy_outlined, size: 20),
+                  SizedBox(width: 12),
                   Text('导出文字摘要'),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            GlassMenuItem(
               value: 'shareImage',
-              child: Row(
+              child: const Row(
                 children: [
-                  Icon(Icons.image_outlined),
-                  SizedBox(width: 8),
+                  Icon(Icons.image_outlined, size: 20),
+                  SizedBox(width: 12),
                   Text('分享图片'),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            GlassMenuItem(
               value: 'addTag',
-              child: Row(
+              child: const Row(
                 children: [
-                  Icon(Icons.label_outline),
-                  SizedBox(width: 8),
+                  Icon(Icons.label_outline, size: 20),
+                  SizedBox(width: 12),
                   Text('添加新标签'),
                 ],
               ),
             ),
-            PopupMenuItem(
+            GlassMenuItem(
               value: 'toggleView',
               child: Row(
                 children: [
-                  Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-                  const SizedBox(width: 8),
+                  Icon(_isGridView ? Icons.view_list : Icons.grid_view, size: 20),
+                  const SizedBox(width: 12),
                   Text(_isGridView ? '列表视图' : '网格视图'),
                 ],
               ),
             ),
           ],
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            child: const Icon(Icons.more_vert),
+          ),
         ),
       ],
     );
