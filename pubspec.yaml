@@ -1,7 +1,7 @@
 name: roll_call_app
 description: 点到为止 - 让点名更有诗意
 publish_to: 'none'
-version: 1.5.9+59
+version: 1.5.10+60
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

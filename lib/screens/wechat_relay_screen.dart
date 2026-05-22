@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/member.dart';
 import '../models/status_tag.dart';
@@ -388,14 +389,43 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
 
           // 解析按钮
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _parseText,
-                icon: const Icon(Icons.auto_fix_high),
-                label: const Text('解析接龙'),
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final data = await Clipboard.getData(Clipboard.kTextPlain);
+                      if (data?.text != null && data!.text!.isNotEmpty) {
+                        setState(() {
+                          _textController.text = data.text!;
+                          _inputExpanded = true;
+                        });
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('剪贴板为空'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.content_paste, size: 18),
+                    label: const Text('粘贴'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton.icon(
+                    onPressed: _parseText,
+                    icon: const Icon(Icons.auto_fix_high, size: 18),
+                    label: const Text('解析接龙'),
+                  ),
+                ),
+              ],
             ),
           ),
 
