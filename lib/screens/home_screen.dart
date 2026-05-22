@@ -265,9 +265,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onPageChanged: _onPageChanged,
           physics: const BouncingScrollPhysics(),
           children: [
+            const StatisticsScreen(),
             _buildOngoingList(state, theme),
             _buildArchivedList(state, theme),
-            const StatisticsScreen(),
             const SettingsScreen(),
           ],
         ),
@@ -303,6 +303,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onDestinationSelected: _onNavItemTapped,
                 destinations: const [
                   NavigationDestination(
+                    icon: Icon(Icons.bar_chart_outlined),
+                    selectedIcon: Icon(Icons.bar_chart),
+                    label: '统计',
+                  ),
+                  NavigationDestination(
                     icon: Icon(Icons.radio_button_checked_outlined),
                     selectedIcon: Icon(Icons.radio_button_checked),
                     label: '进行中',
@@ -311,11 +316,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     icon: Icon(Icons.archive_outlined),
                     selectedIcon: Icon(Icons.archive),
                     label: '历史',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.bar_chart_outlined),
-                    selectedIcon: Icon(Icons.bar_chart),
-                    label: '统计',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.settings_outlined),
@@ -328,7 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: _currentIndex <= 1
+      floatingActionButton: (_currentIndex == 1 || _currentIndex == 2)
           ? Hero(
               tag: 'createButton',
               child: ClipRRect(
