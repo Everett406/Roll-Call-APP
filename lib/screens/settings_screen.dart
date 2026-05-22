@@ -10,6 +10,7 @@ import '../utils/app_info.dart';
 import '../utils/expressive_theme.dart';
 import '../services/update_service.dart';
 import '../services/backup_service.dart';
+import '../services/notification_service.dart';
 import 'member_manager_screen.dart';
 import 'group_manager_screen.dart';
 import 'tag_manager_screen.dart';
@@ -28,11 +29,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _currentVersion = AppInfo.version; // syncs with AppInfo
   int _versionTapCount = 0; // 版本号点击计数
   DateTime? _lastVersionTap; // 上次点击时间
+  bool _notificationsEnabled = false; // 通知开关状态
 
   @override
   void initState() {
     super.initState();
     _loadCurrentVersion();
+    _loadNotificationStatus();
+  }
+
+  Future<void> _loadNotificationStatus() async {
+    final enabled = await NotificationService().checkPermissionStatus();
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled = enabled;
+      });
+    }
   }
 
   Future<void> _loadCurrentVersion() async {
@@ -441,6 +453,65 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
 
+                // ===== 通知设置 =====
+                const SizedBox(height: 24),
+                _buildSectionHeader(theme, '通知设置', Icons.notifications_outlined),
+                const SizedBox(height: 8),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  elevation: 0,
+                  color: theme.colorScheme.surfaceContainerLowest,
+                  child: Column(
+                    children: [
+                      // 通知开关
+                      SwitchListTile(
+                        secondary: const Icon(Icons.notifications_active_outlined),
+                        title: Row(
+                          children: [
+                            const Text('接收通知'),
+                            const SizedBox(width: 8),
+                            // 问号按钮
+                            GestureDetector(
+                              onTap: _showNotificationHelp,
+                              child: Icon(
+                                Icons.help_outline,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        subtitle: Text(
+                          _notificationsEnabled ? '已开启' : '已关闭',
+                        ),
+                        value: _notificationsEnabled,
+                        onChanged: (value) async {
+                          if (value) {
+                            // 请求权限
+                            final granted = await NotificationService().requestPermission();
+                            if (mounted) {
+                              setState(() {
+                                _notificationsEnabled = granted;
+                              });
+                              if (!granted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('请在系统设置中开启通知权限')),
+                                );
+                              }
+                            }
+                          } else {
+                            // 用户想关闭，跳转到系统设置
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('请在系统设置中关闭通知')),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 32),
               ],
             ),
@@ -694,6 +765,118 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       );
     }
+  }
+
+  /// 通知帮助说明
+  void _showNotificationHelp() {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.notifications_outlined, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text('通知说明'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '开启通知后，您将收到以下类型的消息：',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            _buildNotificationTypeItem(
+              icon: Icons.cake_outlined,
+              title: '生日提醒',
+              desc: '当天有人过生日时发送祝福提醒',
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 12),
+            _buildNotificationTypeItem(
+              icon: Icons.calendar_today_outlined,
+              title: '出勤率周报',
+              desc: '每周日发送本周出勤统计报告',
+              color: theme.colorScheme.secondary,
+            ),
+            const SizedBox(height: 12),
+            _buildNotificationTypeItem(
+              icon: Icons.trending_down_outlined,
+              title: '出勤率异常',
+              desc: '检测到出勤率突然下降时提醒',
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 12),
+            _buildNotificationTypeItem(
+              icon: Icons.new_releases_outlined,
+              title: '新版本通知',
+              desc: '有新版本发布时通知一次',
+              color: theme.colorScheme.tertiary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '注意：每种通知每天/每周只发送一次，避免打扰。',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationTypeItem({
+    required IconData icon,
+    required String title,
+    required String desc,
+    required Color color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: color),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Text(
+                desc,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   /// 开发者彩蛋

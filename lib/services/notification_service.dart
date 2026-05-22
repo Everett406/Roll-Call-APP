@@ -56,9 +56,9 @@ class NotificationService {
   Future<void> initialize() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false, // 不在初始化时请求，在设置页面请求
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
     const initSettings = InitializationSettings(
       android: androidSettings,
@@ -74,6 +74,52 @@ class NotificationService {
 
     // 创建通知渠道（Android）
     await _createNotificationChannels();
+  }
+
+  /// 检查通知权限状态
+  Future<bool> checkPermissionStatus() async {
+    // Android 13+ 需要权限检查
+    final androidPlugin = _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      final enabled = await androidPlugin.areNotificationsEnabled();
+      return enabled ?? false;
+    }
+
+    // iOS
+    final iosPlugin = _notifications.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    if (iosPlugin != null) {
+      final settings = await iosPlugin.requestPermissions(
+        alert: false,
+        badge: false,
+        sound: false,
+      );
+      return settings ?? false;
+    }
+
+    return false;
+  }
+
+  /// 请求通知权限
+  Future<bool> requestPermission() async {
+    // Android 13+ 需要请求权限
+    final androidPlugin = _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      final granted = await androidPlugin.requestNotificationsPermission();
+      return granted ?? false;
+    }
+
+    // iOS
+    final iosPlugin = _notifications.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    if (iosPlugin != null) {
+      final settings = await iosPlugin.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      return settings ?? false;
+    }
+
+    return false;
   }
 
   /// 创建通知渠道
