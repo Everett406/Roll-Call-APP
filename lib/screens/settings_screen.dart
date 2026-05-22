@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:confetti/confetti.dart';
@@ -59,9 +60,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               '设置',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
             ),
-            floating: true,
+            pinned: true,
             elevation: 0,
-            scrolledUnderElevation: 4,
+            scrolledUnderElevation: 0,
+            backgroundColor: Colors.transparent,
+            flexibleSpace: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                child: Container(
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.12),
+                ),
+              ),
+            ),
           ),
           SliverToBoxAdapter(
             child: Column(
