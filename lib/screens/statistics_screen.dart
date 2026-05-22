@@ -480,7 +480,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
 
     final showCount = math.min(ranking.length, maxCount);
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 8, bottom: 100),
       itemCount: showCount,
       physics: const ClampingScrollPhysics(),
       itemBuilder: (context, index) {

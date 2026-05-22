@@ -238,16 +238,13 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
     // 处理冲突条目
     for (final result in conflictResults) {
       final shouldOverride = await _showConflictDialog(result);
-      if (shouldOverride == true) {
+      if (shouldOverride) {
         await state.checkIn(
           sessionId: widget.sessionId,
           memberId: result.memberId!,
           statusId: result.matchedTagId!,
           note: '微信接龙导入（覆盖）',
         );
-      } else if (shouldOverride == null) {
-        // 用户选择取消全部
-        break;
       }
     }
 
@@ -261,35 +258,29 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
     }
   }
 
-  Future<bool?> _showConflictDialog(RelayParseResult result) async {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('状态冲突'),
-        content: Text(
-          '${result.name} 已有状态 "${result.currentTagName}"，\n'
-          '接龙中为 "${result.matchedTagName ?? result.status}"。\n\n'
-          '是否覆盖现有状态？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('保留'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, null),
-            child: const Text('取消全部'),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+  Future<bool> _showConflictDialog(RelayParseResult result) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('状态冲突'),
+            content: Text(
+              '${result.name} 已有状态 "${result.currentTagName}"，\n'
+              '接龙中为 "${result.matchedTagName ?? result.status}"。\n\n'
+              '是否覆盖？',
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('否'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('是'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('覆盖'),
-          ),
-        ],
-      ),
-    );
+        ) ??
+        false;
   }
 
   @override
