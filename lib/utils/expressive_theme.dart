@@ -1,4 +1,3 @@
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
@@ -435,8 +434,8 @@ class ExpressiveAnimations {
 /// Frosted Glass Dialog Helpers
 /// ============================================================
 
-/// Show a dialog with frosted glass background blur.
-/// Replaces [showDialog] to add automatic BackdropFilter.
+/// Show a dialog with expressive styling.
+/// Replaces [showDialog] to add automatic styling.
 Future<T?> showExpressiveDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -452,38 +451,12 @@ Future<T?> showExpressiveDialog<T>({
         ? Colors.black.withOpacity(0.45)
         : Colors.black.withOpacity(0.25)),
     useRootNavigator: useRootNavigator,
-    builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.25),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.4),
-              width: 1.2,
-            ),
-            gradient: LinearGradient(
-              begin: const Alignment(-0.8, -1.0),
-              end: const Alignment(0.5, 0.5),
-              colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.04),
-                Colors.transparent,
-              ],
-              stops: const [0.0, 0.3, 0.6],
-            ),
-          ),
-          child: builder(context),
-        ),
-      ),
-    ),
+    builder: (context) => builder(context),
   );
 }
 
-/// Show a bottom sheet with frosted glass background blur.
-/// Replaces [showModalBottomSheet] to add automatic BackdropFilter.
+/// Show a bottom sheet with expressive styling.
+/// Replaces [showModalBottomSheet] to add automatic styling.
 Future<T?> showExpressiveBottomSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -499,52 +472,14 @@ Future<T?> showExpressiveBottomSheet<T>({
     isScrollControlled: isScrollControlled,
     useSafeArea: useSafeArea,
     useRootNavigator: useRootNavigator,
-    backgroundColor: Colors.transparent,
+    backgroundColor: backgroundColor ?? theme.colorScheme.surface,
     barrierColor: theme.brightness == Brightness.dark
         ? Colors.black.withOpacity(0.4)
         : Colors.black.withOpacity(0.2),
-    builder: (context) => ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.30),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border(
-              top: BorderSide(
-                color: Colors.white.withOpacity(0.45),
-                width: 1.0,
-              ),
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Specular highlight gradient
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                    gradient: LinearGradient(
-                      begin: const Alignment(-0.8, -1.0),
-                      end: const Alignment(0.5, 0.5),
-                      colors: [
-                        Colors.white.withOpacity(0.30),
-                        Colors.white.withOpacity(0.06),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.3, 0.6],
-                    ),
-                  ),
-                ),
-              ),
-              // Content
-              builder(context),
-            ],
-          ),
-        ),
-      ),
+    shape: shape ?? const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
+    builder: (context) => builder(context),
   );
 }
 
