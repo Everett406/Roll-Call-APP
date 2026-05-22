@@ -453,16 +453,26 @@ Future<T?> showExpressiveDialog<T>({
         : Colors.black.withOpacity(0.25)),
     useRootNavigator: useRootNavigator,
     builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+      filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
-        child: Material(
-          color: Colors.transparent,
-          shape: RoundedRectangleBorder(
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withOpacity(0.25),
             borderRadius: BorderRadius.circular(28),
-            side: BorderSide(
-              color: Colors.white.withOpacity(0.3),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.4),
               width: 1.2,
+            ),
+            gradient: LinearGradient(
+              begin: const Alignment(-0.8, -1.0),
+              end: const Alignment(0.5, 0.5),
+              colors: [
+                Colors.white.withOpacity(0.2),
+                Colors.white.withOpacity(0.04),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.3, 0.6],
             ),
           ),
           child: builder(context),
