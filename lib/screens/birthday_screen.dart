@@ -203,9 +203,9 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
         events.add(_FestivalEvent(date, f));
       }
 
-      // 检查节气
+      // 检查节气 - 只添加有节气的日期
       final jieQi = lunar.getJieQi();
-      if (jieQi != null) {
+      if (jieQi != null && jieQi.isNotEmpty) {
         events.add(_JieQiEvent(date, jieQi));
       }
     }

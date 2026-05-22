@@ -406,7 +406,7 @@ class _ShareImageScreenState extends ConsumerState<ShareImageScreen> {
                     }),
                   ],
 
-                  // Member list
+                  // Member list - Grid layout
                   if (_showMemberList && statusGroups.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Divider(color: t.textColor.withOpacity(0.08), height: 1),
@@ -420,50 +420,89 @@ class _ShareImageScreenState extends ConsumerState<ShareImageScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    ...statusGroups.entries.expand((entry) {
+                    // 按状态分组显示，每个状态内用 Wrap 布局
+                    ...statusGroups.entries.map((entry) {
                       final statusName = entry.key;
                       final color = entry.value.isNotEmpty ? entry.value.first['color'] as Color : Colors.grey;
-                      return entry.value.asMap().entries.map((e) {
-                        final member = e.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 状态标签
+                          Row(
                             children: [
                               Container(
-                                width: 6,
-                                height: 6,
+                                width: 8,
+                                height: 8,
                                 decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  member['name'] as String,
-                                  style: TextStyle(fontSize: 13, color: t.textColor.withOpacity(0.85)),
-                                ),
-                              ),
+                              const SizedBox(width: 6),
                               Text(
                                 statusName,
-                                style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500),
-                              ),
-                              if (_showNotes && member['note'] != null && (member['note'] as String).isNotEmpty) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: t.accentBgColor,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    member['note'] as String,
-                                    style: TextStyle(fontSize: 10, color: t.textColor.withOpacity(0.5)),
-                                  ),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: t.textColor.withOpacity(0.6),
                                 ),
-                              ],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '(${entry.value.length}人)',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: t.textColor.withOpacity(0.4),
+                                ),
+                              ),
                             ],
                           ),
-                        );
-                      });
-                    }).take(50), // Limit to 50 members to avoid overflow
+                          const SizedBox(height: 6),
+                          // 成员网格
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: entry.value.map((member) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: color.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      member['name'] as String,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: t.textColor.withOpacity(0.85),
+                                      ),
+                                    ),
+                                    if (_showNotes && member['note'] != null && (member['note'] as String).isNotEmpty) ...[
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: t.accentBgColor,
+                                          borderRadius: BorderRadius.circular(3),
+                                        ),
+                                        child: Text(
+                                          member['note'] as String,
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            color: t.textColor.withOpacity(0.5),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      );
+                    }),
                   ],
 
                   const SizedBox(height: 16),
