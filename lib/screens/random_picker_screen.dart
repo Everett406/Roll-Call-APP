@@ -10,6 +10,7 @@ import '../models/member.dart';
 import '../models/random_pick_record.dart';
 import '../utils/expressive_theme.dart';
 import '../widgets/confetti_overlay.dart';
+import 'candidate_config_screen.dart';
 
 class RandomPickerScreen extends ConsumerStatefulWidget {
   const RandomPickerScreen({super.key});
@@ -264,9 +265,24 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
   }
 
   Widget _buildCandidatePool(ThemeData theme, List<Member> members, int count) {
-    final appState = ref.read(appStateProvider);
     return InkWell(
-      onTap: () => _showCandidatePicker(context, theme, appState),
+      onTap: () async {
+        final result = await Navigator.push<Set<String>>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CandidateConfigScreen(
+              initialSelectedIds: _selectedCandidateIds,
+            ),
+          ),
+        );
+        if (result != null) {
+          setState(() {
+            _selectedCandidateIds
+              ..clear()
+              ..addAll(result);
+          });
+        }
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -291,7 +307,7 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
               ),
             ),
             Text(
-              '点选',
+              '设置',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w600,
@@ -306,176 +322,7 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
     );
   }
 
-  void _showCandidatePicker(BuildContext context, ThemeData theme, AppState appState) {
-    // Sort members by studentId
-    final allMembers = [...appState.members]..sort((a, b) {
-      if (a.studentId != null && b.studentId != null) {
-        return a.studentId!.compareTo(b.studentId!);
-      }
-      return a.name.compareTo(b.name);
-    });
-    final groups = appState.groups;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            // Recalculate inside builder so UI updates
-            final allSelected = _selectedCandidateIds.length == allMembers.length;
-
-            return DraggableScrollableSheet(
-              initialChildSize: 0.65,
-              minChildSize: 0.3,
-              maxChildSize: 0.9,
-              expand: false,
-              builder: (_, scrollController) {
-                return Column(
-                  children: [
-                    // Handle bar
-                    Container(
-                      margin: const EdgeInsets.only(top: 12, bottom: 8),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.outlineVariant,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    // Header
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                      child: Row(
-                        children: [
-                          Text(
-                            '候选池',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${_selectedCandidateIds.length}/${allMembers.length}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: theme.colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: () {
-                              setModalState(() {
-                                if (allSelected) {
-                                  _selectedCandidateIds.clear();
-                                } else {
-                                  _selectedCandidateIds.addAll(allMembers.map((m) => m.id));
-                                }
-                              });
-                              setState(() {});
-                            },
-                            child: Text(allSelected ? '全不选' : '全选'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    // Quick group selectors
-                    if (groups.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Wrap(
-                          spacing: 8,
-                          children: [
-                            FilterChip(
-                              selected: allSelected,
-                              label: const Text('全部'),
-                              onSelected: (_) {
-                                setModalState(() {
-                                  if (allSelected) {
-                                    _selectedCandidateIds.clear();
-                                  } else {
-                                    _selectedCandidateIds.addAll(allMembers.map((m) => m.id));
-                                  }
-                                });
-                                setState(() {});
-                              },
-                            ),
-                            ...groups.map((g) {
-                              final groupSelected = g.memberIds.every(
-                                (id) => _selectedCandidateIds.contains(id),
-                              );
-                              return FilterChip(
-                                selected: groupSelected,
-                                label: Text(g.name),
-                                onSelected: (_) {
-                                  setModalState(() {
-                                    if (groupSelected) {
-                                      _selectedCandidateIds.removeAll(g.memberIds);
-                                    } else {
-                                      _selectedCandidateIds.addAll(g.memberIds);
-                                    }
-                                  });
-                                  setState(() {});
-                                },
-                              );
-                            }),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1),
-                    ],
-                    // Member list
-                    Expanded(
-                      child: ListView.builder(
-                        controller: scrollController,
-                        itemCount: allMembers.length,
-                        itemBuilder: (_, index) {
-                          final m = allMembers[index];
-                          final isSelected = _selectedCandidateIds.contains(m.id);
-                          return CheckboxListTile(
-                            dense: true,
-                            title: Text(m.name, style: const TextStyle(fontSize: 14)),
-                            subtitle: m.studentId != null
-                                ? Text(
-                                    '学号: ${m.studentId!}',
-                                    style: const TextStyle(fontSize: 11),
-                                  )
-                                : null,
-                            value: isSelected,
-                            onChanged: (checked) {
-                              setModalState(() {
-                                if (checked == true) {
-                                  _selectedCandidateIds.add(m.id);
-                                } else {
-                                  _selectedCandidateIds.remove(m.id);
-                                }
-                              });
-                              setState(() {});
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
 
   void _showHistorySheet(BuildContext context, AppState state) {
     final theme = Theme.of(context);

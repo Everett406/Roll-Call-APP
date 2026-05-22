@@ -32,6 +32,7 @@ class AppState extends ChangeNotifier {
   int _confettiShape = 2; // 0=circle, 1=square, 2=mixed
   int _confettiMode = 0; // 0=explosive, 1=rain, 2=side, 3=corner
   double _confettiIntensity = 0.7;
+  int _rankingCount = 5;
   List<RandomPickRecord> _randomPickRecords = [];
 
   // ==================== Getters ====================
@@ -48,6 +49,7 @@ class AppState extends ChangeNotifier {
   int get confettiShape => _confettiShape;
   int get confettiMode => _confettiMode;
   double get confettiIntensity => _confettiIntensity;
+  int get rankingCount => _rankingCount;
   List<RandomPickRecord> get randomPickRecords => _randomPickRecords;
 
   /// Check if a tag is considered as "attended" (present).
@@ -77,6 +79,7 @@ class AppState extends ChangeNotifier {
     _confettiShape = StorageService.getConfettiShape();
     _confettiMode = StorageService.getConfettiMode();
     _confettiIntensity = StorageService.getConfettiIntensity();
+    _rankingCount = StorageService.getRankingCount();
     _randomPickRecords = StorageService.getAllRandomPickRecords()
         .map((r) => RandomPickRecord.fromJson(r))
         .toList();
@@ -123,6 +126,12 @@ class AppState extends ChangeNotifier {
   Future<void> setConfettiIntensity(double value) async {
     _confettiIntensity = value;
     await StorageService.setConfettiIntensity(value);
+    notifyListeners();
+  }
+
+  Future<void> setRankingCount(int value) async {
+    _rankingCount = value.clamp(3, 20);
+    await StorageService.setRankingCount(_rankingCount);
     notifyListeners();
   }
 

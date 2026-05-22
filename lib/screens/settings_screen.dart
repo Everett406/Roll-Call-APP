@@ -22,7 +22,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  String _currentVersion = AppInfo.version;
+  String _currentVersion = AppInfo.version; // syncs with AppInfo
 
   @override
   void initState() {
@@ -170,6 +170,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       if (appState.confettiEnabled)
                         _buildConfettiSettings(context, theme, appState),
+                      const Divider(height: 1, indent: 52),
+                      ListTile(
+                        leading: const Icon(Icons.format_list_numbered),
+                        title: const Text('排名显示人数'),
+                        subtitle: Text('${appState.rankingCount} 人'),
+                        trailing: SizedBox(
+                          width: 160,
+                          child: Slider(
+                            value: appState.rankingCount.toDouble(),
+                            min: 3,
+                            max: 20,
+                            divisions: 17,
+                            label: '${appState.rankingCount}',
+                            onChanged: (v) => appState.setRankingCount(v.round()),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 4),
                     ],
                   ),
@@ -356,7 +373,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ListTile(
                         leading: const Icon(Icons.info_outline),
                         title: const Text('关于点到为止'),
-                        subtitle: const Text('点到为止 v1.2.5'),
+                        subtitle: Text('点到为止 ${AppInfo.fullVersion}'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           Navigator.push(

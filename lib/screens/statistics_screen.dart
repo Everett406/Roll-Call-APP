@@ -92,29 +92,12 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        '统计概览',
-                        style: theme.textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_month_outlined),
-                        tooltip: '点名日历',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AttendanceCalendarScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                  Text(
+                    '统计概览',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   // Period selector chips
@@ -491,7 +474,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
       );
     }
 
-    final showCount = math.min(ranking.length, 5);
+    final showCount = math.min(ranking.length, state.rankingCount);
     return ListView.builder(
       padding: const EdgeInsets.only(top: 8),
       itemCount: showCount,

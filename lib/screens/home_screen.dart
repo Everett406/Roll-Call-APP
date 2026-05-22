@@ -15,6 +15,7 @@ import 'new_session_screen.dart';
 import 'statistics_screen.dart';
 import 'settings_screen.dart';
 import 'random_picker_screen.dart';
+import 'attendance_calendar_screen.dart';
 
 /// 页面过渡动画辅助
 PageRouteBuilder<T> _zoomRoute<T>(Widget page) {
@@ -776,9 +777,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Column(
       children: [
+        // Calendar + Filter header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.calendar_month_outlined),
+                tooltip: '点名日历',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AttendanceCalendarScreen(),
+                    ),
+                  );
+                },
+              ),
+              const Spacer(),
+            ],
+          ),
+        ),
         // Filter bar
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
           child: Row(
             children: [
               Expanded(

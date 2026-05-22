@@ -293,8 +293,9 @@ class ExpressiveTheme {
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        scrolledUnderElevation: 1,
-        backgroundColor: colorScheme.surface,
+        scrolledUnderElevation: 4,
+        surfaceTintColor: colorScheme.surfaceTint,
+        backgroundColor: colorScheme.surface.withOpacity(0.95),
         foregroundColor: colorScheme.onSurface,
         titleTextStyle: textTheme.headlineLarge?.copyWith(
           fontWeight: FontWeight.w700,
@@ -302,15 +303,23 @@ class ExpressiveTheme {
         ),
       ),
       // ==========================================================
-      // Navigation Bar
+      // Navigation Bar - frosted glass effect
       // ==========================================================
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
-        elevation: 2,
+        elevation: 0,
+        backgroundColor: colorScheme.surface.withOpacity(0.8),
         indicatorShape: useExpressiveShapes
             ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
             : null,
         indicatorColor: colorScheme.secondaryContainer.withOpacity(0.7),
+      ),
+      bottomAppBarTheme: BottomAppBarTheme(
+        elevation: 0,
+        color: colorScheme.surface.withOpacity(0.8),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colorScheme.surface.withOpacity(0.95),
       ),
       // ==========================================================
       // Divider

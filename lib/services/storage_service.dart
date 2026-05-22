@@ -364,6 +364,19 @@ class StorageService {
   static Future<void> setConfettiIntensity(double value) async =>
       _configBox.put(_confettiIntensityKey, value);
 
+  static const String _rankingCountKey = 'rankingCount';
+
+  /// How many people to show in ranking lists (3~20). Defaults to 5.
+  static int getRankingCount() {
+    final v = _configBox.get(_rankingCountKey);
+    if (v == null) return 5;
+    final i = v as int;
+    return i.clamp(3, 20);
+  }
+
+  static Future<void> setRankingCount(int value) async =>
+      _configBox.put(_rankingCountKey, value.clamp(3, 20));
+
   // ==================== Utility ====================
   static Future<void> clearAll() async {
     await _memberBox.clear();
