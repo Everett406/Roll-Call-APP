@@ -175,20 +175,23 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
 
     nameController.dispose();
 
-    if (result != null) {
+    if (result != null && mounted) {
       final (name, color) = result;
       // 创建标签
-      final newTag = await state.addTag(
-        name: name,
-        colorValue: color,
+      await state.addTagWithParams(name, color);
+
+      // 刷新状态获取新标签
+      await state.loadData();
+
+      // 找到新创建的标签
+      final newTag = state.tags.firstWhere(
+        (t) => t.name == name,
+        orElse: () => StatusTag(id: '', name: '', colorValue: 0),
       );
 
-      if (newTag != null && mounted) {
+      if (newTag.id.isNotEmpty) {
         // 自动选择新标签
         _updateResultTag(index, newTag.id);
-
-        // 重新解析以更新其他相同状态的条目
-        _parseText();
       }
     }
   }
