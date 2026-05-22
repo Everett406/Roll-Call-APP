@@ -108,7 +108,7 @@ class BirthdayScreen extends ConsumerWidget {
                 if (membersWithoutBirthday.isNotEmpty) ...[
                   _buildSectionTitle(theme, '待补全生日 (${membersWithoutBirthday.length})'),
                   const SizedBox(height: 8),
-                  _buildIncompleteList(theme, membersWithoutBirthday),
+                  _buildIncompleteList(theme, ref, membersWithoutBirthday),
                 ],
               ],
             ),
@@ -334,7 +334,7 @@ class BirthdayScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildIncompleteList(ThemeData theme, List<Member> members) {
+  Widget _buildIncompleteList(ThemeData theme, WidgetRef ref, List<Member> members) {
     return Card(
       child: ListView.separated(
         shrinkWrap: true,
@@ -367,7 +367,7 @@ class BirthdayScreen extends ConsumerWidget {
                   )
                 : null,
             trailing: TextButton(
-              onPressed: () => _showEditBirthdayDialog(context, member),
+              onPressed: () => _showEditBirthdayDialog(context, ref, member),
               child: const Text('补全'),
             ),
           );
@@ -441,7 +441,7 @@ class BirthdayScreen extends ConsumerWidget {
   }
 
   /// 显示编辑生日对话框
-  void _showEditBirthdayDialog(BuildContext context, Member member) {
+  void _showEditBirthdayDialog(BuildContext context, WidgetRef ref, Member member) {
     final theme = Theme.of(context);
     DateTime? selectedDate = member.birthday;
 
@@ -464,7 +464,7 @@ class BirthdayScreen extends ConsumerWidget {
               leading: const Icon(Icons.calendar_today),
               title: Text(
                 selectedDate != null
-                    ? '${selectedDate.year}年${selectedDate.month}月${selectedDate.day}日'
+                    ? '${selectedDate!.year}年${selectedDate!.month}月${selectedDate!.day}日'
                     : '选择日期',
               ),
               trailing: selectedDate != null
@@ -473,7 +473,7 @@ class BirthdayScreen extends ConsumerWidget {
                       onPressed: () {
                         selectedDate = null;
                         Navigator.pop(context);
-                        _showEditBirthdayDialog(context, member);
+                        _showEditBirthdayDialog(context, ref, member);
                       },
                     )
                   : null,
@@ -487,7 +487,7 @@ class BirthdayScreen extends ConsumerWidget {
                 if (date != null) {
                   selectedDate = date;
                   Navigator.pop(context);
-                  _showEditBirthdayDialog(context, member);
+                  _showEditBirthdayDialog(context, ref, member);
                 }
               },
             ),
@@ -500,7 +500,7 @@ class BirthdayScreen extends ConsumerWidget {
                     if (birthday != null) {
                       selectedDate = birthday;
                       Navigator.pop(context);
-                      _showEditBirthdayDialog(context, member);
+                      _showEditBirthdayDialog(context, ref, member);
                     }
                   },
                   icon: const Icon(Icons.auto_fix_high),
