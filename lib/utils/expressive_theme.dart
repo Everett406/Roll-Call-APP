@@ -1,7 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
-import '../utils/expressive_theme.dart';
 
 /// ============================================================
 /// Material 3 Expressive Theme Configuration
