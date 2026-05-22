@@ -27,6 +27,8 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
   String? _selectedMemberStudentId;
   bool _isRolling = false;
   final Set<String> _selectedCandidateIds = {};
+  final Set<String> _pickedMemberIds = {}; // 已抽中的人员ID
+  bool _removePicked = false; // 是否移除已抽中人员
 
   @override
   void initState() {
@@ -62,9 +64,14 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
   void _startRoll() async {
     final state = ref.read(appStateProvider);
     final members = state.members.where(
-      (m) => _selectedCandidateIds.contains(m.id),
+      (m) => _selectedCandidateIds.contains(m.id) && (!_removePicked || !_pickedMemberIds.contains(m.id)),
     ).toList();
-    if (members.isEmpty) return;
+    if (members.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('没有可选人员了')),
+      );
+      return;
+    }
 
     setState(() {
       _isRolling = true;
@@ -112,6 +119,12 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
       pickedAt: DateTime.now(),
     );
     await state.addRandomPickRecord(record);
+
+    if (_removePicked) {
+      setState(() {
+        _pickedMemberIds.add(pickedMember.id);
+      });
+    }
 
     if (state.confettiEnabled) {
       _confettiController.play();
@@ -265,60 +278,139 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
   }
 
   Widget _buildCandidatePool(ThemeData theme, List<Member> members, int count) {
-    return InkWell(
-      onTap: () async {
-        final result = await Navigator.push<Set<String>>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CandidateConfigScreen(
-              initialSelectedIds: _selectedCandidateIds,
-            ),
-          ),
-        );
-        if (result != null) {
-          setState(() {
-            _selectedCandidateIds
-              ..clear()
-              ..addAll(result);
-          });
-        }
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.people_outline,
-                size: 18, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '候选: $count / ${members.length} 人',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
+    final availableCount = members.where(
+      (m) => _selectedCandidateIds.contains(m.id) && (!_removePicked || !_pickedMemberIds.contains(m.id)),
+    ).length;
+
+    return Column(
+      children: [
+        InkWell(
+          onTap: () async {
+            final result = await Navigator.push<Set<String>>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CandidateConfigScreen(
+                  initialSelectedIds: _selectedCandidateIds,
                 ),
               ),
-            ),
-            Text(
-              '设置',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
+            );
+            if (result != null) {
+              setState(() {
+                _selectedCandidateIds
+                  ..clear()
+                  ..addAll(result);
+              });
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.3),
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right,
-                size: 18, color: theme.colorScheme.primary),
-          ],
+            child: Row(
+              children: [
+                Icon(Icons.people_outline,
+                    size: 18, color: theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '候选: $availableCount / $count 人',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Text(
+                  '设置',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right,
+                    size: 18, color: theme.colorScheme.primary),
+              ],
+            ),
+          ),
         ),
-      ),
+        const SizedBox(height: 8),
+        // 移除已抽中选项
+        InkWell(
+          onTap: () {
+            setState(() {
+              _removePicked = !_removePicked;
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: _removePicked
+                  ? theme.colorScheme.primaryContainer.withOpacity(0.5)
+                  : theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _removePicked
+                    ? theme.colorScheme.primary.withOpacity(0.3)
+                    : theme.colorScheme.outlineVariant.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _removePicked ? Icons.check_circle : Icons.radio_button_unchecked,
+                  size: 18,
+                  color: _removePicked
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '点一个少一个',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: _removePicked
+                              ? theme.colorScheme.onSurface
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        '抽中的人不再参与下次抽取',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_pickedMemberIds.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _pickedMemberIds.clear();
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已重置抽选记录')),
+                      );
+                    },
+                    child: const Text('重置'),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
