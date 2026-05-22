@@ -242,15 +242,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.casino_outlined),
-            tooltip: '随机点名',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RandomPickerScreen()),
-              );
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: '更多功能',
+            onSelected: (value) {
+              switch (value) {
+                case 'random':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RandomPickerScreen()),
+                  );
+                  break;
+                case 'birthday':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BirthdayScreen()),
+                  );
+                  break;
+              }
             },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'random',
+                child: Row(
+                  children: [
+                    Icon(Icons.casino_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('随机点名'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'birthday',
+                child: Row(
+                  children: [
+                    Icon(Icons.cake_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('生日提醒'),
+                  ],
+                ),
+              ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.help_outline),
@@ -269,7 +301,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const StatisticsScreen(),
             _buildOngoingList(state, theme),
             _buildArchivedList(state, theme),
-            const BirthdayScreen(),
             const SettingsScreen(),
           ],
         ),
@@ -318,11 +349,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     icon: Icon(Icons.archive_outlined),
                     selectedIcon: Icon(Icons.archive),
                     label: '历史',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.cake_outlined),
-                    selectedIcon: Icon(Icons.cake),
-                    label: '生日',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.settings_outlined),

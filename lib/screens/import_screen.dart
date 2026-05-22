@@ -39,6 +39,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
 
       final name = parts[0];
       final studentId = parts.length > 1 ? parts[1] : null;
+      
+      // 解析可选的生日字段（第三个字段）
+      DateTime? birthday;
+      if (parts.length > 2) {
+        birthday = _parseBirthday(parts[2]);
+      }
 
       // Create a unique key for deduplication within the paste
       final key = studentId != null ? '$name|$studentId' : name;
@@ -59,13 +65,45 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
 
       if (alreadyExists) continue;
 
-      parsed.add(_ParsedMember(name: name, studentId: studentId));
+      parsed.add(_ParsedMember(name: name, studentId: studentId, birthday: birthday));
     }
 
     setState(() {
       _parsedMembers = parsed;
       _hasParsed = true;
     });
+  }
+
+  /// 解析生日字符串
+  /// 支持格式：2005-02-01、2005/02/01、20050201
+  DateTime? _parseBirthday(String str) {
+    // 尝试 YYYY-MM-DD 格式
+    if (RegExp(r'^\d{4}-\d{1,2}-\d{1,2}$').hasMatch(str)) {
+      final parts = str.split('-');
+      return DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
+    }
+    // 尝试 YYYY/MM/DD 格式
+    if (RegExp(r'^\d{4}/\d{1,2}/\d{1,2}$').hasMatch(str)) {
+      final parts = str.split('/');
+      return DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
+    }
+    // 尝试 YYYYMMDD 格式（8位数字）
+    if (RegExp(r'^\d{8}$').hasMatch(str)) {
+      return DateTime(
+        int.parse(str.substring(0, 4)),
+        int.parse(str.substring(4, 6)),
+        int.parse(str.substring(6, 8)),
+      );
+    }
+    return null;
   }
 
   @override
@@ -115,7 +153,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '从Excel/Word复制粘贴，每行一个，支持"姓名 学号"格式',
+                  '每行一个，支持格式：\n• 姓名\n• 姓名 学号\n• 姓名 学号 生日',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -128,7 +166,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                     maxLines: null,
                     expands: true,
                     decoration: InputDecoration(
-                      hintText: '张三 2024001\n李四 2024002\n王五\n...',
+                      hintText: '张三 2024001 2005-02-01\n李四 2024002\n王五\n...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -237,6 +275,23 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
                                         ),
                                       ),
                                     ],
+                                    if (m.birthday != null) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.tertiaryContainer.withOpacity(0.5),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          '${m.birthday!.month}/${m.birthday!.day}',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onTertiaryContainer,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               );
@@ -283,6 +338,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
       return Member(
         name: m.name,
         studentId: m.studentId,
+        birthday: m.birthday,
       );
     }).toList();
 
@@ -300,6 +356,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
 class _ParsedMember {
   final String name;
   final String? studentId;
+  final DateTime? birthday;
 
-  _ParsedMember({required this.name, this.studentId});
+  _ParsedMember({required this.name, this.studentId, this.birthday});
 }
