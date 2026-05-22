@@ -307,9 +307,14 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
   }
 
   void _showCandidatePicker(BuildContext context, ThemeData theme, AppState appState) {
-    final allMembers = appState.members;
+    // Sort members by studentId
+    final allMembers = [...appState.members]..sort((a, b) {
+      if (a.studentId != null && b.studentId != null) {
+        return a.studentId!.compareTo(b.studentId!);
+      }
+      return a.name.compareTo(b.name);
+    });
     final groups = appState.groups;
-    final allSelected = _selectedCandidateIds.length == allMembers.length;
 
     showModalBottomSheet(
       context: context,
@@ -320,6 +325,9 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
+            // Recalculate inside builder so UI updates
+            final allSelected = _selectedCandidateIds.length == allMembers.length;
+
             return DraggableScrollableSheet(
               initialChildSize: 0.65,
               minChildSize: 0.3,
@@ -350,9 +358,19 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                             ),
                           ),
                           const Spacer(),
-                          Text(
-                            '${_selectedCandidateIds.length}/${allMembers.length}',
-                            style: theme.textTheme.bodySmall,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${_selectedCandidateIds.length}/${allMembers.length}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 8),
                           TextButton(
@@ -379,23 +397,34 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                         child: Wrap(
                           spacing: 8,
                           children: [
-                            ActionChip(
-                              avatar: const Icon(Icons.group, size: 16),
+                            FilterChip(
+                              selected: allSelected,
                               label: const Text('全部'),
-                              onPressed: () {
+                              onSelected: (_) {
                                 setModalState(() {
-                                  _selectedCandidateIds.addAll(allMembers.map((m) => m.id));
+                                  if (allSelected) {
+                                    _selectedCandidateIds.clear();
+                                  } else {
+                                    _selectedCandidateIds.addAll(allMembers.map((m) => m.id));
+                                  }
                                 });
                                 setState(() {});
                               },
                             ),
                             ...groups.map((g) {
-                              return ActionChip(
-                                avatar: const Icon(Icons.group_outlined, size: 16),
+                              final groupSelected = g.memberIds.every(
+                                (id) => _selectedCandidateIds.contains(id),
+                              );
+                              return FilterChip(
+                                selected: groupSelected,
                                 label: Text(g.name),
-                                onPressed: () {
+                                onSelected: (_) {
                                   setModalState(() {
-                                    _selectedCandidateIds.addAll(g.memberIds);
+                                    if (groupSelected) {
+                                      _selectedCandidateIds.removeAll(g.memberIds);
+                                    } else {
+                                      _selectedCandidateIds.addAll(g.memberIds);
+                                    }
                                   });
                                   setState(() {});
                                 },
@@ -418,7 +447,10 @@ class _RandomPickerScreenState extends ConsumerState<RandomPickerScreen>
                             dense: true,
                             title: Text(m.name, style: const TextStyle(fontSize: 14)),
                             subtitle: m.studentId != null
-                                ? Text(m.studentId!, style: const TextStyle(fontSize: 12))
+                                ? Text(
+                                    '学号: ${m.studentId!}',
+                                    style: const TextStyle(fontSize: 11),
+                                  )
                                 : null,
                             value: isSelected,
                             onChanged: (checked) {

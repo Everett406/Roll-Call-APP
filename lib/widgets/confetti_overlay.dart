@@ -54,17 +54,15 @@ class ConfettiOverlay extends StatelessWidget {
           confettiController: controller,
           blastDirectionality: BlastDirectionality.explosive,
           // Do NOT set blastDirection when explosive
-          numberOfParticles: count,
-          maxBlastForce: 15 + intensity * 25, // 15~40
-          minBlastForce: 5 + intensity * 10, // 5~15
-          gravity: 0.1 + intensity * 0.15, // 0.1~0.25
-          emissionFrequency: 0.02 + intensity * 0.03, // 0.02~0.05
+          numberOfParticles: count + 20, // more particles for fuller effect
+          maxBlastForce: 20 + intensity * 25, // 20~45
+          minBlastForce: 8 + intensity * 12, // 8~20
+          gravity: 0.03 + intensity * 0.07, // 0.03~0.10, slow fall for float
+          emissionFrequency: 0.04 + intensity * 0.04, // 0.04~0.08
+          particleDrag: 0.02 + intensity * 0.03, // air resistance
           shouldLoop: false,
           colors: _getColors(),
-          // Use default particle shapes (rect + circle mix)
-          // Do NOT set createParticlePath
-          minimumSize: const Size(8, 4),
-          maximumSize: const Size(16, 8),
+          // Do NOT set createParticlePath or min/max size - let library handle
         ),
       ),
     );

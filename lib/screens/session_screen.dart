@@ -13,6 +13,7 @@ import '../widgets/operation_log_panel.dart';
 import '../widgets/confetti_overlay.dart';
 import 'member_history_screen.dart';
 import 'export_screen.dart';
+import 'share_image_screen.dart';
 import '../utils/expressive_theme.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
@@ -82,6 +83,14 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   ),
                 );
                 break;
+              case 'shareImage':
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ShareImageScreen(sessionId: widget.sessionId),
+                  ),
+                );
+                break;
               case 'addTag':
                 _showAddTagDialog(context, state, useDistinctColor: true);
                 break;
@@ -123,6 +132,16 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   Icon(Icons.file_copy_outlined),
                   SizedBox(width: 8),
                   Text('导出文字摘要'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'shareImage',
+              child: Row(
+                children: [
+                  Icon(Icons.image_outlined),
+                  SizedBox(width: 8),
+                  Text('分享图片'),
                 ],
               ),
             ),
@@ -817,15 +836,4 @@ class _ArchiveConfettiPageState extends State<_ArchiveConfettiPage> {
               const SizedBox(height: 12),
               Text(
                 '点名完成！',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
+           
