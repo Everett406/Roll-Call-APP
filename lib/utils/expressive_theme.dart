@@ -453,8 +453,21 @@ Future<T?> showExpressiveDialog<T>({
         : Colors.black.withOpacity(0.25)),
     useRootNavigator: useRootNavigator,
     builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-      child: builder(context),
+      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Material(
+          color: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+            side: BorderSide(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.2,
+            ),
+          ),
+          child: builder(context),
+        ),
+      ),
     ),
   );
 }
@@ -483,15 +496,15 @@ Future<T?> showExpressiveBottomSheet<T>({
     builder: (context) => ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withOpacity(0.10),
+            color: theme.colorScheme.surface.withOpacity(0.22),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             border: Border(
               top: BorderSide(
-                color: Colors.white.withOpacity(0.2),
-                width: 0.8,
+                color: Colors.white.withOpacity(0.35),
+                width: 1.0,
               ),
             ),
           ),

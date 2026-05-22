@@ -519,9 +519,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         scrolledUnderElevation: 0,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(
-              color: theme.colorScheme.surface.withOpacity(0.06),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withOpacity(0.25),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.25),
+                    width: 0.8,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -555,9 +563,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       bottomNavigationBar: ClipRect(
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.15),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withOpacity(0.25),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withOpacity(0.25),
+                  width: 0.8,
+                ),
+              ),
+            ),
             child: NavigationBar(
               backgroundColor: Colors.transparent,
               selectedIndex: _currentIndex,

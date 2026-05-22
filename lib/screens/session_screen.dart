@@ -61,9 +61,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       scrolledUnderElevation: 0,
       flexibleSpace: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.06),
+            color: theme.colorScheme.surface.withOpacity(0.25),
           ),
         ),
       ),
@@ -234,9 +234,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       elevation: 0,
       flexibleSpace: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
-            color: theme.colorScheme.surface.withOpacity(0.06),
+            color: theme.colorScheme.surface.withOpacity(0.25),
           ),
         ),
       ),

@@ -161,7 +161,7 @@ class _GlassPopupContent extends StatelessWidget {
                   child: Container(
                     width: menuWidth,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(0.10),
+                      color: theme.colorScheme.surface.withOpacity(0.22),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: Colors.white.withOpacity(0.25),
