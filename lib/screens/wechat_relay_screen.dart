@@ -78,7 +78,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
     });
   }
 
-  /// 更新结果标签 - 只保存映射，不改变板块位置
+  /// 更新结果标签 - 只保存映射，同步相同状态文本的其他条目
   void _updateResultTag(int index, String? tagId) {
     if (tagId == null) return;
 
@@ -93,12 +93,23 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
     }
 
     setState(() {
-      // 只更新标签ID和名称，不改变 parseStatus（保持原板块）
+      // 更新当前条目
       _modifiedResults[index] = result.copyWith(
         matchedTagId: tagId,
         matchedTagName: tag?.name,
-        // 不修改 parseStatus，保持在原来的板块
       );
+
+      // 同步所有状态文本相同的其他条目
+      if (result.status.isNotEmpty) {
+        for (int i = 0; i < _modifiedResults.length; i++) {
+          if (i != index && _modifiedResults[i].status == result.status) {
+            _modifiedResults[i] = _modifiedResults[i].copyWith(
+              matchedTagId: tagId,
+              matchedTagName: tag?.name,
+            );
+          }
+        }
+      }
     });
   }
 
@@ -691,7 +702,9 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 第一行：姓名 + 原始状态
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 姓名
                 Container(
@@ -709,7 +722,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // 原始状态
+                // 原始状态（换行显示）
                 if (result.status.isNotEmpty)
                   Expanded(
                     child: Text(
@@ -717,6 +730,7 @@ class _WechatRelayScreenState extends ConsumerState<WechatRelayScreen> {
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
