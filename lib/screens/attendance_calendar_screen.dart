@@ -229,7 +229,7 @@ class _AttendanceCalendarScreenState extends ConsumerState<AttendanceCalendarScr
                             height: 5,
                             margin: const EdgeInsets.symmetric(horizontal: 1),
                             decoration: BoxDecoration(
-                              color: s.isArchived
+                              color: s.status == 'archived'
                                   ? theme.colorScheme.tertiary
                                   : theme.colorScheme.primary,
                               shape: BoxShape.circle,

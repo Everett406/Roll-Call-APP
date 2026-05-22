@@ -836,4 +836,16 @@ class _ArchiveConfettiPageState extends State<_ArchiveConfettiPage> {
               const SizedBox(height: 12),
               Text(
                 '点名完成！',
-           
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}

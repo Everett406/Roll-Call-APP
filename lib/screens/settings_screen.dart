@@ -22,7 +22,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
-  final String _currentVersion = AppInfo.version;
+  String _currentVersion = AppInfo.version;
 
   @override
   void initState() {

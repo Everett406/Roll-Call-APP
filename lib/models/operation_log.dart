@@ -51,10 +51,7 @@ class OperationLog {
     );
   }
 
-  bool get isUndoable {
-    if (type != 'check_in') return false;
-    return DateTime.now().difference(timestamp).inHours < 72;
-  }
+  bool get isUndoable => type == 'check_in';
 
   @override
   bool operator ==(Object other) {

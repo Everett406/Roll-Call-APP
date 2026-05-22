@@ -76,7 +76,8 @@ class _ShareImageScreenState extends ConsumerState<ShareImageScreen> {
       final tag = state.getTagById(ci.statusId!);
       final name = tag?.name ?? '未知';
       statusGroups.putIfAbsent(name, () => []);
-      statusGroups[name]!.add(ci.memberName);
+      final member = state.getMemberById(ci.memberId);
+      statusGroups[name]!.add(member?.name ?? '未知');
     }
 
     // Unchecked members
