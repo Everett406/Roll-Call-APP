@@ -1,7 +1,7 @@
 name: roll_call_app
 description: 点到为止 - 让点名更有诗意
 publish_to: 'none'
-version: 1.6.1+73
+version: 1.6.2+74
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -26,6 +26,7 @@ dependencies:
   share_plus: ^7.2.1
   file_picker: ^8.0.0+1
   lunar: ^1.7.8
+  sensors_plus: ^6.1.1
 
 dev_dependencies:
   flutter_test:

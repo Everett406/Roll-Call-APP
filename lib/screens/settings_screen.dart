@@ -26,6 +26,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isCheckingUpdate = false;
   String _currentVersion = AppInfo.version; // syncs with AppInfo
+  int _versionTapCount = 0; // 版本号点击计数
+  DateTime? _lastVersionTap; // 上次点击时间
 
   @override
   void initState() {
@@ -401,6 +403,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         leading: const Icon(Icons.update),
                         title: const Text('版本信息'),
                         subtitle: Text('当前版本: $_currentVersion'),
+                        onTap: _onVersionTap,
                       ),
                       const Divider(height: 1, indent: 52),
                       // 检查更新
@@ -667,6 +670,113 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
     }
+  }
+
+  /// 版本号点击彩蛋
+  void _onVersionTap() {
+    final now = DateTime.now();
+    // 超过1.5秒重置计数
+    if (_lastVersionTap != null &&
+        now.difference(_lastVersionTap!).inMilliseconds > 1500) {
+      _versionTapCount = 0;
+    }
+    _lastVersionTap = now;
+    _versionTapCount++;
+
+    if (_versionTapCount >= 7) {
+      _versionTapCount = 0;
+      _showDeveloperEasterEgg();
+    } else if (_versionTapCount >= 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('再点击 ${7 - _versionTapCount} 次解锁彩蛋 🤫'),
+          duration: const Duration(milliseconds: 800),
+        ),
+      );
+    }
+  }
+
+  /// 开发者彩蛋
+  void _showDeveloperEasterEgg() {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🏆', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 16),
+              Text(
+                '开发者模式',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '恭喜你发现了隐藏彩蛋！',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    _buildDevInfo('应用名称', '点到为止'),
+                    _buildDevInfo('版本', AppInfo.fullVersion),
+                    _buildDevInfo('框架', 'Flutter'),
+                    _buildDevInfo('架构', 'Riverpod'),
+                    _buildDevInfo('开发者', 'Everett'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('关闭'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevInfo(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 检查更新

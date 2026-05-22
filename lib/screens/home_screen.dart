@@ -1,8 +1,11 @@
+import 'dart:async';
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import '../providers/app_state.dart';
 import '../providers/theme_provider.dart';
 import '../models/session.dart';
@@ -52,6 +55,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   late PageController _pageController;
   int _archivedFilterDays = 7; // Default: show last 7 days
 
+  // 摇一摇相关
+  StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
+  DateTime? _lastShakeTime;
+  static const double _shakeThreshold = 12.0;
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +69,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _checkForUpdate();
       _checkSessionTimeouts();
     });
+    _startShakeDetection();
+  }
+
+  /// 摇一摇检测
+  void _startShakeDetection() {
+    _accelerometerSubscription = accelerometerEventStream(
+      samplingPeriod: SensorInterval.uiInterval,
+    ).listen((event) {
+      final now = DateTime.now();
+      // 冷却时间2秒
+      if (_lastShakeTime != null &&
+          now.difference(_lastShakeTime!).inMilliseconds < 2000) {
+        return;
+      }
+
+      final acceleration = sqrt(
+        event.x * event.x + event.y * event.y + event.z * event.z,
+      );
+
+      if (acceleration > _shakeThreshold) {
+        _lastShakeTime = now;
+        _onShake();
+      }
+    });
+  }
+
+  /// 摇一摇触发
+  void _onShake() {
+    if (!mounted) return;
+    final quotes = [
+      '今天也要加油哦！💪',
+      '你是最棒的！🌟',
+      '生活不止眼前的苟且，还有诗和远方 🎵',
+      '点到为止，恰到好处 ✨',
+      '每一次点名，都是一次相遇 🤝',
+      '认真的人最可爱 😊',
+      '今天也是元气满满的一天！☀️',
+      '努力的人运气不会太差 🍀',
+      '保持热爱，奔赴山海 🏔️',
+      '愿你历尽千帆，归来仍是少年 🎓',
+    ];
+    final quote = quotes[Random().nextInt(quotes.length)];
+
+    showDialog(
+      context: context,
+      builder: (context) => _ShakeEasterEggDialog(quote: quote),
+    );
   }
 
   /// 启动时自动检查更新
@@ -200,6 +255,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _accelerometerSubscription?.cancel();
     super.dispose();
   }
 
@@ -1301,6 +1357,96 @@ class _SessionCard extends ConsumerWidget {
           ],
         );
       }).toList(),
+    );
+  }
+}
+
+/// 摇一摇彩蛋弹窗
+class _ShakeEasterEggDialog extends StatefulWidget {
+  final String quote;
+
+  const _ShakeEasterEggDialog({required this.quote});
+
+  @override
+  State<_ShakeEasterEggDialog> createState() => _ShakeEasterEggDialogState();
+}
+
+class _ShakeEasterEggDialogState extends State<_ShakeEasterEggDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final emojis = ['🎉', '🎊', '✨', '🌟', '💫', '🥳', '🎊', '🎆'];
+    final emoji = emojis[Random().nextInt(emojis.length)];
+
+    return Center(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    emoji,
+                    style: const TextStyle(fontSize: 48),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '摇一摇彩蛋',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.quote,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('知道了'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
