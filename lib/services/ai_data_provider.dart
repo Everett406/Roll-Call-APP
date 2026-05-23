@@ -23,6 +23,8 @@ class AiDataProvider {
           return await importMembers(args);
         case 'update_member':
           return await updateMember(args);
+        case 'query_birthdays':
+          return await queryBirthdays(args);
         default:
           return '未知工具：$toolName';
       }
@@ -199,6 +201,7 @@ class AiDataProvider {
 
         final studentId = data['studentId'] as String?;
         final birthdayStr = data['birthday'] as String?;
+        final lunarBirthdayStr = data['lunarBirthday'] as String?;
         DateTime? birthday;
         if (birthdayStr != null && birthdayStr.isNotEmpty) {
           try {
@@ -225,6 +228,7 @@ class AiDataProvider {
           final updated = existing.first.copyWith(
             studentId: studentId,
             birthday: birthday,
+            lunarBirthday: lunarBirthdayStr,
           );
           await StorageService.putMember(updated);
         } else {
@@ -234,6 +238,7 @@ class AiDataProvider {
             name: name,
             studentId: studentId,
             birthday: birthday,
+            lunarBirthday: lunarBirthdayStr,
           );
           await StorageService.putMember(member);
         }
@@ -254,25 +259,30 @@ class AiDataProvider {
   static Future<String> updateMember(Map<String, dynamic> args) async {
     final memberId = args['memberId'] as String?;
     final name = args['name'] as String?;
+    final newName = args['newName'] as String?;
     final studentId = args['studentId'] as String?;
     final birthdayStr = args['birthday'] as String?;
+    final lunarBirthdayStr = args['lunarBirthday'] as String?;
 
-    if (memberId == null || memberId.isEmpty) {
-      return '请提供成员ID';
-    }
+    Member? targetMember;
 
-    final members = StorageService.getAllMembers();
-    final member = members.where((m) => m.id == memberId).toList();
-
-    if (member.isEmpty) {
-      // 尝试按姓名查找
-      if (name != null && name.isNotEmpty) {
-        final byName = members.where((m) => m.name == name).toList();
-        if (byName.isEmpty) return '未找到成员';
-        if (byName.length > 1) return '找到多个同名成员，请提供ID';
+    if (memberId != null && memberId.isNotEmpty) {
+      final members = StorageService.getAllMembers();
+      final found = members.where((m) => m.id == memberId).toList();
+      if (found.isNotEmpty) {
+        targetMember = found.first;
       }
-      return '未找到成员';
     }
+
+    if (targetMember == null && name != null && name.isNotEmpty) {
+      final members = StorageService.getAllMembers();
+      final byName = members.where((m) => m.name == name).toList();
+      if (byName.isEmpty) return '未找到名为"$name"的成员';
+      if (byName.length > 1) return '找到多个同名成员，请提供ID';
+      targetMember = byName.first;
+    }
+
+    if (targetMember == null) return '未找到成员，请提供姓名';
 
     DateTime? birthday;
     if (birthdayStr != null && birthdayStr.isNotEmpty) {
@@ -288,13 +298,50 @@ class AiDataProvider {
       } catch (_) {}
     }
 
-    final updated = member.first.copyWith(
-      name: name,
+    final updated = targetMember.copyWith(
+      name: newName,
       studentId: studentId,
       birthday: birthday,
+      lunarBirthday: lunarBirthdayStr,
     );
     await StorageService.putMember(updated);
 
     return '已更新成员：${updated.name}';
+  }
+
+  /// 查询最近过生日的成员
+  static Future<String> queryBirthdays(Map<String, dynamic> args) async {
+    final days = (args['days'] as int?) ?? 7;
+    final members = StorageService.getAllMembers();
+    final now = DateTime.now();
+    final results = <String>[];
+
+    for (final member in members) {
+      // 检查公历生日
+      if (member.birthday != null) {
+        DateTime birthdayThisYear = DateTime(now.year, member.birthday!.month, member.birthday!.day);
+        if (birthdayThisYear.isBefore(now)) {
+          birthdayThisYear = DateTime(now.year + 1, member.birthday!.month, member.birthday!.day);
+        }
+        final diff = birthdayThisYear.difference(now).inDays;
+        if (diff >= 0 && diff <= days) {
+          String info = '- ${member.name}：公历生日 ${member.birthday!.month}月${member.birthday!.day}日';
+          if (diff == 0) info += '（今天！）';
+          else if (diff == 1) info += '（明天）';
+          else info += '（${diff}天后）';
+          results.add(info);
+        }
+      }
+
+      // 检查农历生日（如果有 lunarBirthday 字段）
+      if (member.lunarBirthday != null && member.lunarBirthday!.isNotEmpty) {
+        // 农历生日暂存提示信息（需要农历转换库才能精确计算）
+        results.add('- ${member.name}：农历生日 ${member.lunarBirthday}（农历转换暂不支持精确日期计算）');
+      }
+    }
+
+    if (results.isEmpty) return '最近 $days 天内没有成员过生日';
+    results.sort();
+    return '最近 $days 天内的生日：\n${results.join('\n')}';
   }
 }

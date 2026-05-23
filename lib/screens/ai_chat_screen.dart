@@ -76,6 +76,7 @@ class AiChatScreen extends StatefulWidget {
 class _AiChatScreenState extends State<AiChatScreen> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final _thinkingScrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode();
   final List<ChatMessage> _messages = [];
   final AiService _aiService = AiService();
@@ -304,6 +305,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
     _waitingTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
+    _thinkingScrollController.dispose();
     _inputFocusNode.dispose();
     super.dispose();
   }
@@ -317,6 +319,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
           curve: Curves.easeOut,
         );
       }
+    });
+  }
+
+  void _cancelGeneration() {
+    _aiService.cancelGeneration();
+    setState(() {
+      _isLoading = false;
     });
   }
 
@@ -390,6 +399,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
               aiMessage.thinkingContent =
                   (aiMessage.thinkingContent ?? '') + (event['content'] as String);
             });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_thinkingScrollController.hasClients) {
+                _thinkingScrollController.animateTo(
+                  _thinkingScrollController.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                );
+              }
+            });
             _scrollToBottom();
             break;
 
@@ -440,6 +458,14 @@ class _AiChatScreenState extends State<AiChatScreen> {
               _remainingQuota--;
             });
             _saveConversation(); // 保存对话
+            break;
+
+          case 'cancelled':
+            _stopWaitingTimer();
+            setState(() {
+              aiMessage.isStreaming = false;
+              _isLoading = false;
+            });
             break;
 
           case 'error':
@@ -1102,19 +1128,17 @@ class _AiChatScreenState extends State<AiChatScreen> {
               ),
               initiallyExpanded: false,
               children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    message.thinkingContent ?? '',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                      height: 1.5,
+                SizedBox(
+                  height: 200,
+                  child: SingleChildScrollView(
+                    controller: _thinkingScrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Text(
+                      message.thinkingContent ?? '',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -1254,27 +1278,29 @@ class _AiChatScreenState extends State<AiChatScreen> {
           const SizedBox(width: 10),
           // 发送按钮
           Material(
-            color: _isLoading || _inputController.text.trim().isEmpty
-                ? theme.colorScheme.surfaceContainerHighest
-                : theme.colorScheme.primary,
+            color: _isLoading
+                ? theme.colorScheme.primary
+                : (_inputController.text.trim().isEmpty
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : theme.colorScheme.primary),
             borderRadius: BorderRadius.circular(28),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: (_isLoading || _inputController.text.trim().isEmpty)
-                  ? null
-                  : _sendMessage,
+              onTap: _isLoading
+                  ? _cancelGeneration
+                  : (_inputController.text.trim().isEmpty ? null : _sendMessage),
               borderRadius: BorderRadius.circular(28),
               child: Container(
                 width: 56,
                 height: 56,
                 alignment: Alignment.center,
                 child: _isLoading
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.colorScheme.onSurfaceVariant,
+                    ? IconButton(
+                        onPressed: _cancelGeneration,
+                        icon: Icon(
+                          Icons.stop_rounded,
+                          color: theme.colorScheme.onPrimary,
+                          size: 24,
                         ),
                       )
                     : Icon(

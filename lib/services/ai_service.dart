@@ -36,6 +36,12 @@ class AiService {
 
   final Dio _dio = Dio();
 
+  bool _isCancelled = false;
+
+  void cancelGeneration() {
+    _isCancelled = true;
+  }
+
   /// 获取今日剩余额度
   Future<int> getRemainingQuota() async {
     final prefs = await SharedPreferences.getInstance();
@@ -178,6 +184,67 @@ class AiService {
           },
         },
       },
+      {
+        'type': 'function',
+        'function': {
+          'name': 'import_members',
+          'description': '批量导入或更新成员信息。如果成员已存在（同名），则更新其信息；否则创建新成员。',
+          'parameters': {
+            'type': 'object',
+            'properties': {
+              'members': {
+                'type': 'array',
+                'description': '成员列表',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'name': {'type': 'string', 'description': '姓名'},
+                    'studentId': {'type': 'string', 'description': '学号（可选）'},
+                    'birthday': {'type': 'string', 'description': '公历生日，格式：年/月/日，如 2005/3/15'},
+                    'lunarBirthday': {'type': 'string', 'description': '农历生日，格式：月/日，如 3/15。如果该成员过农历生日则填此项'},
+                  },
+                  'required': ['name'],
+                },
+              },
+            },
+            'required': ['members'],
+          },
+        },
+      },
+      {
+        'type': 'function',
+        'function': {
+          'name': 'update_member',
+          'description': '更新指定成员的信息',
+          'parameters': {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string', 'description': '成员姓名（用于查找）'},
+              'newName': {'type': 'string', 'description': '新姓名（可选）'},
+              'studentId': {'type': 'string', 'description': '学号（可选）'},
+              'birthday': {'type': 'string', 'description': '公历生日，格式：年/月/日（可选）'},
+              'lunarBirthday': {'type': 'string', 'description': '农历生日，格式：月/日（可选）'},
+            },
+            'required': ['name'],
+          },
+        },
+      },
+      {
+        'type': 'function',
+        'function': {
+          'name': 'query_birthdays',
+          'description': '查询最近过生日的成员。同时查询公历生日和农历生日，返回最近N天内过生日的成员列表。',
+          'parameters': {
+            'type': 'object',
+            'properties': {
+              'days': {
+                'type': 'integer',
+                'description': '查询未来N天内的生日，默认7天',
+              },
+            },
+          },
+        },
+      },
     ];
   }
 
@@ -228,6 +295,11 @@ class AiService {
     int iteration = 0;
 
     while (iteration < maxIterations) {
+      if (_isCancelled) {
+        _isCancelled = false;
+        yield {'type': 'cancelled'};
+        return;
+      }
       iteration++;
       String? functionName;
       Map<String, dynamic>? functionArgs;
@@ -324,6 +396,8 @@ class AiService {
 
         // 处理工具调用
         if (functionName != null && functionArgs != null) {
+          final toolCallId = 'call_${DateTime.now().millisecondsSinceEpoch}';
+
           yield {
             'type': 'tool_call',
             'name': functionName,
@@ -341,10 +415,10 @@ class AiService {
           // 将工具结果加入消息，继续对话
           messages.add({
             'role': 'assistant',
-            'content': contentContent,
+            'content': contentContent.isEmpty ? null : contentContent,
             'tool_calls': [
               {
-                'id': 'call_${DateTime.now().millisecondsSinceEpoch}',
+                'id': toolCallId,
                 'type': 'function',
                 'function': {
                   'name': functionName,
@@ -355,7 +429,7 @@ class AiService {
           });
           messages.add({
             'role': 'tool',
-            'tool_call_id': 'call_${DateTime.now().millisecondsSinceEpoch}',
+            'tool_call_id': toolCallId,
             'content': result,
           });
 

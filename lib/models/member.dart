@@ -7,6 +7,7 @@ class Member {
   final String name;
   final String? studentId;
   final DateTime? birthday; // 生日（月日）
+  final String? lunarBirthday; // 农历生日，格式：月/日，如 3/15
   final DateTime createdAt;
 
   Member({
@@ -14,6 +15,7 @@ class Member {
     required this.name,
     this.studentId,
     this.birthday,
+    this.lunarBirthday,
     DateTime? createdAt,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now();
@@ -24,6 +26,7 @@ class Member {
       'name': name,
       'studentId': studentId,
       'birthday': birthday?.millisecondsSinceEpoch,
+      'lunarBirthday': lunarBirthday,
       'createdAt': createdAt.millisecondsSinceEpoch,
     };
   }
@@ -36,6 +39,7 @@ class Member {
       birthday: map['birthday'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['birthday'] as int)
           : null,
+      lunarBirthday: map['lunarBirthday'] as String?,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
     );
   }
@@ -44,12 +48,14 @@ class Member {
     String? name,
     String? studentId,
     DateTime? birthday,
+    String? lunarBirthday,
   }) {
     return Member(
       id: id,
       name: name ?? this.name,
       studentId: studentId ?? this.studentId,
       birthday: birthday ?? this.birthday,
+      lunarBirthday: lunarBirthday ?? this.lunarBirthday,
       createdAt: createdAt,
     );
   }
