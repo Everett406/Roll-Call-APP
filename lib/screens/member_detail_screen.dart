@@ -5,6 +5,7 @@ import '../models/member.dart';
 import '../models/check_in.dart';
 import '../models/session.dart';
 import '../utils/expressive_theme.dart';
+import '../services/storage_service.dart';
 
 /// 成员详情页面
 class MemberDetailScreen extends ConsumerWidget {
@@ -29,8 +30,8 @@ class MemberDetailScreen extends ConsumerWidget {
     }
 
     // 获取该成员的出勤记录
-    final checkIns = state.getCheckInsForMember(memberId);
-    final sessions = state.getAllSessions()
+    final checkIns = StorageService.getCheckInsForMember(memberId);
+    final sessions = StorageService.getAllSessions()
         .where((s) => s.status == 'archived')
         .toList();
 
