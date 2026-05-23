@@ -875,56 +875,29 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
   Widget _buildAiEntry(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const AiChatScreen(),
-              ),
-            );
-          },
-            borderRadius: BorderRadius.circular(24),
+      child: Hero(
+        tag: 'ai_input',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AiChatScreen(),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(22),
             child: Container(
-              height: 48,
+              height: 44,
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(22),
               ),
               child: Row(
                 children: [
-                  const SizedBox(width: 16),
-                  // 左侧图标
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          theme.colorScheme.primaryContainer,
-                          theme.colorScheme.tertiaryContainer,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.auto_awesome,
-                      size: 14,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 18),
                   // 动态占位文字
                   Expanded(
                     child: AnimatedSwitcher(
@@ -943,7 +916,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                   ),
                   // 右侧发送按钮
                   Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.only(right: 4),
                     child: Container(
                       width: 36,
                       height: 36,
@@ -961,6 +934,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                 ],
               ),
             ),
+          ),
         ),
       ),
     );

@@ -4,15 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ai_conversation.dart';
 import 'ai_chat_screen.dart';
 
-/// AI 对话列表页面
-class AiConversationsScreen extends StatefulWidget {
-  const AiConversationsScreen({super.key});
+/// AI 对话列表底部弹窗
+class AiConversationsBottomSheet extends StatefulWidget {
+  const AiConversationsBottomSheet({super.key});
 
   @override
-  State<AiConversationsScreen> createState() => _AiConversationsScreenState();
+  State<AiConversationsBottomSheet> createState() => _AiConversationsBottomSheetState();
 }
 
-class _AiConversationsScreenState extends State<AiConversationsScreen> {
+class _AiConversationsBottomSheetState extends State<AiConversationsBottomSheet> {
   List<AiConversation> _conversations = [];
   bool _isLoading = true;
 
@@ -31,12 +31,9 @@ class _AiConversationsScreenState extends State<AiConversationsScreen> {
         final List<dynamic> list = jsonDecode(json);
         setState(() {
           _conversations = list.map((e) => AiConversation.fromJson(e)).toList();
-          // 按更新时间倒序
           _conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
         });
-      } catch (_) {
-        // 解析失败
-      }
+      } catch (_) {}
     }
     
     setState(() {
@@ -58,12 +55,7 @@ class _AiConversationsScreenState extends State<AiConversationsScreen> {
     await _saveConversations();
     
     if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => AiChatScreen(conversation: conversation),
-        ),
-      ).then((_) => _loadConversations());
+      Navigator.pop(context, conversation);
     }
   }
 
@@ -92,33 +84,69 @@ class _AiConversationsScreenState extends State<AiConversationsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('AI 对话'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: '新建对话',
-            onPressed: _createNewConversation,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 顶部拖动条
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.outlineVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
+          // 标题栏
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Text(
+                  '历史对话',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                FilledButton.icon(
+                  onPressed: _createNewConversation,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('新建'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          // 列表
+          Flexible(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _conversations.isEmpty
+                    ? _buildEmptyState(theme)
+                    : _buildConversationList(theme),
+          ),
+          // 底部安全区域
+          SizedBox(height: MediaQuery.of(context).padding.bottom),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _conversations.isEmpty
-              ? _buildEmptyState(theme)
-              : _buildConversationList(theme),
     );
   }
 
   Widget _buildEmptyState(ThemeData theme) {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.all(32),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.chat_bubble_outline,
-            size: 64,
+            size: 48,
             color: theme.colorScheme.outline,
           ),
           const SizedBox(height: 16),
@@ -130,16 +158,10 @@ class _AiConversationsScreenState extends State<AiConversationsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '点击右上角 + 开始新对话',
+            '点击"新建"开始新对话',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.outline,
             ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: _createNewConversation,
-            icon: const Icon(Icons.add),
-            label: const Text('开始对话'),
           ),
         ],
       ),
@@ -148,6 +170,7 @@ class _AiConversationsScreenState extends State<AiConversationsScreen> {
 
   Widget _buildConversationList(ThemeData theme) {
     return ListView.builder(
+      shrinkWrap: true,
       itemCount: _conversations.length,
       itemBuilder: (context, index) {
         final conv = _conversations[index];
@@ -182,16 +205,21 @@ class _AiConversationsScreenState extends State<AiConversationsScreen> {
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AiChatScreen(conversation: conv),
-                ),
-              ).then((_) => _loadConversations());
+              Navigator.pop(context, conv);
             },
           ),
         );
       },
     );
   }
+}
+
+/// 显示历史对话底部弹窗
+Future<AiConversation?> showAiConversationsBottomSheet(BuildContext context) async {
+  return showModalBottomSheet<AiConversation>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const AiConversationsBottomSheet(),
+  );
 }

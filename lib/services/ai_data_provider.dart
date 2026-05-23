@@ -7,19 +7,23 @@ import 'storage_service.dart';
 class AiDataProvider {
   /// 执行工具调用
   static Future<String> execute(String toolName, Map<String, dynamic> args) async {
-    switch (toolName) {
-      case 'query_members':
-        return _queryMembers(args);
-      case 'query_member_detail':
-        return _queryMemberDetail(args);
-      case 'query_sessions':
-        return _querySessions(args);
-      case 'query_attendance_stats':
-        return _queryAttendanceStats(args);
-      case 'query_absent_members':
-        return _queryAbsentMembers(args);
-      default:
-        return '未知工具：$toolName';
+    try {
+      switch (toolName) {
+        case 'query_members':
+          return await _queryMembers(args);
+        case 'query_member_detail':
+          return await _queryMemberDetail(args);
+        case 'query_sessions':
+          return await _querySessions(args);
+        case 'query_attendance_stats':
+          return await _queryAttendanceStats(args);
+        case 'query_absent_members':
+          return await _queryAbsentMembers(args);
+        default:
+          return '未知工具：$toolName';
+      }
+    } catch (e) {
+      return '查询出错：$e';
     }
   }
 
@@ -47,7 +51,11 @@ class AiDataProvider {
   }
 
   static Future<String> _queryMemberDetail(Map<String, dynamic> args) async {
-    final name = args['name'] as String;
+    final name = args['name'] as String?;
+    if (name == null || name.isEmpty) {
+      return '请提供成员姓名';
+    }
+    
     final members = StorageService.getAllMembers();
     final member = members.where((m) => m.name == name).toList();
 
@@ -95,12 +103,12 @@ class AiDataProvider {
   }
 
   static Future<String> _queryAttendanceStats(Map<String, dynamic> args) async {
-    final period = args['period'] as String;
+    final period = args['period'] as String? ?? 'all';
     final now = DateTime.now();
     final allCheckIns = StorageService.getAllCheckIns();
     final allSessions = StorageService.getAllSessions().where((s) => s.status == 'archived').toList();
 
-    List sessions;
+    List<Session> sessions;
     if (period == 'week') {
       final weekAgo = now.subtract(const Duration(days: 7));
       sessions = allSessions.where((s) => s.createdAt.isAfter(weekAgo)).toList();
@@ -120,7 +128,7 @@ class AiDataProvider {
       final sessionCheckIns = allCheckIns.where((c) => c.sessionId == session.id && !c.isUndone).toList();
       final arrived = sessionCheckIns.where((c) => c.statusId == 'tag_arrived').length;
       totalArrived += arrived;
-      totalMembers += session.memberIds.length as int;
+      totalMembers += (session.memberIds.length as num).toInt();
     }
 
     final avgRate = totalMembers > 0 ? (totalArrived / totalMembers * 100).toStringAsFixed(1) : '0';
