@@ -191,7 +191,7 @@ class SessionDetailScreen extends ConsumerWidget {
       if (checkIn.isUndone) continue;
       final member = state.getMemberById(checkIn.memberId);
       if (member != null) {
-        memberStatus[member] = state.getTagById(checkIn.statusId);
+        memberStatus[member] = state.getTagById(checkIn.statusId!);
       }
     }
 
