@@ -659,6 +659,23 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'BETA',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -1177,6 +1194,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   color: theme.colorScheme.primary,
                 ),
               )
+            else if (toolCall.result != null &&
+                (toolCall.result!.contains('出错') ||
+                    toolCall.result!.contains('失败') ||
+                    toolCall.result!.contains('未找到')))
+              Icon(
+                Icons.error_outline,
+                size: 14,
+                color: theme.colorScheme.error,
+              )
             else
               Icon(
                 Icons.check_circle,
@@ -1188,9 +1214,19 @@ class _AiChatScreenState extends State<AiChatScreen> {
               child: Text(
                 toolCall.isRunning
                     ? '正在查询$displayName...'
-                    : '已查询$displayName',
+                    : (toolCall.result != null &&
+                            (toolCall.result!.contains('出错') ||
+                                toolCall.result!.contains('失败') ||
+                                toolCall.result!.contains('未找到')))
+                        ? '查询$displayName失败'
+                        : '已查询$displayName',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: (toolCall.result != null &&
+                          (toolCall.result!.contains('出错') ||
+                              toolCall.result!.contains('失败') ||
+                              toolCall.result!.contains('未找到')))
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.onSurfaceVariant,
                   fontSize: 12,
                 ),
                 overflow: TextOverflow.ellipsis,

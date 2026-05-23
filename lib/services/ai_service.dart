@@ -291,7 +291,7 @@ class AiService {
     ];
 
     final tools = enableTools ? _buildTools() : null;
-    int maxIterations = 5; // 最多5轮工具调用
+    int maxIterations = 8; // 最多8轮工具调用
     int iteration = 0;
 
     while (iteration < maxIterations) {

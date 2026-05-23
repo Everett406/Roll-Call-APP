@@ -77,16 +77,23 @@ class AiDataProvider {
     // 计算出勤率
     int arrived = 0;
     for (final ci in checkIns) {
-      if (ci.statusId == 'tag_arrived') arrived++;
+      if (ci.statusId == 'tag_arrived' && !ci.isUndone) arrived++;
     }
-    final rate = totalSessions > 0 ? (arrived / totalSessions * 100).toStringAsFixed(1) : 'N/A';
+    // 只统计包含该成员的已归档点名
+    int relevantSessions = 0;
+    for (final session in sessions) {
+      if (session.memberIds.contains(m.id)) relevantSessions++;
+    }
+    final rate = relevantSessions > 0 ? (arrived / relevantSessions * 100).toStringAsFixed(1) : 'N/A';
 
     String info = '成员：${m.name}\n';
     if (m.studentId != null) info += '学号：${m.studentId}\n';
     if (m.birthday != null) info += '生日：${m.birthday!.year}/${m.birthday!.month}/${m.birthday!.day}\n';
-    info += '参与点名次数：$totalSessions\n';
+    if (m.lunarBirthday != null) info += '农历生日：${m.lunarBirthday}\n';
+    info += '参与点名次数：$relevantSessions\n';
     info += '出勤次数：$arrived\n';
     info += '出勤率：$rate%';
+    info += '\n[查看详情](rollcall://member/${m.id})';
 
     return info;
   }
