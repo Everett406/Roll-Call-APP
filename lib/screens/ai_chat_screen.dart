@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -87,6 +88,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
       _enableThinking = prefs.getBool('ai_thinking_mode') ?? true;
     });
 
+    // 加载历史记录
+    await _loadHistory();
+
     // 获取剩余额度
     final quota = await _aiService.getRemainingQuota();
     if (mounted) {
@@ -102,6 +106,54 @@ class _AiChatScreenState extends State<AiChatScreen> {
         _sendMessage();
       });
     }
+  }
+
+  /// 加载历史记录
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final historyJson = prefs.getString('ai_chat_history');
+    if (historyJson != null) {
+      try {
+        final List<dynamic> history = jsonDecode(historyJson);
+        setState(() {
+          _messages.addAll(history.map((h) => ChatMessage(
+            id: h['id'],
+            isUser: h['isUser'],
+            content: h['content'],
+            thinkingContent: h['thinkingContent'],
+            timestamp: DateTime.parse(h['timestamp']),
+          )));
+        });
+      } catch (_) {
+        // 解析失败，忽略
+      }
+    }
+  }
+
+  /// 保存历史记录
+  Future<void> _saveHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    // 只保存最近 50 条
+    final historyToSave = _messages.length > 50
+        ? _messages.sublist(_messages.length - 50)
+        : _messages;
+    final history = historyToSave.map((m) => {
+      'id': m.id,
+      'isUser': m.isUser,
+      'content': m.content,
+      'thinkingContent': m.thinkingContent,
+      'timestamp': m.timestamp.toIso8601String(),
+    }).toList();
+    await prefs.setString('ai_chat_history', jsonEncode(history));
+  }
+
+  /// 清空历史记录
+  Future<void> _clearHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('ai_chat_history');
+    setState(() {
+      _messages.clear();
+    });
   }
 
   @override
@@ -236,6 +288,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               _isLoading = false;
               _remainingQuota--;
             });
+            _saveHistory(); // 保存历史记录
             break;
 
           case 'error':
@@ -319,8 +372,35 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-              ],
+              ),
             ),
+          ),
+          // 清空历史按钮
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: '清空对话',
+            onPressed: _messages.isEmpty ? null : () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('清空对话'),
+                  content: const Text('确定要清空所有对话记录吗？'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('取消'),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        _clearHistory();
+                        Navigator.pop(context);
+                      },
+                      child: const Text('清空'),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -612,61 +692,81 @@ class _AiChatScreenState extends State<AiChatScreen> {
     );
   }
 
-  /// 思考过程折叠区域
+  /// 思考过程折叠区域 - 简洁风格
   Widget _buildThinkingSection(ChatMessage message, ThemeData theme) {
     return StatefulBuilder(
       builder: (context, setLocalState) {
-        final isExpanded = message.thinkingContent != null &&
-            message.thinkingContent!.isNotEmpty &&
-            !message.isStreaming;
+        final hasContent = message.thinkingContent != null &&
+            message.thinkingContent!.isNotEmpty;
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: InkWell(
-            onTap: () {
-              // 使用外层 setState 来触发重建
-              // 由于 thinkingContent 本身不变，我们需要一个本地状态
-            },
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withOpacity(0.3),
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+            ),
             child: ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              childrenPadding: const EdgeInsets.only(bottom: 4),
+              tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               dense: true,
               visualDensity: VisualDensity.compact,
-              leading: Icon(
-                Icons.psychology,
-                size: 16,
-                color: theme.colorScheme.primary.withOpacity(0.7),
-              ),
-              title: Text(
-                message.isStreaming ? '正在思考...' : '思考过程',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.primary.withOpacity(0.8),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+              leading: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Icon(
+                  Icons.psychology_outlined,
+                  size: 14,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-              trailing: message.isStreaming
-                  ? SizedBox(
-                      width: 14,
-                      height: 14,
+              title: Row(
+                children: [
+                  Text(
+                    message.isStreaming ? '思考中' : '已思考',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (message.isStreaming) ...[
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 12,
+                      height: 12,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: theme.colorScheme.primary.withOpacity(0.5),
                       ),
-                    )
-                  : null,
+                    ),
+                  ],
+                ],
+              ),
+              trailing: Icon(
+                Icons.expand_more,
+                size: 18,
+                color: theme.colorScheme.primary.withOpacity(0.5),
+              ),
               initiallyExpanded: false,
-              onExpansionChanged: (expanded) {
-                setLocalState(() {});
-              },
               children: [
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(8),
+                    color: theme.colorScheme.surface.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     message.thinkingContent ?? '',

@@ -286,15 +286,21 @@ class AiService {
               if (delta.containsKey('tool_calls') && delta['tool_calls'] != null) {
                 for (final tc in (delta['tool_calls'] as List)) {
                   final tcMap = tc as Map<String, dynamic>;
-                  final function = tcMap['function'] as Map<String, dynamic>;
-                  functionName ??= function['name'] as String;
+                  final function = tcMap['function'] as Map<String, dynamic>?;
+                  if (function == null) continue;
+                  
+                  final name = function['name'] as String?;
+                  if (name != null) functionName ??= name;
+                  
                   if (function['arguments'] != null) {
                     functionArgs ??= {};
-                    final argsStr = function['arguments'] as String;
-                    try {
-                      functionArgs = jsonDecode(argsStr) as Map<String, dynamic>;
-                    } catch (_) {
-                      functionArgs = {'raw': argsStr};
+                    final argsStr = function['arguments'] as String?;
+                    if (argsStr != null && argsStr.isNotEmpty) {
+                      try {
+                        functionArgs = jsonDecode(argsStr) as Map<String, dynamic>;
+                      } catch (_) {
+                        functionArgs = {'raw': argsStr};
+                      }
                     }
                   }
                 }
