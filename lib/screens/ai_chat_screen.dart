@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ai_service.dart';
 import '../services/ai_data_provider.dart';
@@ -72,9 +74,18 @@ class _AiChatScreenState extends State<AiChatScreen> {
   bool _enableThinking = true;
   StreamSubscription<Map<String, dynamic>>? _streamSubscription;
 
+  // 等待动画相关
+  DateTime? _lastContentTime;
+  bool _showWaiting = false;
+  Timer? _waitingTimer;
+
   @override
   void initState() {
     super.initState();
+    // 监听输入框文本变化以更新发送按钮状态
+    _inputController.addListener(() {
+      setState(() {});
+    });
     _init();
   }
 
@@ -156,9 +167,48 @@ class _AiChatScreenState extends State<AiChatScreen> {
     });
   }
 
+  /// 启动等待检测定时器
+  void _startWaitingTimer() {
+    _waitingTimer?.cancel();
+    _lastContentTime = DateTime.now();
+    _showWaiting = false;
+
+    _waitingTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (!mounted) {
+        _waitingTimer?.cancel();
+        return;
+      }
+      final elapsed = DateTime.now().difference(_lastContentTime!).inMilliseconds;
+      final shouldShow = elapsed > 1000;
+      if (shouldShow != _showWaiting) {
+        setState(() {
+          _showWaiting = shouldShow;
+        });
+      }
+    });
+  }
+
+  /// 停止等待检测定时器
+  void _stopWaitingTimer() {
+    _waitingTimer?.cancel();
+    _waitingTimer = null;
+    _showWaiting = false;
+  }
+
+  /// 重置等待时间（收到新内容时调用）
+  void _resetWaitingTime() {
+    _lastContentTime = DateTime.now();
+    if (_showWaiting) {
+      setState(() {
+        _showWaiting = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _streamSubscription?.cancel();
+    _waitingTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
     _inputFocusNode.dispose();
@@ -209,6 +259,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
     });
     _scrollToBottom();
 
+    // 启动等待检测定时器
+    _startWaitingTimer();
+
     // 构建对话历史
     final history = _messages
         .where((m) => !m.isStreaming)
@@ -239,6 +292,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
         switch (type) {
           case 'thinking':
+            _resetWaitingTime();
             setState(() {
               aiMessage.thinkingContent =
                   (aiMessage.thinkingContent ?? '') + (event['content'] as String);
@@ -247,6 +301,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             break;
 
           case 'content':
+            _resetWaitingTime();
             setState(() {
               aiMessage.content += event['content'] as String;
             });
@@ -254,6 +309,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             break;
 
           case 'tool_call':
+            _resetWaitingTime();
             setState(() {
               final toolCall = ToolCallInfo(
                 name: event['name'] as String,
@@ -266,6 +322,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             break;
 
           case 'tool_result':
+            _resetWaitingTime();
             setState(() {
               final toolName = event['name'] as String;
               final result = event['result'] as String;
@@ -283,6 +340,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             break;
 
           case 'done':
+            _stopWaitingTimer();
             setState(() {
               aiMessage.isStreaming = false;
               _isLoading = false;
@@ -292,6 +350,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             break;
 
           case 'error':
+            _stopWaitingTimer();
             setState(() {
               aiMessage.content = event['message'] as String;
               aiMessage.isStreaming = false;
@@ -302,6 +361,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
       },
       onError: (error) {
         if (!mounted) return;
+        _stopWaitingTimer();
         setState(() {
           aiMessage.content = '发生错误：$error';
           aiMessage.isStreaming = false;
@@ -318,6 +378,141 @@ class _AiChatScreenState extends State<AiChatScreen> {
     });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('ai_thinking_mode', value);
+  }
+
+  /// 处理深度链接
+  Future<void> _handleDeepLink(String uri) async {
+    final parts = uri.replaceFirst('rollcall://', '').split('/');
+    if (parts.length >= 2) {
+      final type = parts[0];
+      final id = parts[1];
+      switch (type) {
+        case 'session':
+          try {
+            // 尝试跳转到点名详情页
+            // 如果 SessionDetailScreen 不存在，使用 try-catch 处理
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('点名详情（ID: $id）- 功能开发中')),
+            );
+          } catch (_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('功能开发中')),
+            );
+          }
+          break;
+        case 'member':
+          try {
+            // 尝试跳转到成员详情页
+            // 如果 MemberDetailScreen 不存在，使用 try-catch 处理
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('成员信息（ID: $id）- 功能开发中')),
+            );
+          } catch (_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('功能开发中')),
+            );
+          }
+          break;
+      }
+    }
+  }
+
+  /// 判断内容是否为 HTML
+  bool _isHtmlContent(String content) {
+    final trimmed = content.trim();
+    return trimmed.startsWith('<html>') || trimmed.contains('<html>');
+  }
+
+  /// 获取日期分组标签
+  String _getDateLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final messageDate = DateTime(date.year, date.month, date.day);
+
+    if (messageDate == today) {
+      return '今天';
+    } else if (messageDate == yesterday) {
+      return '昨天';
+    } else {
+      return '${date.month}月${date.day}日';
+    }
+  }
+
+  /// 获取消息时间字符串（如 "14:30"）
+  String _getMessageTime(DateTime timestamp) {
+    return '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// 构建带日期分组的消息列表项
+  List<Widget> _buildGroupedMessages(ThemeData theme) {
+    final List<Widget> widgets = [];
+    DateTime? lastDate;
+
+    for (int i = 0; i < _messages.length; i++) {
+      final message = _messages[i];
+      final messageDate = DateTime(
+        message.timestamp.year,
+        message.timestamp.month,
+        message.timestamp.day,
+      );
+
+      // 如果日期不同，添加日期标签
+      if (lastDate == null || messageDate != lastDate) {
+        lastDate = messageDate;
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _getDateLabel(message.timestamp),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      // 添加消息气泡
+      widgets.add(_buildMessageBubble(message, theme));
+    }
+
+    return widgets;
+  }
+
+  /// 等待动画 - 三个跳动的点
+  Widget _buildWaitingDots(ThemeData theme) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (index) {
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+          builder: (context, value, child) {
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.3 + value * 0.7),
+                shape: BoxShape.circle,
+              ),
+            );
+          },
+        );
+      }),
+    );
   }
 
   @override
@@ -526,14 +721,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   /// 消息列表
   Widget _buildMessageList(ThemeData theme) {
-    return ListView.builder(
+    return ListView(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: _messages.length,
-      itemBuilder: (context, index) {
-        final message = _messages[index];
-        return _buildMessageBubble(message, theme);
-      },
+      children: _buildGroupedMessages(theme),
     );
   }
 
@@ -542,87 +733,80 @@ class _AiChatScreenState extends State<AiChatScreen> {
     final isUser = message.isUser;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          if (!isUser) ...[
-            // AI 头像
-            Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(right: 8, top: 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.auto_awesome,
-                size: 16,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ],
-          // 消息内容
-          Flexible(
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * (isUser ? 0.75 : 0.82),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isUser
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 16),
+          Row(
+            mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // AI 消息：无头像，简洁风格
+              if (!isUser)
+                Flexible(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.82,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(16),
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      ),
+                    ),
+                    child: _buildAiMessageContent(message, theme),
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isUser)
-                    Text(
+              // 用户消息：右侧蓝色气泡
+              if (isUser) ...[
+                Flexible(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.75,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(4),
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      ),
+                    ),
+                    child: Text(
                       message.content,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onPrimary,
                         fontWeight: FontWeight.w500,
                       ),
-                    )
-                  else
-                    _buildAiMessageContent(message, theme),
-                ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          // 时间戳
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
+            child: Text(
+              _getMessageTime(message.timestamp),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                fontSize: 11,
               ),
             ),
           ),
-          if (isUser) ...[
-            const SizedBox(width: 8),
-            // 用户头像
-            Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(top: 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.person,
-                size: 16,
-                color: theme.colorScheme.onTertiaryContainer,
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  /// AI 消息内容（包含思考过程、工具调用、Markdown 渲染）
+  /// AI 消息内容（包含思考过程、工具调用、Markdown/HTML 渲染）
   Widget _buildAiMessageContent(ChatMessage message, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -637,26 +821,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
         // 正式回复内容
         if (message.content.isNotEmpty)
-          MarkdownBody(
-            data: message.content,
-            selectable: true,
-            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-              p: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.6,
-              ),
-              code: theme.textTheme.bodyMedium?.copyWith(
-                fontFamily: 'monospace',
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                fontSize: 12,
-              ),
-              codeblockDecoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
+          _isHtmlContent(message.content)
+              ? _buildHtmlContent(message.content, theme)
+              : _buildMarkdownContent(message.content, theme),
 
-        // 流式加载指示器
+        // 流式加载指示器（初始等待）
         if (message.isStreaming && message.content.isEmpty && message.thinkingContent == null && (message.toolCalls == null || message.toolCalls!.isEmpty))
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -679,8 +848,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
             ],
           ),
 
+        // 等待动画（流式过程中超过1秒无新内容）
+        if (message.isStreaming && message.content.isNotEmpty && _showWaiting)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: _buildWaitingDots(theme),
+          ),
+
         // 流式光标
-        if (message.isStreaming && message.content.isNotEmpty)
+        if (message.isStreaming && message.content.isNotEmpty && !_showWaiting)
           Text(
             '|',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -689,6 +865,60 @@ class _AiChatScreenState extends State<AiChatScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  /// Markdown 内容渲染（支持深度链接）
+  Widget _buildMarkdownContent(String content, ThemeData theme) {
+    return MarkdownBody(
+      data: content,
+      selectable: true,
+      onTapLink: (text, href, title) {
+        if (href != null && href.startsWith('rollcall://')) {
+          _handleDeepLink(href);
+        } else if (href != null) {
+          launchUrl(Uri.parse(href));
+        }
+      },
+      styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+        p: theme.textTheme.bodyMedium?.copyWith(
+          height: 1.6,
+        ),
+        code: theme.textTheme.bodyMedium?.copyWith(
+          fontFamily: 'monospace',
+          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          fontSize: 12,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  /// HTML 内容渲染
+  Widget _buildHtmlContent(String content, ThemeData theme) {
+    return Html(
+      data: content,
+      style: {
+        'body': Style(
+          fontSize: FontSize(theme.textTheme.bodyMedium?.fontSize ?? 14),
+          lineHeight: LineHeight(1.6),
+          color: theme.colorScheme.onSurface,
+        ),
+        'a': Style(
+          color: theme.colorScheme.primary,
+          textDecoration: TextDecoration.underline,
+        ),
+      },
+      onLinkTap: (url, _, __) {
+        if (url != null && url.startsWith('rollcall://')) {
+          _handleDeepLink(url);
+        } else if (url != null) {
+          launchUrl(Uri.parse(url));
+        }
+      },
     );
   }
 
