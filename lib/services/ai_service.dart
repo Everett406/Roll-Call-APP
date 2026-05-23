@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/member.dart';
@@ -247,16 +248,12 @@ class AiService {
         );
 
         // 解析 SSE 流
-        final stream = response.data.stream as Stream<List<int>>;
-        final transformer = StreamTransformer<List<int>, String>.fromHandlers(
-          handleData: (data, sink) {
-            sink.add(utf8.decode(data));
-          },
-        );
+        final stream = response.data.stream as Stream<Uint8List>;
 
         String buffer = '';
-        await for (final chunk in stream.transform(transformer)) {
-          buffer += chunk;
+        await for (final chunk in stream) {
+          final stringChunk = utf8.decode(chunk);
+          buffer += stringChunk;
           // 按行分割处理 SSE
           while (buffer.contains('\n')) {
             final index = buffer.indexOf('\n');
