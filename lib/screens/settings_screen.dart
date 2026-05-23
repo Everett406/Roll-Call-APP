@@ -379,52 +379,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 // ===== 通知设置 =====
                 const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '通知设置',
-                      style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  elevation: 0,
-                  color: theme.colorScheme.surfaceContainerLowest,
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  elevation: 0.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 通知开关
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            children: [
+                              Text(
+                                '通知设置',
+                                style: TextStyle(
+                                  color: theme.colorScheme.primary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: _showNotificationHelp,
+                                child: Icon(
+                                  Icons.help_outline,
+                                  size: 16,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       SwitchListTile(
                         secondary: const Icon(Icons.notifications_active_outlined),
-                        title: Row(
-                          children: [
-                            const Text('接收通知'),
-                            const SizedBox(width: 8),
-                            // 问号按钮
-                            GestureDetector(
-                              onTap: _showNotificationHelp,
-                              child: Icon(
-                                Icons.help_outline,
-                                size: 18,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
+                        title: const Text('接收通知'),
                         subtitle: Text(
                           _notificationsEnabled ? '已开启' : '已关闭',
                         ),
                         value: _notificationsEnabled,
                         onChanged: (value) async {
                           if (value) {
-                            // 开启：先请求权限，成功后保存状态
                             final granted = await NotificationService().requestPermission();
                             if (mounted) {
                               if (granted) {
@@ -440,7 +439,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               }
                             }
                           } else {
-                            // 关闭：直接保存状态，不去系统设置
                             final prefs = await SharedPreferences.getInstance();
                             await prefs.setBool('notifications_enabled', false);
                             setState(() {
