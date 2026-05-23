@@ -120,7 +120,7 @@ class AiDataProvider {
       final sessionCheckIns = allCheckIns.where((c) => c.sessionId == session.id && !c.isUndone).toList();
       final arrived = sessionCheckIns.where((c) => c.statusId == 'tag_arrived').length;
       totalArrived += arrived;
-      totalMembers += session.memberIds.length;
+      totalMembers += session.memberIds.length as int;
     }
 
     final avgRate = totalMembers > 0 ? (totalArrived / totalMembers * 100).toStringAsFixed(1) : '0';
