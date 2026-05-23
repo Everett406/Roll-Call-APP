@@ -19,6 +19,10 @@ class AiDataProvider {
           return await _queryAttendanceStats(args);
         case 'query_absent_members':
           return await _queryAbsentMembers(args);
+        case 'import_members':
+          return await importMembers(args);
+        case 'update_member':
+          return await updateMember(args);
         default:
           return '未知工具：$toolName';
       }
@@ -173,5 +177,124 @@ class AiDataProvider {
 
     final result = top.map((e) => '- ${e.key}：缺勤 ${e.value} 次').join('\n');
     return '缺勤排行（前$limit名）：\n$result';
+  }
+
+  /// 导入成员
+  static Future<String> importMembers(Map<String, dynamic> args) async {
+    final membersData = args['members'] as List<dynamic>?;
+    if (membersData == null || membersData.isEmpty) {
+      return '请提供成员数据';
+    }
+
+    int successCount = 0;
+    final errors = <String>[];
+
+    for (final data in membersData) {
+      try {
+        final name = data['name'] as String?;
+        if (name == null || name.isEmpty) {
+          errors.add('成员姓名不能为空');
+          continue;
+        }
+
+        final studentId = data['studentId'] as String?;
+        final birthdayStr = data['birthday'] as String?;
+        DateTime? birthday;
+        if (birthdayStr != null && birthdayStr.isNotEmpty) {
+          try {
+            final parts = birthdayStr.split('/');
+            if (parts.length == 3) {
+              birthday = DateTime(
+                int.parse(parts[0]),
+                int.parse(parts[1]),
+                int.parse(parts[2]),
+              );
+            }
+          } catch (_) {
+            // 忽略解析错误
+          }
+        }
+
+        // 检查是否已存在
+        final existing = StorageService.getAllMembers()
+            .where((m) => m.name == name && (studentId == null || m.studentId == studentId))
+            .toList();
+
+        if (existing.isNotEmpty) {
+          // 更新现有成员
+          final updated = existing.first.copyWith(
+            studentId: studentId,
+            birthday: birthday,
+          );
+          await StorageService.putMember(updated);
+        } else {
+          // 创建新成员
+          final member = Member(
+            id: 'member_${DateTime.now().millisecondsSinceEpoch}_$successCount',
+            name: name,
+            studentId: studentId,
+            birthday: birthday,
+          );
+          await StorageService.putMember(member);
+        }
+        successCount++;
+      } catch (e) {
+        errors.add('导入失败: $e');
+      }
+    }
+
+    String result = '成功导入 $successCount 位成员';
+    if (errors.isNotEmpty) {
+      result += '\n错误：${errors.take(3).join(', ')}';
+    }
+    return result;
+  }
+
+  /// 更新成员信息
+  static Future<String> updateMember(Map<String, dynamic> args) async {
+    final memberId = args['memberId'] as String?;
+    final name = args['name'] as String?;
+    final studentId = args['studentId'] as String?;
+    final birthdayStr = args['birthday'] as String?;
+
+    if (memberId == null || memberId.isEmpty) {
+      return '请提供成员ID';
+    }
+
+    final members = StorageService.getAllMembers();
+    final member = members.where((m) => m.id == memberId).toList();
+
+    if (member.isEmpty) {
+      // 尝试按姓名查找
+      if (name != null && name.isNotEmpty) {
+        final byName = members.where((m) => m.name == name).toList();
+        if (byName.isEmpty) return '未找到成员';
+        if (byName.length > 1) return '找到多个同名成员，请提供ID';
+      }
+      return '未找到成员';
+    }
+
+    DateTime? birthday;
+    if (birthdayStr != null && birthdayStr.isNotEmpty) {
+      try {
+        final parts = birthdayStr.split('/');
+        if (parts.length == 3) {
+          birthday = DateTime(
+            int.parse(parts[0]),
+            int.parse(parts[1]),
+            int.parse(parts[2]),
+          );
+        }
+      } catch (_) {}
+    }
+
+    final updated = member.first.copyWith(
+      name: name,
+      studentId: studentId,
+      birthday: birthday,
+    );
+    await StorageService.putMember(updated);
+
+    return '已更新成员：${updated.name}';
   }
 }

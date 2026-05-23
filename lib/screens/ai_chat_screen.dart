@@ -12,6 +12,7 @@ import '../services/ai_data_provider.dart';
 import '../models/ai_conversation.dart';
 import 'ai_conversations_screen.dart' show showAiConversationsBottomSheet;
 import 'session_detail_screen.dart';
+import 'member_detail_screen.dart';
 
 /// 聊天消息模型
 class ChatMessage {
@@ -488,8 +489,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
           );
           break;
         case 'member':
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('成员详情（ID: $id）- 功能开发中')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MemberDetailScreen(memberId: id),
+            ),
           );
           break;
       }
@@ -991,6 +995,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
           color: theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
         ),
+        // 分割线样式
+        horizontalRuleDecoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+              width: 0.5,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1228,6 +1241,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
