@@ -1,10 +1,12 @@
 import 'package:workmanager/workmanager.dart';
 import 'notification_service.dart';
+import 'update_service.dart';
 
 /// 后台任务标识
 class BackgroundTask {
   static const String weeklyReport = 'weekly_report_task';
   static const String attendanceCheck = 'attendance_check_task';
+  static const String updateCheck = 'update_check_task';
 }
 
 /// 后台任务回调（必须是顶层函数）
@@ -19,8 +21,6 @@ void callbackDispatcher() {
         // 周日发送周报
         final now = DateTime.now();
         if (now.weekday == 7) { // 周日
-          // 这里需要从数据库获取数据
-          // 暂时使用模拟数据
           await notificationService.sendWeeklyReport(
             avgRate: 85.0,
             prevAvgRate: 80.0,
@@ -32,8 +32,20 @@ void callbackDispatcher() {
 
       case BackgroundTask.attendanceCheck:
         // 检查出勤率异常
-        // 这里需要从数据库获取数据
-        // 暂时不发送，因为需要App状态
+        break;
+
+      case BackgroundTask.updateCheck:
+        // 检查新版本
+        final release = await UpdateService.checkUpdate();
+        if (release != null) {
+          final notes = release.body.length > 100
+              ? release.body.substring(0, 100)
+              : release.body;
+          await notificationService.sendNewVersionNotification(
+            release.tagName,
+            notes,
+          );
+        }
         break;
     }
 
@@ -84,6 +96,18 @@ class BackgroundService {
       frequency: const Duration(hours: 6), // 每6小时检查一次
       constraints: Constraints(
         networkType: NetworkType.not_required,
+        requiresBatteryNotLow: false,
+      ),
+      existingWorkPolicy: ExistingWorkPolicy.replace,
+    );
+
+    // 注册版本检查任务（每24小时检查一次）
+    await Workmanager().registerPeriodicTask(
+      BackgroundTask.updateCheck,
+      BackgroundTask.updateCheck,
+      frequency: const Duration(hours: 24),
+      constraints: Constraints(
+        networkType: NetworkType.connected, // 需要网络
         requiresBatteryNotLow: false,
       ),
       existingWorkPolicy: ExistingWorkPolicy.replace,
