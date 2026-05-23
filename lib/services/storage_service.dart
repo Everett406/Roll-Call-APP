@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/member.dart';
 import '../models/status_tag.dart';
 import '../models/session.dart';
@@ -26,6 +28,8 @@ class StorageService {
     await Hive.openBox(_configBoxName);
     await Hive.openBox(_randomPickBox);
     await _initDefaultTags();
+    // 启动时检查并压缩膨胀的数据库
+    await compactIfNeeded();
   }
 
   static Future<void> _initDefaultTags() async {
@@ -158,6 +162,7 @@ class StorageService {
     for (final key in keysToDelete) {
       await _checkInBox.delete(key);
     }
+    if (keysToDelete.isNotEmpty) await _checkInBox.compact();
     return keysToDelete.length;
   }
 
@@ -173,6 +178,7 @@ class StorageService {
     for (final key in keysToDelete) {
       await _logBox.delete(key);
     }
+    if (keysToDelete.isNotEmpty) await _logBox.compact();
     return keysToDelete.length;
   }
 
@@ -397,5 +403,46 @@ class StorageService {
     await _groupBox.clear();
     await _configBox.clear();
     await _initDefaultTags();
+    // 清除后立即压缩
+    await compactAll();
+  }
+
+  // ==================== Database Compaction ====================
+
+  /// 压缩所有 Box，回收磁盘空间
+  static Future<void> compactAll() async {
+    await _memberBox.compact();
+    await _tagBox.compact();
+    await _sessionBox.compact();
+    await _checkInBox.compact();
+    await _logBox.compact();
+    await _groupBox.compact();
+    await _configBox.compact();
+    await _randomPickBoxInstanceGetter.compact();
+  }
+
+  /// 检查数据库文件大小，超过阈值时自动压缩
+  /// 阈值：5MB（正常数据远小于此）
+  static Future<void> compactIfNeeded() async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final hiveDir = Directory('${appDir.path}');
+
+      int totalSize = 0;
+      if (await hiveDir.exists()) {
+        await for (final entity in hiveDir.list(recursive: true)) {
+          if (entity is File && entity.path.endsWith('.hive')) {
+            totalSize += await entity.length();
+          }
+        }
+      }
+
+      // 超过 5MB 就压缩（正常数据应该只有几百KB）
+      if (totalSize > 5 * 1024 * 1024) {
+        await compactAll();
+      }
+    } catch (e) {
+      // 压缩失败不影响正常使用
+    }
   }
 }
