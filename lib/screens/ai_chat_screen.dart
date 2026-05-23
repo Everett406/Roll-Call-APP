@@ -1213,19 +1213,20 @@ class _AiChatScreenState extends State<AiChatScreen> {
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Hero 输入框
           Expanded(
             child: Hero(
               tag: 'ai_input',
               child: Material(
-                color: Colors.transparent,
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(22),
+                clipBehavior: Clip.antiAlias,
                 child: Container(
                   height: 44,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  alignment: Alignment.centerLeft,
                   child: TextField(
                     controller: _inputController,
                     focusNode: _inputFocusNode,
@@ -1239,8 +1240,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 18),
                       isDense: true,
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
                 ),
@@ -1249,36 +1250,38 @@ class _AiChatScreenState extends State<AiChatScreen> {
           ),
           const SizedBox(width: 10),
           // 发送按钮
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: _isLoading || _inputController.text.trim().isEmpty
-                  ? theme.colorScheme.surfaceContainerHighest
-                  : theme.colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              onPressed: (_isLoading || _inputController.text.trim().isEmpty)
+          Material(
+            color: _isLoading || _inputController.text.trim().isEmpty
+                ? theme.colorScheme.surfaceContainerHighest
+                : theme.colorScheme.primary,
+            borderRadius: BorderRadius.circular(22),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: (_isLoading || _inputController.text.trim().isEmpty)
                   ? null
                   : _sendMessage,
-              icon: _isLoading
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.onSurfaceVariant,
+              borderRadius: BorderRadius.circular(22),
+              child: Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                child: _isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      )
+                    : Icon(
+                        Icons.send_rounded,
+                        color: (_isLoading || _inputController.text.trim().isEmpty)
+                            ? theme.colorScheme.onSurfaceVariant
+                            : theme.colorScheme.onPrimary,
+                        size: 20,
                       ),
-                    )
-                  : Icon(
-                      Icons.send_rounded,
-                      color: (_isLoading || _inputController.text.trim().isEmpty)
-                          ? theme.colorScheme.onSurfaceVariant
-                          : theme.colorScheme.onPrimary,
-                      size: 20,
-                    ),
+              ),
             ),
           ),
         ],

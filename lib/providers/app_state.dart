@@ -344,10 +344,11 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> undoLastAction(String sessionId) async {
-    // Get undoable logs in reverse chronological order
+    // Get undoable logs in reverse chronological order (newest first)
     final sessionLogs = _logs
         .where((l) => l.sessionId == sessionId && l.isUndoable)
-        .toList();
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     if (sessionLogs.isEmpty) return;
 

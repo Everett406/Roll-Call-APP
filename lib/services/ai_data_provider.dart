@@ -44,6 +44,7 @@ class AiDataProvider {
       if (m.birthday != null) {
         info += '，生日：${m.birthday!.month}/${m.birthday!.day}';
       }
+      info += ' [查看](rollcall://member/${m.id})';
       return info;
     }).join('\n');
 
@@ -96,6 +97,7 @@ class AiDataProvider {
         info += '（${s.endedAt!.month}/${s.endedAt!.day}）';
       }
       info += '，参与 ${s.memberIds.length} 人';
+      info += ' [查看详情](rollcall://session/${s.id})';
       return info;
     }).join('\n');
 

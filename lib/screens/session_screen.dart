@@ -755,6 +755,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           note: note,
         );
       },
+      onEditTag: (updatedTag) {
+        state.updateTag(updatedTag);
+      },
     );
   }
 
