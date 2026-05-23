@@ -52,6 +52,12 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
   static const String _recordsKey = 'notification_records';
 
+  /// 检查通知是否启用（App内开关）
+  Future<bool> isEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('notifications_enabled') ?? false;
+  }
+
   /// 初始化通知
   Future<void> initialize() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -237,6 +243,7 @@ class NotificationService {
 
   /// 发送生日通知
   Future<void> sendBirthdayNotification(Member member) async {
+    if (!await isEnabled()) return;
     if (await hasSentToday(NotificationType.birthday)) return;
 
     final id = 'birthday_${member.id}_${DateTime.now().millisecondsSinceEpoch}';
@@ -278,6 +285,7 @@ class NotificationService {
     required int totalSessions,
     required String trend,
   }) async {
+    if (!await isEnabled()) return;
     if (await hasSentWeeklyReport()) return;
 
     final id = 'weekly_${DateTime.now().millisecondsSinceEpoch}';
@@ -335,6 +343,7 @@ class NotificationService {
     required double previousRate,
     required double dropPercent,
   }) async {
+    if (!await isEnabled()) return;
     // 下降提醒可以重复，但间隔至少6小时
     final prefs = await SharedPreferences.getInstance();
     final recordsJson = prefs.getStringList(_recordsKey) ?? [];
@@ -392,6 +401,7 @@ class NotificationService {
 
   /// 检查并发送生日通知（在App启动时调用）
   Future<void> checkAndSendBirthdayNotification(List<Member> members) async {
+    if (!await isEnabled()) return;
     if (await hasSentToday(NotificationType.birthday)) return;
 
     final now = DateTime.now();
@@ -518,6 +528,7 @@ class NotificationService {
 
   /// 发送新版本通知
   Future<void> sendNewVersionNotification(String version, String releaseNotes) async {
+    if (!await isEnabled()) return;
     // 检查是否已通知过这个版本
     final prefs = await SharedPreferences.getInstance();
     final recordsJson = prefs.getStringList(_recordsKey) ?? [];

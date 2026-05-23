@@ -29,7 +29,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _currentVersion = AppInfo.version; // syncs with AppInfo
   int _versionTapCount = 0; // 版本号点击计数
   DateTime? _lastVersionTap; // 上次点击时间
-  bool _notificationsEnabled = false; // 通知开关状态
+  bool _notificationsEnabled = false; // 通知开关状态（App内控制）
 
   @override
   void initState() {
@@ -39,10 +39,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _loadNotificationStatus() async {
-    final enabled = await NotificationService().checkPermissionStatus();
-    if (mounted) {
+    // 读取App内保存的通知开关状态
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool('notifications_enabled');
+    if (saved != null && mounted) {
       setState(() {
-        _notificationsEnabled = enabled;
+        _notificationsEnabled = saved;
       });
     }
   }
@@ -421,23 +423,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         value: _notificationsEnabled,
                         onChanged: (value) async {
                           if (value) {
-                            // 请求权限
+                            // 开启：先请求权限，成功后保存状态
                             final granted = await NotificationService().requestPermission();
                             if (mounted) {
-                              setState(() {
-                                _notificationsEnabled = granted;
-                              });
-                              if (!granted) {
+                              if (granted) {
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setBool('notifications_enabled', true);
+                                setState(() {
+                                  _notificationsEnabled = true;
+                                });
+                              } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('请在系统设置中开启通知权限')),
+                                  const SnackBar(content: Text('需要通知权限才能开启')),
                                 );
                               }
                             }
                           } else {
-                            // 用户想关闭，跳转到系统设置
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('请在系统设置中关闭通知')),
-                            );
+                            // 关闭：直接保存状态，不去系统设置
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setBool('notifications_enabled', false);
+                            setState(() {
+                              _notificationsEnabled = false;
+                            });
                           }
                         },
                       ),
