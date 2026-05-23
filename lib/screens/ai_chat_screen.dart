@@ -372,7 +372,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-              ),
+              ],
             ),
           ),
           // 清空历史按钮
