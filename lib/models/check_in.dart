@@ -36,12 +36,13 @@ class CheckIn {
 
   factory CheckIn.fromMap(Map<String, dynamic> map) {
     return CheckIn(
-      id: map['id'] as String,
-      sessionId: map['sessionId'] as String,
-      memberId: map['memberId'] as String,
+      id: map['id'] as String? ?? _uuid.v4(),
+      sessionId: map['sessionId'] as String? ?? '',
+      memberId: map['memberId'] as String? ?? '',
       statusId: map['statusId'] as String?,
-      checkedAt:
-          DateTime.fromMillisecondsSinceEpoch(map['checkedAt'] as int),
+      checkedAt: map['checkedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['checkedAt'] as int)
+          : DateTime.now(),
       note: map['note'] as String?,
       isUndone: map['isUndone'] as bool? ?? false,
     );

@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ai_service.dart';
 import '../services/ai_data_provider.dart';
 import '../models/ai_conversation.dart';
+import 'ai_conversations_screen.dart';
 
 /// 聊天消息模型
 class ChatMessage {
@@ -612,9 +613,25 @@ class _AiChatScreenState extends State<AiChatScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: '返回对话列表',
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.history),
+          tooltip: '历史对话',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AiConversationsScreen(),
+              ),
+            ).then((result) {
+              // 如果从历史对话列表选择了一个对话，重新加载
+              if (result is AiConversation) {
+                setState(() {
+                  _messages.clear();
+                  _currentConversation = result;
+                  _loadConversationMessages(result);
+                });
+              }
+            });
+          },
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,

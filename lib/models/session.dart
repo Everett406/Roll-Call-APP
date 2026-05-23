@@ -41,9 +41,11 @@ class Session {
 
   factory Session.fromMap(Map<String, dynamic> map) {
     return Session(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      id: map['id'] as String? ?? '',
+      title: map['title'] as String? ?? '未命名',
+      createdAt: map['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int)
+          : DateTime.now(),
       endedAt: map['endedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['endedAt'] as int)
           : null,

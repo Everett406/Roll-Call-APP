@@ -875,19 +875,17 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
   Widget _buildAiEntry(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Hero(
-        tag: 'ai_input',
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AiConversationsScreen(),
-                ),
-              );
-            },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AiChatScreen(),
+              ),
+            );
+          },
             borderRadius: BorderRadius.circular(24),
             child: Container(
               height: 48,
@@ -963,7 +961,6 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                 ],
               ),
             ),
-          ),
         ),
       ),
     );
