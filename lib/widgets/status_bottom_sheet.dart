@@ -228,14 +228,36 @@ class _EditTagDialogState extends State<_EditTagDialog> {
   bool _showCustomColor = false;
 
   final List<Map<String, dynamic>> _presetColors = [
+    // 绿色系
+    {'name': '浅绿', 'value': 0xFF8BC34A},
     {'name': '绿色', 'value': 0xFF4CAF50},
+    {'name': '深绿', 'value': 0xFF2E7D32},
+    {'name': '青绿', 'value': 0xFF009688},
+    // 红色系
+    {'name': '浅红', 'value': 0xFFEF5350},
     {'name': '红色', 'value': 0xFFF44336},
+    {'name': '深红', 'value': 0xFFC62828},
+    {'name': '粉红', 'value': 0xFFE91E63},
+    // 橙黄色系
+    {'name': '浅橙', 'value': 0xFFFFB74D},
     {'name': '橙色', 'value': 0xFFFF9800},
+    {'name': '深橙', 'value': 0xFFF57C00},
+    {'name': '黄色', 'value': 0xFFFFEB3B},
+    {'name': '琥珀', 'value': 0xFFFFC107},
+    // 蓝色系
+    {'name': '浅蓝', 'value': 0xFF64B5F6},
     {'name': '蓝色', 'value': 0xFF2196F3},
+    {'name': '深蓝', 'value': 0xFF1565C0},
+    {'name': '靛蓝', 'value': 0xFF3F51B5},
+    {'name': '天蓝', 'value': 0xFF03A9F4},
+    // 紫色系
+    {'name': '浅紫', 'value': 0xFFBA68C8},
     {'name': '紫色', 'value': 0xFF9C27B0},
-    {'name': '粉色', 'value': 0xFFE91E63},
-    {'name': '青色', 'value': 0xFF009688},
+    {'name': '深紫', 'value': 0xFF7B1FA2},
+    // 其他
     {'name': '灰色', 'value': 0xFF9E9E9E},
+    {'name': '棕色', 'value': 0xFF795548},
+    {'name': '黑色', 'value': 0xFF212121},
   ];
 
   @override
@@ -261,6 +283,42 @@ class _EditTagDialogState extends State<_EditTagDialog> {
     }
     widget.onConfirm(name, _selectedColor);
     Navigator.pop(context);
+  }
+
+  /// 解析颜色字符串 (#RRGGBB 或 0xRRGGBB)
+  int? _parseColor(String value) {
+    value = value.trim();
+    if (value.isEmpty) return null;
+    
+    // 处理 #RRGGBB 格式
+    if (value.startsWith('#')) {
+      if (value.length == 7) {
+        try {
+          return int.parse('0xFF${value.substring(1)}');
+        } catch (_) {}
+      }
+    }
+    
+    // 处理 0xRRGGBB 或 0xAARRGGBB 格式
+    if (value.startsWith('0x') || value.startsWith('0X')) {
+      try {
+        final parsed = int.parse(value);
+        // 如果没有 alpha 通道，添加 FF
+        if (parsed <= 0xFFFFFF) {
+          return parsed | 0xFF000000;
+        }
+        return parsed;
+      } catch (_) {}
+    }
+    
+    // 处理 RRGGBB 格式（纯6位十六进制）
+    if (value.length == 6) {
+      try {
+        return int.parse('0xFF$value');
+      } catch (_) {}
+    }
+    
+    return null;
   }
 
   @override
@@ -345,8 +403,8 @@ class _EditTagDialogState extends State<_EditTagDialog> {
               children: [
                 const SizedBox(height: 12),
                 Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+                  spacing: 10,
+                  runSpacing: 10,
                   children: _presetColors.map((c) {
                     final isSelected = _selectedColor == c['value'];
                     return GestureDetector(
@@ -356,8 +414,8 @@ class _EditTagDialogState extends State<_EditTagDialog> {
                         });
                       },
                       child: Container(
-                        width: 40,
-                        height: 40,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           color: Color(c['value']),
                           shape: BoxShape.circle,
@@ -369,11 +427,55 @@ class _EditTagDialogState extends State<_EditTagDialog> {
                               : null,
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check, color: Colors.white, size: 20)
+                            ? const Icon(Icons.check, color: Colors.white, size: 16)
                             : null,
                       ),
                     );
                   }).toList(),
+                ),
+                const SizedBox(height: 16),
+                // 自定义颜色输入
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: '自定义颜色 (如: #FF5733)',
+                          hintStyle: theme.textTheme.bodySmall,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          prefixIcon: const Icon(Icons.colorize, size: 20),
+                        ),
+                        style: theme.textTheme.bodySmall,
+                        onChanged: (value) {
+                          final color = _parseColor(value);
+                          if (color != null) {
+                            setState(() {
+                              _selectedColor = color;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Color(_selectedColor),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: theme.colorScheme.outline,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -888,12 +888,12 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                 ),
               );
             },
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(28),
             child: Container(
-              height: 44,
+              height: 56,
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(28),
               ),
               child: Row(
                 children: [

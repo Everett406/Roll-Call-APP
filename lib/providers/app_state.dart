@@ -270,6 +270,18 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> restoreSession(String sessionId) async {
+    final idx = _sessions.indexWhere((s) => s.id == sessionId);
+    if (idx != -1) {
+      _sessions[idx] = _sessions[idx].copyWith(
+        status: 'ongoing',
+        endedAt: null,
+      );
+      await StorageService.putSession(_sessions[idx]);
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteSession(String sessionId) async {
     // Cascade delete: also remove check-ins and logs for this session
     await StorageService.deleteCheckInsForSession(sessionId);

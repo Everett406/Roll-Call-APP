@@ -11,6 +11,7 @@ import '../services/ai_service.dart';
 import '../services/ai_data_provider.dart';
 import '../models/ai_conversation.dart';
 import 'ai_conversations_screen.dart' show showAiConversationsBottomSheet;
+import 'session_detail_screen.dart';
 
 /// 聊天消息模型
 class ChatMessage {
@@ -479,30 +480,17 @@ class _AiChatScreenState extends State<AiChatScreen> {
       final id = parts[1];
       switch (type) {
         case 'session':
-          try {
-            // 尝试跳转到点名详情页
-            // 如果 SessionDetailScreen 不存在，使用 try-catch 处理
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('点名详情（ID: $id）- 功能开发中')),
-            );
-          } catch (_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('功能开发中')),
-            );
-          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SessionDetailScreen(sessionId: id),
+            ),
+          );
           break;
         case 'member':
-          try {
-            // 尝试跳转到成员详情页
-            // 如果 MemberDetailScreen 不存在，使用 try-catch 处理
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('成员信息（ID: $id）- 功能开发中')),
-            );
-          } catch (_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('功能开发中')),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('成员详情（ID: $id）- 功能开发中')),
+          );
           break;
       }
     }
@@ -1224,7 +1212,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 borderRadius: BorderRadius.circular(22),
                 clipBehavior: Clip.antiAlias,
                 child: Container(
-                  height: 44,
+                  height: 56,
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   alignment: Alignment.centerLeft,
                   child: TextField(
@@ -1233,15 +1221,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     enabled: !_isLoading,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendMessage(),
-                    style: theme.textTheme.bodyMedium,
+                    style: theme.textTheme.bodyLarge,
                     decoration: InputDecoration(
                       hintText: '输入你的问题...',
-                      hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                      hintStyle: theme.textTheme.bodyLarge?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       border: InputBorder.none,
                       isDense: true,
-                      contentPadding: EdgeInsets.zero,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
                 ),
@@ -1254,16 +1242,16 @@ class _AiChatScreenState extends State<AiChatScreen> {
             color: _isLoading || _inputController.text.trim().isEmpty
                 ? theme.colorScheme.surfaceContainerHighest
                 : theme.colorScheme.primary,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(28),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
               onTap: (_isLoading || _inputController.text.trim().isEmpty)
                   ? null
                   : _sendMessage,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(28),
               child: Container(
-                width: 44,
-                height: 44,
+                width: 56,
+                height: 56,
                 alignment: Alignment.center,
                 child: _isLoading
                     ? SizedBox(
