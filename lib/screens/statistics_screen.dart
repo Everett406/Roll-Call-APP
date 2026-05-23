@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import '../utils/expressive_theme.dart';
 import '../utils/chart_painter.dart';
 import 'member_history_screen.dart';
 import 'attendance_calendar_screen.dart';
+import 'ai_chat_screen.dart';
 
 class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
@@ -23,6 +25,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
   TimePeriod _selectedPeriod = TimePeriod.lastWeek;
   late TabController _tabController;
   int _selectedRankingTab = 0; // 0 = 缺勤榜, 1 = 出勤榜
+  int _aiPlaceholderIndex = 0;
+  Timer? _aiPlaceholderTimer;
 
   @override
   void initState() {
@@ -33,11 +37,20 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
         _selectedRankingTab = _tabController.index;
       });
     });
+    // 每3秒切换 AI 入口占位文字
+    _aiPlaceholderTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        setState(() {
+          _aiPlaceholderIndex = (_aiPlaceholderIndex + 1) % _aiPlaceholders.length;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _aiPlaceholderTimer?.cancel();
     super.dispose();
   }
 
@@ -176,6 +189,11 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
           // ===== 今日提醒（生日+节假日）=====
           SliverToBoxAdapter(
             child: _buildTodayReminders(state, theme),
+          ),
+
+          // ===== AI 助手入口 =====
+          SliverToBoxAdapter(
+            child: _buildAiEntry(theme),
           ),
 
           // ===== Attendance Trend Line Chart =====
@@ -840,6 +858,112 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
           const SizedBox(height: 8),
           ...reminders,
         ],
+      ),
+    );
+  }
+
+  /// AI 助手入口占位文字列表
+  static const _aiPlaceholders = [
+    '问问 AI 出勤情况...',
+    '查询谁缺勤了...',
+    '分析本周出勤率...',
+    '问问 AI 任何问题...',
+  ];
+
+  /// AI 助手入口组件
+  Widget _buildAiEntry(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Hero(
+        tag: 'ai_input',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AiChatScreen(),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 16),
+                  // 左侧图标
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          theme.colorScheme.primaryContainer,
+                          theme.colorScheme.tertiaryContainer,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.auto_awesome,
+                      size: 14,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 动态占位文字
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 500),
+                      switchInCurve: Curves.easeIn,
+                      switchOutCurve: Curves.easeOut,
+                      child: Text(
+                        _aiPlaceholders[_aiPlaceholderIndex],
+                        key: ValueKey<String>(_aiPlaceholders[_aiPlaceholderIndex]),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  // 右侧发送按钮
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.send_rounded,
+                        size: 16,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
