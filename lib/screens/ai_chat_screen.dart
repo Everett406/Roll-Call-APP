@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' show min;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -8,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ai_service.dart';
 import '../services/ai_data_provider.dart';
+import '../models/ai_conversation.dart';
 
 /// 聊天消息模型
 class ChatMessage {
@@ -53,10 +55,16 @@ const sampleQuestions = [
 ];
 
 class AiChatScreen extends StatefulWidget {
+  /// 当前对话（从对话列表传递过来）
+  final AiConversation? conversation;
   /// 初始消息（从统计页传递过来）
   final String? initialMessage;
 
-  const AiChatScreen({super.key, this.initialMessage});
+  const AiChatScreen({
+    super.key,
+    this.conversation,
+    this.initialMessage,
+  });
 
   @override
   State<AiChatScreen> createState() => _AiChatScreenState();
@@ -79,6 +87,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
   bool _showWaiting = false;
   Timer? _waitingTimer;
 
+  // 当前对话
+  AiConversation? _currentConversation;
+
   @override
   void initState() {
     super.initState();
@@ -99,8 +110,16 @@ class _AiChatScreenState extends State<AiChatScreen> {
       _enableThinking = prefs.getBool('ai_thinking_mode') ?? true;
     });
 
-    // 加载历史记录
-    await _loadHistory();
+    // 初始化对话
+    if (widget.conversation != null) {
+      // 使用传入的对话
+      _currentConversation = widget.conversation;
+      // 加载对话中的消息
+      _loadConversationMessages(widget.conversation!);
+    } else {
+      // 创建新对话
+      _currentConversation = AiConversation.create();
+    }
 
     // 获取剩余额度
     final quota = await _aiService.getRemainingQuota();
@@ -119,52 +138,123 @@ class _AiChatScreenState extends State<AiChatScreen> {
     }
   }
 
-  /// 加载历史记录
-  Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final historyJson = prefs.getString('ai_chat_history');
-    if (historyJson != null) {
-      try {
-        final List<dynamic> history = jsonDecode(historyJson);
-        setState(() {
-          _messages.addAll(history.map((h) => ChatMessage(
-            id: h['id'],
-            isUser: h['isUser'],
-            content: h['content'],
-            thinkingContent: h['thinkingContent'],
-            timestamp: DateTime.parse(h['timestamp']),
-          )));
-        });
-      } catch (_) {
-        // 解析失败，忽略
-      }
+  /// 从对话中加载消息
+  void _loadConversationMessages(AiConversation conversation) {
+    if (conversation.messages.isNotEmpty) {
+      setState(() {
+        _messages.addAll(conversation.messages.map((m) => ChatMessage(
+          id: m['id'] as String,
+          isUser: m['isUser'] as bool,
+          content: m['content'] as String,
+          thinkingContent: m['thinkingContent'] as String?,
+          timestamp: DateTime.parse(m['timestamp'] as String),
+        )));
+      });
     }
   }
 
-  /// 保存历史记录
-  Future<void> _saveHistory() async {
+  /// 获取当前对话标题
+  String _getConversationTitle() {
+    if (_currentConversation == null) return 'AI 助手';
+    
+    // 如果是"新对话"且已有消息，使用第一条用户消息作为标题
+    if (_currentConversation!.title == '新对话' && _messages.isNotEmpty) {
+      final firstUserMessage = _messages.firstWhere(
+        (m) => m.isUser,
+        orElse: () => _messages.first,
+      );
+      final content = firstUserMessage.content;
+      if (content.length > 20) {
+        return content.substring(0, 20);
+      }
+      return content;
+    }
+    
+    return _currentConversation!.title;
+  }
+
+  /// 保存当前对话到对话列表
+  Future<void> _saveConversation() async {
+    if (_currentConversation == null) return;
+
+    // 更新对话
+    final updated = _currentConversation!.copyWith(
+      messages: _messages.map((m) => {
+        'id': m.id,
+        'isUser': m.isUser,
+        'content': m.content,
+        'thinkingContent': m.thinkingContent,
+        'timestamp': m.timestamp.toIso8601String(),
+      }).toList(),
+      updatedAt: DateTime.now(),
+      // 如果是第一条用户消息，用它作为标题（截断前20字）
+      title: _currentConversation!.title == '新对话' && _messages.isNotEmpty
+          ? () {
+              final firstUserMessage = _messages.firstWhere(
+                (m) => m.isUser,
+                orElse: () => _messages.first,
+              );
+              final content = firstUserMessage.content;
+              return content.substring(0, min(20, content.length));
+            }()
+          : _currentConversation!.title,
+    );
+
+    // 保存到对话列表
     final prefs = await SharedPreferences.getInstance();
-    // 只保存最近 50 条
-    final historyToSave = _messages.length > 50
-        ? _messages.sublist(_messages.length - 50)
-        : _messages;
-    final history = historyToSave.map((m) => {
-      'id': m.id,
-      'isUser': m.isUser,
-      'content': m.content,
-      'thinkingContent': m.thinkingContent,
-      'timestamp': m.timestamp.toIso8601String(),
-    }).toList();
-    await prefs.setString('ai_chat_history', jsonEncode(history));
+    final json = prefs.getString('ai_conversations');
+    List<AiConversation> conversations = [];
+    if (json != null) {
+      final List<dynamic> list = jsonDecode(json);
+      conversations = list.map((e) => AiConversation.fromJson(e)).toList();
+    }
+
+    // 更新或添加
+    final index = conversations.indexWhere((c) => c.id == updated.id);
+    if (index >= 0) {
+      conversations[index] = updated;
+    } else {
+      conversations.insert(0, updated);
+    }
+
+    // 只保留最近 50 个对话
+    if (conversations.length > 50) {
+      conversations = conversations.sublist(0, 50);
+    }
+
+    await prefs.setString('ai_conversations', jsonEncode(conversations.map((c) => c.toJson()).toList()));
+    
+    // 更新当前对话引用
+    _currentConversation = updated;
   }
 
   /// 清空历史记录
   Future<void> _clearHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('ai_chat_history');
     setState(() {
       _messages.clear();
     });
+    
+    // 更新对话（清空消息）
+    if (_currentConversation != null) {
+      final updated = _currentConversation!.copyWith(
+        messages: [],
+        updatedAt: DateTime.now(),
+      );
+      
+      final prefs = await SharedPreferences.getInstance();
+      final json = prefs.getString('ai_conversations');
+      if (json != null) {
+        final List<dynamic> list = jsonDecode(json);
+        final conversations = list.map((e) => AiConversation.fromJson(e)).toList();
+        final index = conversations.indexWhere((c) => c.id == updated.id);
+        if (index >= 0) {
+          conversations[index] = updated;
+          await prefs.setString('ai_conversations', jsonEncode(conversations.map((c) => c.toJson()).toList()));
+        }
+      }
+      
+      _currentConversation = updated;
+    }
   }
 
   /// 启动等待检测定时器
@@ -346,7 +436,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               _isLoading = false;
               _remainingQuota--;
             });
-            _saveHistory(); // 保存历史记录
+            _saveConversation(); // 保存对话
             break;
 
           case 'error':
@@ -521,6 +611,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: '返回对话列表',
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -530,7 +625,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
               color: theme.colorScheme.primary,
             ),
             const SizedBox(width: 8),
-            const Text('AI 助手'),
+            Flexible(
+              child: Text(
+                _getConversationTitle(),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         actions: [

@@ -12,6 +12,7 @@ import '../utils/chart_painter.dart';
 import 'member_history_screen.dart';
 import 'attendance_calendar_screen.dart';
 import 'ai_chat_screen.dart';
+import 'ai_conversations_screen.dart';
 
 class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
@@ -883,7 +884,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const AiChatScreen(),
+                  builder: (_) => const AiConversationsScreen(),
                 ),
               );
             },
