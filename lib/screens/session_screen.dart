@@ -480,11 +480,51 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     if (isShowingAll) {
       // Fixed list: all members in studentId order, no splitting
-      return Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: _isSearchExpanded
-            ? _buildSearchAppBar(session)
-            : _buildNormalAppBar(session, state),
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          
+          // 检查是否有已标记的成员
+          final hasCheckIns = members.any((m) {
+            final checkIn = state.getActiveCheckIn(widget.sessionId, m.id);
+            return checkIn != null;
+          });
+          
+          if (!hasCheckIns) {
+            // 没有已标记的成员，直接返回
+            Navigator.of(context).pop();
+            return;
+          }
+          
+          // 有已标记的成员，弹出确认对话框
+          final shouldPop = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('确定离开？'),
+              content: const Text('当前点名进度将会保留，您可以稍后继续点名。'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('继续点名'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('离开'),
+                ),
+              ],
+            ),
+          );
+          
+          if (shouldPop == true && context.mounted) {
+            Navigator.of(context).pop();
+          }
+        },
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          appBar: _isSearchExpanded
+              ? _buildSearchAppBar(session)
+              : _buildNormalAppBar(session, state),
         body: Column(
           children: [
             // Spacer for AppBar + bottom area (FilterChip & InfoRow now in AppBar bottom)
@@ -525,7 +565,8 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
               ),
           ],
         ),
-      );
+      ),
+    );
     }
 
     // ---- Filtered view: show only matching members ----
