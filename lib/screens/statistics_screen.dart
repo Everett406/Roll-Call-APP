@@ -9,6 +9,7 @@ import '../models/time_period.dart';
 import '../utils/constants.dart';
 import '../utils/expressive_theme.dart';
 import '../utils/chart_painter.dart';
+import '../widgets/animated_numbers.dart';
 import 'member_history_screen.dart';
 import 'attendance_calendar_screen.dart';
 import 'ai_chat_screen.dart';
@@ -162,6 +163,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                   value: '$totalCheckIns',
                   icon: Icons.people_outline,
                   color: theme.colorScheme.primary,
+                  animatedValue: totalCheckIns,
                   changeBadge: countChange != 0
                       ? ChangeBadge(
                           change: comparison['previousCount'] as int > 0
@@ -176,12 +178,14 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
                   value: '${state.sessions.length}',
                   icon: Icons.event_note_outlined,
                   color: theme.colorScheme.secondary,
+                  animatedValue: state.sessions.length,
                 ),
                 _buildStatCard(
                   title: '成员数',
                   value: '${state.members.length}',
                   icon: Icons.group_outlined,
                   color: theme.colorScheme.tertiary,
+                  animatedValue: state.members.length,
                 ),
               ],
             ),
@@ -336,6 +340,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
     required IconData icon,
     required Color color,
     Widget? changeBadge,
+    int? animatedValue,
   }) {
     final theme = Theme.of(context);
     return Card(
@@ -360,14 +365,24 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
               ],
             ),
             const SizedBox(height: 6),
-            Text(
-              value,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: color,
-                fontSize: 22,
+            if (animatedValue != null)
+              AnimatedNumber(
+                value: animatedValue,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  fontSize: 22,
+                ),
+              )
+            else
+              Text(
+                value,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  fontSize: 22,
+                ),
               ),
-            ),
             Text(
               title,
               style: theme.textTheme.bodySmall?.copyWith(

@@ -13,6 +13,8 @@ import '../widgets/swipe_person_card.dart';
 import '../widgets/status_bottom_sheet.dart';
 import '../widgets/operation_log_panel.dart';
 import '../widgets/confetti_overlay.dart';
+import '../widgets/random_picker_wheel.dart';
+import '../widgets/frosted_glass.dart';
 import 'member_history_screen.dart';
 import 'export_screen.dart';
 import 'share_image_screen.dart';
@@ -126,6 +128,13 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         ),
       actions: [
+        // 随机点名按钮
+        if (session.status == 'ongoing')
+          IconButton(
+            icon: const Icon(Icons.shuffle),
+            tooltip: '随机点名',
+            onPressed: () => _showRandomPicker(state),
+          ),
         // 归档按钮（仅 ongoing 状态显示）
         if (session.status == 'ongoing')
           IconButton(
@@ -809,6 +818,74 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         builder: (_) => MemberHistoryScreen(
           memberId: member.id,
           memberName: member.name,
+        ),
+      ),
+    );
+  }
+
+  /// 显示随机点名转盘
+  void _showRandomPicker(AppState state) {
+    final session = state.getSessionById(widget.sessionId);
+    if (session == null) return;
+
+    // 获取未标记的成员
+    final unmarkedMembers = session.memberIds
+        .map((id) => state.getMemberById(id))
+        .where((m) => m != null)
+        .where((m) {
+          final checkIn = state.getActiveCheckIn(widget.sessionId, m!.id);
+          return checkIn == null;
+        })
+        .map((m) => m!.name)
+        .toList();
+
+    if (unmarkedMembers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('所有成员都已标记')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FrostedGlassBottomSheet(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '随机点名',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+              RandomPickerWheel(
+                items: unmarkedMembers,
+                color: Theme.of(context).colorScheme.primary,
+                onSelected: (name) {
+                  // 找到选中的成员
+                  final member = session.memberIds
+                      .map((id) => state.getMemberById(id))
+                      .where((m) => m != null)
+                      .firstWhere((m) => m!.name == name, orElse: () => null);
+
+                  if (member != null) {
+                    // 自动标记为出勤
+                    state.checkIn(
+                      sessionId: widget.sessionId,
+                      memberId: member.id,
+                      statusId: 'tag_arrived',
+                    );
+                  }
+                },
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+            ],
+          ),
         ),
       ),
     );
