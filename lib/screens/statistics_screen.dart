@@ -4,6 +4,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/app_state.dart';
 import '../models/time_period.dart';
 import '../utils/constants.dart';
@@ -28,6 +29,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
   int _selectedRankingTab = 0; // 0 = 缺勤榜, 1 = 出勤榜
   int _aiPlaceholderIndex = 0;
   Timer? _aiPlaceholderTimer;
+  bool _aiEnabled = false;
 
   @override
   void initState() {
@@ -38,14 +40,25 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
         _selectedRankingTab = _tabController.index;
       });
     });
+    _loadAiStatus();
     // 每3秒切换 AI 入口占位文字
     _aiPlaceholderTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) {
+      if (mounted && _aiEnabled) {
         setState(() {
           _aiPlaceholderIndex = (_aiPlaceholderIndex + 1) % _aiPlaceholders.length;
         });
       }
     });
+  }
+
+  Future<void> _loadAiStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool('ai_enabled');
+    if (mounted) {
+      setState(() {
+        _aiEnabled = saved ?? false;
+      });
+    }
   }
 
   @override
@@ -193,9 +206,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
           ),
 
           // ===== AI 助手入口 =====
-          SliverToBoxAdapter(
-            child: _buildAiEntry(theme),
-          ),
+          if (_aiEnabled)
+            SliverToBoxAdapter(
+              child: _buildAiEntry(theme),
+            ),
 
           // ===== Attendance Trend Line Chart =====
           SliverToBoxAdapter(

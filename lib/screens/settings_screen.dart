@@ -31,12 +31,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   int _versionTapCount = 0; // 版本号点击计数
   DateTime? _lastVersionTap; // 上次点击时间
   bool _notificationsEnabled = false; // 通知开关状态（App内控制）
+  bool _aiEnabled = false; // AI功能开关
 
   @override
   void initState() {
     super.initState();
     _loadCurrentVersion();
     _loadNotificationStatus();
+    _loadAiStatus();
+  }
+
+  Future<void> _loadAiStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool('ai_enabled');
+    if (mounted) {
+      setState(() {
+        _aiEnabled = saved ?? false; // 默认关闭
+      });
+    }
   }
 
   Future<void> _loadNotificationStatus() async {
@@ -371,6 +383,72 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         subtitle: const Text('删除所有人员、分组和点名记录'),
                         trailing: Icon(Icons.chevron_right, color: theme.colorScheme.error),
                         onTap: () => _confirmClearData(),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+
+                // ===== AI 功能 =====
+                const SizedBox(height: 24),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  elevation: 0.5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            children: [
+                              Text(
+                                'AI 功能',
+                                style: TextStyle(
+                                  color: theme.colorScheme.primary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.tertiaryContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'BETA',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onTertiaryContainer,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SwitchListTile(
+                        secondary: const Icon(Icons.auto_awesome_outlined),
+                        title: const Text('启用 AI 助手'),
+                        subtitle: Text(
+                          _aiEnabled ? '已开启 - 可使用智能问答功能' : '已关闭',
+                        ),
+                        value: _aiEnabled,
+                        onChanged: (value) async {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setBool('ai_enabled', value);
+                          setState(() {
+                            _aiEnabled = value;
+                          });
+                        },
                       ),
                       const SizedBox(height: 4),
                     ],
