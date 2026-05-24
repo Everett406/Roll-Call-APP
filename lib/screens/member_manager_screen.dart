@@ -145,7 +145,8 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                         ),
                       ),
                     ),
-                  if (!_isMultiSelectMode) const SizedBox(width: 12),
+                  if (!_isMultiSelectMode)
+                    const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +173,8 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                           ),
                       ],
                     ),
-                  if (!_isMultiSelectMode) ...[
+                  ),
+                  if (!_isMultiSelectMode)
                     if (showDragHandle && dragIndex != null)
                       ReorderableDragStartListener(
                         index: dragIndex,
@@ -191,7 +193,6 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                         onPressed: () =>
                             _showEditDialog(context, state, member),
                       ),
-                  ],
                 ],
               ),
             ),
