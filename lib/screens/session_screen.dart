@@ -128,13 +128,6 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         ),
       actions: [
-        // 随机点名按钮
-        if (session.status == 'ongoing')
-          IconButton(
-            icon: const Icon(Icons.shuffle),
-            tooltip: '随机点名',
-            onPressed: () => _showRandomPicker(state),
-          ),
         // 归档按钮（仅 ongoing 状态显示）
         if (session.status == 'ongoing')
           IconButton(

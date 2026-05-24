@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ai_service.dart';
 import '../services/ai_data_provider.dart';
@@ -975,13 +976,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.colorScheme.primary,
-                ),
+              SpinKitWave(
+                color: theme.colorScheme.primary,
+                size: 24,
+                type: SpinKitWaveType.start,
               ),
               const SizedBox(width: 8),
               Text(
@@ -1127,13 +1125,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   ),
                   if (message.isStreaming) ...[
                     const SizedBox(width: 8),
-                    SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.primary.withOpacity(0.5),
-                      ),
+                    SpinKitThreeBounce(
+                      color: theme.colorScheme.primary.withOpacity(0.5),
+                      size: 12,
                     ),
                   ],
                 ],
@@ -1186,13 +1180,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (toolCall.isRunning)
-              SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.colorScheme.primary,
-                ),
+              SpinKitThreeBounce(
+                color: theme.colorScheme.primary,
+                size: 14,
               )
             else if (toolCall.result != null &&
                 (toolCall.result!.contains('出错') ||

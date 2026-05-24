@@ -9,6 +9,7 @@ class Member {
   final DateTime? birthday; // 生日（月日）
   final String? lunarBirthday; // 农历生日，格式：月/日，如 3/15
   final DateTime createdAt;
+  final int sortOrder; // 排序顺序
 
   Member({
     String? id,
@@ -17,6 +18,7 @@ class Member {
     this.birthday,
     this.lunarBirthday,
     DateTime? createdAt,
+    this.sortOrder = 0,
   })  : id = id ?? _uuid.v4(),
         createdAt = createdAt ?? DateTime.now();
 
@@ -28,6 +30,7 @@ class Member {
       'birthday': birthday?.millisecondsSinceEpoch,
       'lunarBirthday': lunarBirthday,
       'createdAt': createdAt.millisecondsSinceEpoch,
+      'sortOrder': sortOrder,
     };
   }
 
@@ -41,6 +44,7 @@ class Member {
           : null,
       lunarBirthday: map['lunarBirthday'] as String?,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      sortOrder: map['sortOrder'] as int? ?? 0,
     );
   }
 
@@ -49,6 +53,7 @@ class Member {
     String? studentId,
     DateTime? birthday,
     String? lunarBirthday,
+    int? sortOrder,
   }) {
     return Member(
       id: id,
@@ -57,6 +62,7 @@ class Member {
       birthday: birthday ?? this.birthday,
       lunarBirthday: lunarBirthday ?? this.lunarBirthday,
       createdAt: createdAt,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 

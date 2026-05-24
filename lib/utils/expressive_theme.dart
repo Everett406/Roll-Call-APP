@@ -662,3 +662,85 @@ class ExpressiveStatCard extends StatelessWidget {
     );
   }
 }
+
+/// ============================================================
+/// 自定义页面过渡动画
+/// ============================================================
+class ExpressivePageTransitions {
+  /// 从右侧滑入（带缩放）
+  static Route<T> slideIn<T>({
+    required WidgetBuilder builder,
+    RouteSettings? settings,
+  }) {
+    return PageRouteBuilder<T>(
+      settings: settings,
+      pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+            .chain(CurveTween(curve: Curves.easeOutCubic));
+        final scaleTween = Tween(begin: 0.95, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOutCubic));
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: animation.drive(scaleTween),
+              child: child,
+            ),
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 350),
+      reverseTransitionDuration: const Duration(milliseconds: 250),
+    );
+  }
+
+  /// 从底部滑入（用于弹窗式页面）
+  static Route<T> slideUp<T>({
+    required WidgetBuilder builder,
+    RouteSettings? settings,
+  }) {
+    return PageRouteBuilder<T>(
+      settings: settings,
+      pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final tween = Tween(begin: const Offset(0.0, 1.0), end: Offset.zero)
+            .chain(CurveTween(curve: Curves.easeOutCubic));
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: FadeTransition(
+            opacity: animation,
+            child: child,
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 400),
+      reverseTransitionDuration: const Duration(milliseconds: 250),
+    );
+  }
+
+  /// 淡入缩放（用于详情页）
+  static Route<T> fadeScale<T>({
+    required WidgetBuilder builder,
+    RouteSettings? settings,
+  }) {
+    return PageRouteBuilder<T>(
+      settings: settings,
+      pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final scaleTween = Tween(begin: 0.9, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOutCubic));
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: animation.drive(scaleTween),
+            child: child,
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+    );
+  }
+}

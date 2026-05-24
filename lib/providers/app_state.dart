@@ -186,6 +186,22 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// 重新排序成员列表
+  Future<void> reorderMembers(int oldIndex, int newIndex) async {
+    // ReorderableListView 的 onReorder 传递的 newIndex：
+    // - 向下移动时，newIndex 是移除元素后的位置+1，需要减1
+    // - 向上移动时，newIndex 就是目标位置
+    if (oldIndex < newIndex) newIndex--;
+    final member = _members.removeAt(oldIndex);
+    _members.insert(newIndex, member);
+    // 更新排序字段
+    for (int i = 0; i < _members.length; i++) {
+      _members[i] = _members[i].copyWith(sortOrder: i);
+      await StorageService.putMember(_members[i]);
+    }
+    notifyListeners();
+  }
+
   // ==================== Tag CRUD ====================
   Future<void> addTag(StatusTag tag) async {
     _tags.add(tag);

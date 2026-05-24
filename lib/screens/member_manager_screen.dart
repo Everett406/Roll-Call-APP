@@ -27,24 +27,204 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
     super.dispose();
   }
 
+  /// 构建单个成员卡片
+  Widget _buildMemberCard({
+    required BuildContext context,
+    required Member member,
+    required AppState state,
+    required bool isSelected,
+    required bool showDragHandle,
+    int? dragIndex,
+  }) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      key: ValueKey(member.id),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Dismissible(
+        key: ValueKey('dismissible_${member.id}'),
+        direction: _isMultiSelectMode
+            ? DismissDirection.none
+            : DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.error,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.delete, color: Colors.white),
+        ),
+        confirmDismiss: (direction) async {
+          final confirmed = await showExpressiveDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('删除人员'),
+              content: Text('确定要删除 ${member.name} 吗？'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.error,
+                  ),
+                  child: const Text('删除'),
+                ),
+              ],
+            ),
+          );
+
+          if (confirmed == true) {
+            state.deleteMember(member.id);
+          }
+          return false;
+        },
+        child: Card(
+          child: InkWell(
+            onTap: () {
+              if (_isMultiSelectMode) {
+                setState(() {
+                  if (isSelected) {
+                    _selectedMemberIds.remove(member.id);
+                    if (_selectedMemberIds.isEmpty) {
+                      _isMultiSelectMode = false;
+                    }
+                  } else {
+                    _selectedMemberIds.add(member.id);
+                  }
+                });
+              } else {
+                _showEditDialog(context, state, member);
+              }
+            },
+            onLongPress: () {
+              setState(() {
+                if (!_isMultiSelectMode) {
+                  _isMultiSelectMode = true;
+                  _selectedMemberIds.add(member.id);
+                }
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  if (_isMultiSelectMode)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Checkbox(
+                        value: isSelected,
+                        onChanged: (selected) {
+                          setState(() {
+                            if (selected == true) {
+                              _selectedMemberIds.add(member.id);
+                            } else {
+                              _selectedMemberIds.remove(member.id);
+                              if (_selectedMemberIds.isEmpty) {
+                                _isMultiSelectMode = false;
+                              }
+                            }
+                          });
+                        },
+                      ),
+                    )
+                  else
+                    CircleAvatar(
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                      child: Text(
+                        member.name.isNotEmpty ? member.name[0] : '?',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  if (!_isMultiSelectMode) const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Hero(
+                          tag: 'memberName_${member.id}',
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Text(
+                              member.name,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (member.studentId != null &&
+                            member.studentId!.isNotEmpty)
+                          Text(
+                            member.studentId!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                  if (!_isMultiSelectMode) ...[
+                    if (showDragHandle && dragIndex != null)
+                      ReorderableDragStartListener(
+                        index: dragIndex,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            Icons.drag_handle,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            size: 24,
+                          ),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        onPressed: () =>
+                            _showEditDialog(context, state, member),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(appStateProvider);
     final theme = Theme.of(context);
 
-    // Filter members based on search, sorted by studentId
-    final members = (_isSearchExpanded
-            ? state.searchMembers(_searchQuery)
-            : [...state.members])
+    // 搜索模式下按学号/姓名排序；非搜索模式下按 sortOrder 排序
+    final List<Member> members;
+    if (_isSearchExpanded) {
+      members = state.searchMembers(_searchQuery)
         ..sort((a, b) {
           if (a.studentId != null && b.studentId != null) {
             return a.studentId!.compareTo(b.studentId!);
           }
           return a.name.compareTo(b.name);
         });
+    } else {
+      members = [...state.members]
+        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    }
 
     final hasSelected = _selectedMemberIds.isNotEmpty;
-    final allSelected = members.length == _selectedMemberIds.length && members.isNotEmpty;
+    final allSelected =
+        members.length == _selectedMemberIds.length && members.isNotEmpty;
+
+    // 判断是否可以使用拖拽排序（非搜索、非多选模式）
+    final canReorder = !_isSearchExpanded && !_isMultiSelectMode;
 
     return Scaffold(
       appBar: _isMultiSelectMode
@@ -70,7 +250,8 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                           }
                         : () {
                             setState(() {
-                              _selectedMemberIds.addAll(members.map((m) => m.id));
+                              _selectedMemberIds.addAll(
+                                  members.map((m) => m.id));
                             });
                           },
                     icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
@@ -118,13 +299,15 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                           tag: 'settingsIcon_members',
                           child: Material(
                             type: MaterialType.transparency,
-                            child: Icon(Icons.people_outline, color: theme.colorScheme.primary),
+                            child: Icon(Icons.people_outline,
+                                color: theme.colorScheme.primary),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           '人员管理 (${state.members.length} 人)',
-                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -193,165 +376,84 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
                 ],
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: members.length,
-              itemBuilder: (context, index) {
-                final member = members[index];
-                final isSelected = _selectedMemberIds.contains(member.id);
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Dismissible(
-                    key: ValueKey(member.id),
-                    direction: _isMultiSelectMode
-                        ? DismissDirection.none
-                        : DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.error,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    confirmDismiss: (direction) async {
-                      final confirmed = await showExpressiveDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('删除人员'),
-                          content: Text('确定要删除 ${member.name} 吗？'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('取消'),
-                            ),
-                            FilledButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: theme.colorScheme.error,
-                              ),
-                              child: const Text('删除'),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirmed == true) {
-                        state.deleteMember(member.id);
-                      }
-                      return false;
-                    },
-                    child: Card(
-                      child: InkWell(
-                        onTap: () {
-                          if (_isMultiSelectMode) {
-                            setState(() {
-                              if (isSelected) {
-                                _selectedMemberIds.remove(member.id);
-                                if (_selectedMemberIds.isEmpty) {
-                                  _isMultiSelectMode = false;
-                                }
-                              } else {
-                                _selectedMemberIds.add(member.id);
-                              }
-                            });
-                          } else {
-                            _showEditDialog(context, state, member);
-                          }
-                        },
-                        onLongPress: () {
-                          setState(() {
-                            if (!_isMultiSelectMode) {
-                              _isMultiSelectMode = true;
-                              _selectedMemberIds.add(member.id);
-                            }
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              if (_isMultiSelectMode)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: Checkbox(
-                                    value: isSelected,
-                                    onChanged: (selected) {
-                                      setState(() {
-                                        if (selected == true) {
-                                          _selectedMemberIds.add(member.id);
-                                        } else {
-                                          _selectedMemberIds.remove(member.id);
-                                          if (_selectedMemberIds.isEmpty) {
-                                            _isMultiSelectMode = false;
-                                          }
-                                        }
-                                      });
-                                    },
-                                  ),
-                                )
-                              else
-                                CircleAvatar(
-                                  backgroundColor: theme.colorScheme.primaryContainer,
-                                  child: Text(
-                                    member.name.isNotEmpty ? member.name[0] : '?',
-                                    style: TextStyle(
-                                      color: theme.colorScheme.onPrimaryContainer,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              if (!_isMultiSelectMode) const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Hero(
-                                      tag: 'memberName_${member.id}',
-                                      child: Material(
-                                        type: MaterialType.transparency,
-                                        child: Text(
-                                          member.name,
-                                          style: theme.textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    if (member.studentId != null &&
-                                        member.studentId!.isNotEmpty)
-                                      Text(
-                                        member.studentId!,
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              if (!_isMultiSelectMode)
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 20),
-                                  onPressed: () => _showEditDialog(context, state, member),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+          : canReorder
+              ? _buildReorderableList(context, members, state)
+              : _buildNormalList(context, members, state),
       floatingActionButton: _isMultiSelectMode
           ? null
           : FloatingActionButton(
               onPressed: () => _showAddDialog(context, state),
               child: const Icon(Icons.person_add),
             ),
+    );
+  }
+
+  /// 构建可拖拽排序列表
+  Widget _buildReorderableList(
+      BuildContext context, List<Member> members, AppState state) {
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: members.length,
+      buildDefaultDragHandles: false, // 使用自定义拖拽手柄
+      proxyDecorator: (child, index, animation) {
+        // 拖拽时的视觉反馈：添加阴影和缩放效果
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            final double elevation = lerpDouble(0, 6, animation.value)!;
+            final double scale = lerpDouble(1, 1.02, animation.value)!;
+            return Transform.scale(
+              scale: scale,
+              child: Material(
+                elevation: elevation,
+                color: Colors.transparent,
+                shadowColor: Theme.of(context)
+                    .colorScheme
+                    .shadow
+                    .withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                child: child,
+              ),
+            );
+          },
+          child: child,
+        );
+      },
+      onReorder: (oldIndex, newIndex) {
+        // ReorderableListView 的 onReorder 中，newIndex 已经是调整后的值
+        // 但我们需要手动调整，因为 reorderMembers 内部也会调整
+        state.reorderMembers(oldIndex, newIndex);
+      },
+      itemBuilder: (context, index) {
+        final member = members[index];
+        return _buildMemberCard(
+          context: context,
+          member: member,
+          state: state,
+          isSelected: _selectedMemberIds.contains(member.id),
+          showDragHandle: true,
+          dragIndex: index,
+        );
+      },
+    );
+  }
+
+  /// 构建普通列表（搜索模式或多选模式）
+  Widget _buildNormalList(
+      BuildContext context, List<Member> members, AppState state) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: members.length,
+      itemBuilder: (context, index) {
+        final member = members[index];
+        return _buildMemberCard(
+          context: context,
+          member: member,
+          state: state,
+          isSelected: _selectedMemberIds.contains(member.id),
+          showDragHandle: false,
+        );
+      },
     );
   }
 
@@ -437,6 +539,7 @@ class _MemberManagerScreenState extends ConsumerState<MemberManagerScreen> {
               state.addMember(Member(
                 name: name,
                 studentId: studentId.isEmpty ? null : studentId,
+                sortOrder: state.members.length,
               ));
               Navigator.pop(context);
             },

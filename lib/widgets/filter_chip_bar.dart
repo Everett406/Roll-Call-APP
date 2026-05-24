@@ -66,7 +66,7 @@ class FilterChipBar extends ConsumerWidget {
             color: Theme.of(context).colorScheme.primary,
             onTap: () => onFilterChanged(null),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           // 未标记
           _buildChip(
             context,
@@ -76,12 +76,12 @@ class FilterChipBar extends ConsumerWidget {
             onTap: () =>
                 onFilterChanged(selectedFilter == 'unchecked' ? null : 'unchecked'),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           // 常驻标签
           ...pinnedTags.map((tag) {
             final count = statusCounts[tag.id] ?? 0;
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 6),
               child: _buildChip(
                 context,
                 label: '${tag.name} $count',
@@ -98,14 +98,14 @@ class FilterChipBar extends ConsumerWidget {
             Container(
               width: 1,
               height: 20,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
+              margin: const EdgeInsets.symmetric(horizontal: 2),
               color: Theme.of(context).colorScheme.outlineVariant,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 2),
             ...dynamicTags.map((tag) {
               final count = statusCounts[tag.id] ?? 0;
               return Padding(
-                padding: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.only(right: 6),
                 child: _buildChip(
                   context,
                   label: '${tag.name} $count',
@@ -129,24 +129,38 @@ class FilterChipBar extends ConsumerWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? color : color.withOpacity(0.1),
+          color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? color : color.withOpacity(0.3),
-          ),
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: color.withOpacity(0.4),
+                  width: 1,
+                ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.25),
+                    offset: const Offset(0, 2),
+                    blurRadius: 6,
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
             color: isSelected ? Colors.white : color,
             fontSize: 13,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
         ),
       ),
