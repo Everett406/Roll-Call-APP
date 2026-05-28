@@ -1,8 +1,10 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:confetti/confetti.dart';
+import 'package:share_plus/share_plus.dart';
 import '../providers/app_state.dart';
 import '../models/member.dart';
 import '../utils/constants.dart';
@@ -177,6 +179,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                   ),
                 );
                 break;
+              case 'exportUnmarked':
+                _exportUnmarkedMembers(state);
+                break;
             }
           },
           items: [
@@ -203,6 +208,20 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                 ],
               ),
             ),
+            if (session.status == 'ongoing')
+              GlassMenuItem(
+                value: 'exportUnmarked',
+                child: Row(
+                  children: [
+                    Icon(Icons.person_off_outlined, size: 20, color: AppColors.warning),
+                    const SizedBox(width: 12),
+                    Text(
+                      '导出未标记人员',
+                      style: TextStyle(color: AppColors.warning),
+                    ),
+                  ],
+                ),
+              ),
             GlassMenuItem(
               value: 'export',
               child: const Row(
@@ -768,6 +787,54 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         builder: (_) => MemberHistoryScreen(
           memberId: member.id,
           memberName: member.name,
+        ),
+      ),
+    );
+  }
+
+  /// 导出未标记人员
+  void _exportUnmarkedMembers(AppState state) {
+    final session = state.getSessionById(widget.sessionId);
+    if (session == null) return;
+
+    final unmarked = session.memberIds
+        .map((id) => state.getMemberById(id))
+        .where((m) => m != null)
+        .where((m) {
+          final checkIn = state.getActiveCheckIn(widget.sessionId, m!.id);
+          return checkIn == null;
+        })
+        .map((m) => m!)
+        .toList();
+
+    if (unmarked.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('所有成员都已标记')),
+      );
+      return;
+    }
+
+    // 生成文本
+    final buffer = StringBuffer();
+    buffer.writeln('📋 ${session.title} - 未标记人员');
+    buffer.writeln('共 ${unmarked.length} 人');
+    buffer.writeln('时间：${session.createdAt.toString().substring(0, 16)}');
+    buffer.writeln('──────────────');
+    for (int i = 0; i < unmarked.length; i++) {
+      final m = unmarked[i];
+      buffer.writeln('${i + 1}. ${m.name}${m.studentId != null ? '（${m.studentId}）' : ''}');
+    }
+
+    // 复制到剪贴板
+    Clipboard.setData(ClipboardData(text: buffer.toString()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('已复制 ${unmarked.length} 位未标记人员到剪贴板'),
+        action: SnackBarAction(
+          label: '分享',
+          onPressed: () {
+            Share.share(buffer.toString(), subject: '${session.title} - 未标记人员');
+          },
         ),
       ),
     );
