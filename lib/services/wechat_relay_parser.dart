@@ -115,9 +115,6 @@ class WechatRelayParser {
       // 跳过纯数字行（如第一行的"1"）
       if (!RegExp(r'[\u4e00-\u9fa5]').hasMatch(line)) continue;
 
-      // 跳过只有1-2个汉字的行（可能是标题）
-      if (RegExp(r'^[\u4e00-\u9fa5]{1,2}$').hasMatch(line)) continue;
-
       final result = _parseLine(line, members, tags, mappings, currentStatuses);
       results.add(result);
     }
