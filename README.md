@@ -59,7 +59,7 @@
 ### 手动构建（可选）
 
 ```bash
-git clone https://github.com/Everett406/Roll-Call-APP.git
+git clone https://gitee.com/Everett5678/Roll-Call-APP.git
 cd Roll-Call-APP
 flutter pub get
 flutter build apk --release
