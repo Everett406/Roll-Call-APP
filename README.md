@@ -1,9 +1,9 @@
----
 
 > [!NOTE]
 > **本仓库已迁移至 Gitee**：<https://gitee.com/Everett5678/Roll-Call-APP>
 > GitHub 端仅作只读归档，新代码请推送到 Gitee。
 
+---
 # 点到为止
 
 > 让点名更有诗意
